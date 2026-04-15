@@ -328,65 +328,96 @@
   .res-winner-tbd { color: var(--text-dim); font-size: 0.72rem; font-style: italic; }
   .res-finals-badge { display: inline-block; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; background: var(--gold); color: #001834; padding: 1px 5px; border-radius: 2px; margin-left: 5px; vertical-align: middle; }
 
-  /* ── Mobile / iPhone responsive ── */
-  .mobile-back-btn {
-    display: none; /* shown via JS on mobile */
-    align-items: center;
-    gap: 6px;
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    padding: 7px 14px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--navy);
-    cursor: pointer;
-    margin-bottom: 16px;
+  /* ── Navigation history buttons (desktop: hidden; mobile: large touch targets) ── */
+  .nav-history-btn {
+    display: none; /* shown only on mobile via media query */
+    align-items: center; justify-content: center;
+    width: 44px; height: 44px; padding: 0;
+    font-size: 1.4rem; letter-spacing: 0; text-transform: none;
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--navy); cursor: pointer; flex-shrink: 0;
     font-family: inherit;
   }
-  @media (max-width: 768px) {
-    /* Safe area padding for iPhone notch / home bar */
-    body { padding-bottom: env(safe-area-inset-bottom); }
-    .topbar {
-      flex-wrap: wrap;
-      height: auto;
-      padding: 8px 12px;
-      gap: 6px;
-      padding-top: max(8px, env(safe-area-inset-top));
-    }
-    /* Hide data-utility buttons and timestamp on small screens */
-    .topbar .nav-btn:not([data-view]):not(.nav-history-btn) { display: none; }
-    .updated-label { display: none; }
-    .topbar-search { flex: 0 0 100%; max-width: none; order: 10; margin-left: 0; }
-    .nav-btn { padding: 6px 10px; font-size: 0.65rem; letter-spacing: 0.1em; }
+  .nav-history-btn.nav-disabled { opacity: 0.25; cursor: default; }
 
-    /* Athletes: stack to single column, toggle list/profile */
+  /* ── Hamburger button (mobile only) ── */
+  .hamburger-btn {
+    display: none; /* shown only on mobile */
+    align-items: center; justify-content: center;
+    width: 44px; height: 44px; padding: 0;
+    font-size: 1.5rem; background: none; border: none;
+    color: var(--navy); cursor: pointer; flex-shrink: 0;
+    font-family: inherit;
+  }
+
+  /* ── Mobile slide-down navigation menu ── */
+  .mobile-menu {
+    display: none;
+    position: fixed; left: 0; right: 0;
+    background: #fff; z-index: 999;
+    box-shadow: 0 6px 24px rgba(0,24,52,0.14);
+    border-bottom: 1px solid var(--border);
+  }
+  .mobile-menu.open { display: block; }
+  .mobile-menu-item {
+    display: block; width: 100%; padding: 16px 20px;
+    background: none; border: none; border-bottom: 1px solid #f1f5f9;
+    text-align: left; font-size: 0.85rem; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--navy); cursor: pointer; font-family: inherit;
+  }
+  .mobile-menu-item:last-child { border-bottom: none; }
+  .mobile-menu-item.active { border-left: 3px solid var(--navy); padding-left: 17px; }
+  .mobile-menu-item.menu-utility { color: var(--text-dim); font-size: 0.78rem; font-weight: 600; }
+  .mobile-menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* ── Back-to-list button inside profile panel (mobile) ── */
+  .mobile-back-btn {
+    display: none;
+    align-items: center; gap: 6px;
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    padding: 8px 14px; font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--navy); cursor: pointer; margin-bottom: 16px; font-family: inherit;
+  }
+
+  /* ── Mobile layout (max 768px) ── */
+  @media (max-width: 768px) {
+    body { padding-bottom: env(safe-area-inset-bottom); }
+
+    /* Topbar: row 1 = [←][→] [brand] [≡], row 2 = [search] */
+    .topbar {
+      flex-wrap: wrap; height: auto; gap: 4px;
+      padding: max(10px, env(safe-area-inset-top)) 10px 8px;
+    }
+    .topbar-brand { flex: 1; text-align: center; font-size: 0.92rem; }
+    .nav { display: none; }
+    .updated-label { display: none; }
+    .topbar .nav-btn:not([data-view]):not(.nav-history-btn):not(.hamburger-btn) { display: none; }
+    .topbar-search { flex: 0 0 100%; max-width: none; order: 10; margin: 0; }
+
+    /* Large touch-target arrows */
+    .nav-history-btn { display: flex; }
+
+    /* Hamburger */
+    .hamburger-btn { display: flex; }
+
+    /* Athletes view */
     .athletes-layout { grid-template-columns: 1fr; gap: 0; }
     .athlete-list-panel { position: static; max-height: 50vh; top: auto; }
     .profile-panel { padding: 16px; min-height: 0; }
-    /* When a profile is active on mobile, show only the profile */
     .athletes-layout.mobile-profile .athlete-list-panel { display: none; }
     .athletes-layout.mobile-profile .profile-panel { display: block; }
     .mobile-back-btn { display: inline-flex; }
 
-    /* Profile text sizes */
+    /* Text sizes */
     .profile-name { font-size: 2rem; }
     .stat-card-value { font-size: 3rem; }
 
-    /* Winners: single column */
+    /* Single-column layouts */
     .winners-layout { grid-template-columns: 1fr; }
-
-    /* Bento: single column */
     .bento-row { grid-template-columns: 1fr; }
-
-    /* Views padding */
     .view { padding: 12px; }
-  }
-  @media (max-width: 480px) {
-    .nav-btn { padding: 5px 7px; font-size: 0.6rem; }
-    .topbar-brand { font-size: 0.88rem; }
   }
 </style>
 </head>
@@ -1725,17 +1756,14 @@ if ('serviceWorker' in navigator) {
 (function () {
 
   // ── History stack ──────────────────────────────────────────────────────────
-  // We maintain our own stack so we can reliably know whether back/forward
-  // are available (browser's history.length doesn't tell us about forward).
-  const stack = [location.hash || '#athletes'];
-  let   pos   = 0;
-  let   moving = false; // true while a programmatic back/forward is in progress
+  const stack  = [location.hash || '#athletes'];
+  let   pos    = 0;
+  let   moving = false;
 
   window.addEventListener('hashchange', function () {
-    if (moving) {
-      moving = false; // this change was ours — don't push to stack
-    } else {
-      stack.splice(pos + 1);        // discard any forward history
+    if (moving) { moving = false; }
+    else {
+      stack.splice(pos + 1);
       stack.push(location.hash);
       pos = stack.length - 1;
     }
@@ -1744,19 +1772,14 @@ if ('serviceWorker' in navigator) {
 
   function goBack() {
     if (pos <= 0) return;
-    pos--;
-    moving = true;
-    location.hash = stack[pos];
+    pos--; moving = true; location.hash = stack[pos];
   }
-
   function goFwd() {
     if (pos >= stack.length - 1) return;
-    pos++;
-    moving = true;
-    location.hash = stack[pos];
+    pos++; moving = true; location.hash = stack[pos];
   }
 
-  // ── Back / Forward buttons in topbar ──────────────────────────────────────
+  // ── Back / Forward buttons (visible on mobile only via CSS) ───────────────
   const topbar = document.querySelector('.topbar');
 
   function makeNavBtn(label, title, fn) {
@@ -1774,7 +1797,56 @@ if ('serviceWorker' in navigator) {
   topbar.prepend(btnFwd);
   topbar.prepend(btnBack);
 
-  // ── "← Athletes" button inside the profile panel (mobile only) ────────────
+  // ── Hamburger menu (mobile only) ──────────────────────────────────────────
+  const NAV_ITEMS = [
+    { label: 'Athletes', view: 'athletes' },
+    { label: 'Events',   view: 'events'   },
+    { label: 'Seasons',  view: 'season'   },
+    { label: 'Winners',  view: 'winners'  },
+  ];
+
+  // Build menu element
+  const mobileMenu = document.createElement('div');
+  mobileMenu.className = 'mobile-menu';
+  mobileMenu.innerHTML =
+    NAV_ITEMS.map(item =>
+      `<button class="mobile-menu-item" data-view="${item.view}"
+               onclick="showView('${item.view}')">${item.label}</button>`
+    ).join('') +
+    `<div class="mobile-menu-divider"></div>
+     <button class="mobile-menu-item menu-utility"
+             onclick="exportNotes()">Export Data</button>
+     <button class="mobile-menu-item menu-utility"
+             onclick="document.getElementById('import-input').click()">Import Data</button>`;
+  document.body.appendChild(mobileMenu);
+
+  // Close menu when a view item is tapped
+  mobileMenu.querySelectorAll('[data-view]').forEach(btn => {
+    btn.addEventListener('click', function () {
+      mobileMenu.classList.remove('open');
+    });
+  });
+  // Close menu when tapping outside
+  document.addEventListener('click', function (e) {
+    if (!hamburgerBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
+      mobileMenu.classList.remove('open');
+    }
+  });
+
+  // Hamburger button
+  const hamburgerBtn = document.createElement('button');
+  hamburgerBtn.className = 'hamburger-btn';
+  hamburgerBtn.setAttribute('aria-label', 'Menu');
+  hamburgerBtn.title = 'Menu';
+  hamburgerBtn.textContent = '☰';
+  hamburgerBtn.addEventListener('click', function () {
+    const rect = topbar.getBoundingClientRect();
+    mobileMenu.style.top = rect.bottom + 'px';
+    mobileMenu.classList.toggle('open');
+  });
+  topbar.appendChild(hamburgerBtn);
+
+  // ── "← Athletes" button inside the profile panel ─────────────────────────
   const profilePanel = document.getElementById('profile-panel');
   const layout       = document.querySelector('.athletes-layout');
 
@@ -1782,15 +1854,11 @@ if ('serviceWorker' in navigator) {
   backToList.className = 'mobile-back-btn';
   backToList.textContent = '← Athletes';
   backToList.addEventListener('click', function () {
-    if (pos > 0) {
-      goBack();
-    } else {
-      location.hash = '#athletes';
-    }
+    if (pos > 0) goBack(); else location.hash = '#athletes';
   });
   profilePanel.prepend(backToList);
 
-  // ── Refresh all navigation UI after every hash change ─────────────────────
+  // ── Refresh all nav UI after every hash change ────────────────────────────
   function refreshUI() {
     const canBack = pos > 0;
     const canFwd  = pos < stack.length - 1;
@@ -1800,7 +1868,13 @@ if ('serviceWorker' in navigator) {
     btnFwd.disabled  = !canFwd;
     btnFwd.classList.toggle('nav-disabled', !canFwd);
 
-    // Mobile athletes layout: show profile full-screen when on an athlete hash
+    // Highlight active item in hamburger menu
+    const currentView = (location.hash.slice(1).split('/')[0]) || 'athletes';
+    mobileMenu.querySelectorAll('[data-view]').forEach(b => {
+      b.classList.toggle('active', b.dataset.view === currentView);
+    });
+
+    // Mobile athletes layout: profile full-screen when on an athlete hash
     if (layout) {
       const onProfile = location.hash.startsWith('#athletes/');
       const onMobile  = window.innerWidth <= 768;
