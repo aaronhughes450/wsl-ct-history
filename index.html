@@ -217,6 +217,7 @@
 
   /* Season progression in athlete profile */
   .season-prog-block { margin-bottom: 14px; }
+  .season-sub-label { display: block; font-size: 0.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.18em; color: var(--text-dim); opacity: 0.75; margin-bottom: 4px; }
   .season-prog-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-bottom: 7px; }
   .prog-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 4px 7px; font-size: 0.76rem; display: flex; flex-direction: column; align-items: center; min-width: 36px; }
   .prog-chip .pc-key { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; }
@@ -1725,8 +1726,8 @@ function buildSeasonProgression(name, gender) {
 
     html += `<div class="season-prog-block">
       <div class="section-title">${yr} Season</div>
-      ${progHtml ? `<div class="season-prog-chips">${progHtml}</div>` : ''}
-      ${placingHtml ? `<div class="season-placings">${placingHtml}</div>` : ''}
+      ${progHtml ? `<div class="season-prog-section"><span class="season-sub-label">Ranking Progression</span><div class="season-prog-chips">${progHtml}</div></div>` : ''}
+      ${placingHtml ? `<div class="season-prog-section" style="margin-top:6px"><span class="season-sub-label">Event Placings</span><div class="season-placings">${placingHtml}</div></div>` : ''}
     </div>`;
   }
   return html;
