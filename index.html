@@ -423,11 +423,10 @@
     /* Winners — Event Winners by Year: stack Women/Men vertically */
     .yr-cols { grid-template-columns: 1fr; }
     .yr-col:first-child { border-right: none; border-bottom: 1px solid #e2e8f0; }
-    /* Let each row wrap: event name on top line, winner below */
-    .res-row-inner { flex-wrap: wrap; gap: 2px 12px; }
-    .res-name-block { flex: 1 1 60%; }
-    .res-winner-block { min-width: 0; max-width: none; flex: 0 0 auto; text-align: left; }
-    .res-winner-name { white-space: normal; }
+    .res-winner-block { min-width: 0; max-width: none; }
+    /* Let event name wrap instead of truncating; winner stays right */
+    .res-name-block a,
+    .res-name-block span.ev-label { white-space: normal; overflow: visible; text-overflow: clip; }
   }
 </style>
 </head>
