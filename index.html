@@ -43,7 +43,7 @@
   .nav-btn { background: none; border: none; border-bottom: 2px solid transparent; color: #64748b; padding: 6px 14px; border-radius: 0; cursor: pointer; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; transition: all 0.15s; }
   .nav-btn:hover { color: #001834; }
   .nav-btn.active { color: #001834; border-bottom-color: #001834; }
-  .topbar-search { flex: 1; max-width: 320px; margin-left: auto; }
+  .topbar-search { flex: 0 0 220px; }
   .topbar-search input { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 2px; padding: 5px 10px; color: #001834; font-size: 0.78rem; outline: none; }
   .topbar-search input:focus { border-color: #001834; }
   .topbar-search input::placeholder { color: #94a3b8; }
@@ -174,6 +174,15 @@
   .athlete-link:hover { text-decoration: underline; text-decoration-color: rgba(0,24,52,0.4); text-underline-offset: 2px; }
 
   .updated-label { font-size: 0.75rem; color: var(--text-dim); margin-left: auto; }
+  /* Gear menu */
+  .gear-menu { position: relative; }
+  .gear-btn { background: none; border: none; cursor: pointer; color: var(--text-dim); padding: 6px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: color 0.15s, background 0.15s; }
+  .gear-btn:hover { color: var(--navy); background: var(--surface2); }
+  .gear-dropdown { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--border); border-radius: 4px; box-shadow: 0 4px 16px rgba(0,24,52,0.12); min-width: 160px; z-index: 200; padding: 4px; }
+  .gear-dropdown.open { display: block; }
+  .gear-dropdown-label { font-size: 0.48rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: var(--text-dim); padding: 6px 10px 4px; }
+  .gear-item { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; cursor: pointer; padding: 7px 10px; border-radius: 3px; font-size: 0.72rem; font-weight: 600; color: var(--navy); text-align: left; font-family: 'Inter', sans-serif; transition: background 0.1s; }
+  .gear-item:hover { background: var(--surface2); }
   .no-data { padding: 40px; text-align: center; color: var(--text-dim); }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -441,15 +450,31 @@
     <button class="nav-btn" data-view="season" onclick="showView('season')">Seasons</button>
     <button class="nav-btn" data-view="winners" onclick="showView('winners')">Winners</button>
   </nav>
-  <div class="topbar-search">
-    <input type="text" id="global-search" placeholder="Search athletes…" oninput="globalSearch(this.value)">
+  <div style="display:flex;align-items:center;gap:12px;margin-left:auto">
+    <div class="topbar-search">
+      <input type="text" id="global-search" placeholder="Search athletes…" oninput="globalSearch(this.value)">
+    </div>
+    <span id="sync-status" style="font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#94a3b8;transition:color 0.3s;white-space:nowrap"></span>
+    <div class="gear-menu" id="gear-menu">
+      <button class="gear-btn" onclick="toggleGearMenu(event)" title="Data tools" aria-label="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <div class="gear-dropdown" id="gear-dropdown">
+        <div class="gear-dropdown-label">Data</div>
+        <button class="gear-item" onclick="exportNotes();toggleGearMenu()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Backup
+        </button>
+        <button class="gear-item" onclick="document.getElementById('import-input').click();toggleGearMenu()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import Backup
+        </button>
+        <input type="file" id="import-input" accept=".json" style="display:none" onchange="importNotes(this)">
+      </div>
+    </div>
   </div>
-  <div class="updated-label">Updated: 14 Apr 2026, 06:17</div>
-  <button class="nav-btn" onclick="exportNotes()" title="Export all notes and bio data — save as app-data.json to sync across devices" style="margin-left:8px;font-size:0.78rem">Export Data</button>
-  <button class="nav-btn" onclick="document.getElementById('import-input').click()" title="Restore notes and bio data from a backup file" style="font-size:0.78rem">Import Data</button>
-  <input type="file" id="import-input" accept=".json" style="display:none" onchange="importNotes(this)">
-  <button class="nav-btn" onclick="document.getElementById('bio-import-input').click()" title="Load bio data from bio-migration.json (one-time migration)" style="font-size:0.78rem">Import Bio</button>
-  <input type="file" id="bio-import-input" accept=".json" style="display:none" onchange="importBio(this)">
 </div>
 
 
@@ -829,6 +854,39 @@ function getAthleteEvents(name, gender) {
   return result;
 }
 
+// ── Nation flag emojis ──
+const NATION_FLAGS = {
+  'Australia':     '🇦🇺',
+  'Barbados':      '🇧🇧',
+  'Brazil':        '🇧🇷',
+  'Canada':        '🇨🇦',
+  'Costa Rica':    '🇨🇷',
+  'France':        '🇫🇷',
+  'Germany':       '🇩🇪',
+  'Great Britain': '🇬🇧',
+  'Hawaii':        '🌺',
+  'Indonesia':     '🇮🇩',
+  'Ireland':       '🇮🇪',
+  'Israel':        '🇮🇱',
+  'Italy':         '🇮🇹',
+  'Japan':         '🇯🇵',
+  'Mauritius':     '🇲🇺',
+  'Mexico':        '🇲🇽',
+  'Morocco':       '🇲🇦',
+  'New Zealand':   '🇳🇿',
+  'Peru':          '🇵🇪',
+  'Portugal':      '🇵🇹',
+  'Puerto Rico':   '🇵🇷',
+  'RSA':           '🇿🇦',
+  'Reunion':       '🇷🇪',
+  'South Africa':  '🇿🇦',
+  'Spain':         '🇪🇸',
+  'Tahiti':        '🇵🇫',
+  'UK':            '🇬🇧',
+  'USA':           '🇺🇸',
+};
+function nationFlag(n) { return NATION_FLAGS[n] ? NATION_FLAGS[n] + ' ' : ''; }
+
 function renderProfile(name) {
   const a = DATA.athletes[name];
   if (!a) return;
@@ -930,7 +988,7 @@ function renderProfile(name) {
   // Editable bio fields (bento info card)
   const bioFields = `
     <div class="bento-info-card">
-      <div class="section-title" style="margin-top:0">Bio <span style="font-size:0.65rem;font-weight:400;letter-spacing:0;text-transform:none;color:var(--text-dim)">(saved locally)</span></div>
+      <div class="section-title" style="margin-top:0">Bio</div>
       <div class="bento-info-grid">
         <div class="bento-info-field">
           <label>Date of Birth</label>
@@ -945,7 +1003,13 @@ function renderProfile(name) {
           </div>
         </div>
         <div class="bento-info-field">
-          <label>Location</label>
+          <label>Born</label>
+          <input class="bio-input" placeholder="e.g. Oceanside, USA"
+            value="${escHtml(bioGet('born'))}"
+            onchange="saveBio('${name}','born',this.value)">
+        </div>
+        <div class="bento-info-field">
+          <label>Resides</label>
           <input class="bio-input" placeholder="e.g. Gold Coast, AUS"
             value="${escHtml(bioGet('location'))}"
             onchange="saveBio('${name}','location',this.value)">
@@ -969,10 +1033,10 @@ function renderProfile(name) {
   // Nation / CT debut / WC / ROTY meta tags
   const wcCount = st.wc || 0;
   const tags = [
-    a.nation     ? `<div class="meta-tag"><span>${a.nation}</span></div>` : '',
-    rookieSeason ? `<div class="meta-tag">CT debut <span>${rookieSeason}</span></div>` : '',
+    a.nation     ? `<div class="meta-tag"><span>${nationFlag(a.nation)}${a.nation}</span></div>` : '',
+    rookieSeason ? `<div class="meta-tag">Rookie Season: <span>${rookieSeason}</span></div>` : '',
     wcCount      ? `<div class="meta-tag" style="background:#f0b400;color:#001834;border-color:#f0b400;letter-spacing:0.18em">🏆 ${wcCount > 1 ? wcCount + '× ' : ''}World Champion</div>` : '',
-    isRoty       ? `<div class="meta-tag" style="background:rgba(167,139,250,0.25);color:#a78bfa;border:1px solid #a78bfa">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
+    isRoty       ? `<div class="meta-tag" style="background:var(--navy);color:#fff;border-color:var(--navy)">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
   ].join('');
 
   // Rookie class
@@ -1752,6 +1816,18 @@ function buildSeasonProgression(name, gender) {
 }
 
 
+// ── Gear menu toggle ──
+function toggleGearMenu(e) {
+  if (e) e.stopPropagation();
+  const dd = document.getElementById('gear-dropdown');
+  if (!dd) return;
+  dd.classList.toggle('open');
+}
+document.addEventListener('click', () => {
+  const dd = document.getElementById('gear-dropdown');
+  if (dd) dd.classList.remove('open');
+});
+
 // ── Init ──
 document.addEventListener('DOMContentLoaded', () => {
   filterAthletes('');
@@ -1917,17 +1993,8 @@ const FIREBASE_CONFIG = {"apiKey": "AIzaSyBqq_a3I3WcVYUeVszBcWpqCTKi-CBz86w", "a
 (function () {
   if (!FIREBASE_CONFIG || !FIREBASE_CONFIG.databaseURL) return;
 
-  // ── Sync status chip in topbar ──────────────────────────────────────────
-  function addStatus() {
-    const brand = document.querySelector('.topbar-brand');
-    if (!brand) return null;
-    const s = document.createElement('span');
-    s.id = 'sync-status';
-    s.style.cssText = 'font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#94a3b8;margin-left:12px;transition:color 0.3s;';
-    brand.parentNode.insertBefore(s, brand.nextSibling);
-    return s;
-  }
-  const status = addStatus();
+  // ── Sync status chip (already in topbar HTML) ─────────────────────────
+  const status = document.getElementById('sync-status');
   const setStatus = (msg, color) => { if (status) { status.textContent = msg; status.style.color = color; } };
   setStatus('⟳ Syncing', '#94a3b8');
 
