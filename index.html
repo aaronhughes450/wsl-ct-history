@@ -2388,28 +2388,45 @@ const FIREBASE_CONFIG = {"apiKey": "AIzaSyBqq_a3I3WcVYUeVszBcWpqCTKi-CBz86w", "a
     // ── Initial pull: remote → localStorage → refresh open profile ────────
     ref.once('value').then(snap => {
       const remote = snap.val() || {};
-      let changed = 0;
+
+      // ── Bootstrap upload ────────────────────────────────────────────────
+      // If bio/notes data was entered before Firebase was integrated it only
+      // exists in the Mac's localStorage, never in Firebase.  On the Mac we
+      // push any key that Firebase doesn't know about yet so the iPhone can
+      // pick it up on its next sync.  We only push keys Firebase is missing
+      // entirely (remote[k] == null) to avoid overwriting intentional edits.
+      for (var _i = 0; _i < localStorage.length; _i++) {
+        var _k = localStorage.key(_i);
+        if ((_k.startsWith('bio__') || _k.startsWith('notes__') || _k.startsWith('evnotes__'))
+            && localStorage.getItem(_k)
+            && !(_k in remote)) {
+          ref.child(_k).set(localStorage.getItem(_k));
+        }
+      }
+
+      // ── Pull remote → local ─────────────────────────────────────────────
       Object.entries(remote).forEach(([k, v]) => {
         if (v && v !== localStorage.getItem(k)) {
           localStorage.setItem(k, v);
-          changed++;
         }
       });
+
       setStatus('✓ Synced', '#16a34a');
-      if (changed > 0) {
-        // Re-render open athlete profile so fresh notes/bio appear
-        const h = location.hash;
-        const currentView = (h.slice(1).split('/')[0]) || 'athletes';
-        if (h.startsWith('#athletes/')) {
-          const name = decodeURIComponent(h.slice('#athletes/'.length));
-          if (typeof renderProfile === 'function') renderProfile(name);
-        }
-        // Re-render event widgets if on the events view — stance data lives in
-        // localStorage and won't be available until after this sync completes.
-        if (currentView === 'events' && typeof renderEventWidgets === 'function') {
-          renderEventWidgets();
-        }
+
+      // ── Re-render after sync ────────────────────────────────────────────
+      // Always re-render regardless of `changed` count: the initial page render
+      // runs before Firebase loads, so bio data (stance etc.) wasn't in
+      // localStorage yet.  This one-time re-render fixes stance stats on iPhone.
+      const h = location.hash;
+      const currentView = (h.slice(1).split('/')[0]) || 'athletes';
+      if (h.startsWith('#athletes/')) {
+        const name = decodeURIComponent(h.slice('#athletes/'.length));
+        if (typeof renderProfile === 'function') renderProfile(name);
       }
+      if (currentView === 'events' && typeof renderEventWidgets === 'function') {
+        renderEventWidgets();
+      }
+
     }).catch(() => setStatus('⚠ Offline', '#d97706'));
 
     // ── Real-time listener: changes from other devices appear instantly ────
