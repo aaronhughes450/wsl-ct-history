@@ -470,6 +470,30 @@
     .stat-card-value { font-size: 2.6rem; }
     .bento-stat-card { min-height: 100px; }
 
+    /* ── Board tables: tighter columns so values don't get clipped ── */
+    .winners-table th.wins-col { width: 36px; padding: 8px 4px; }
+    .winners-table td.wins-num { font-size: 0.88rem; padding: 7px 4px; }
+    .winners-table th.num,
+    .winners-table td.num { width: 22px; padding: 7px 4px; }
+    .winners-table th { padding: 8px 6px; font-size: 0.5rem; }
+    .winners-table td { padding: 7px 6px; }
+    .winners-board-header { padding: 10px 12px; }
+    .winners-board-title { font-size: 0.62rem; }
+
+    /* ── Scroll performance fixes ── */
+    /* Remove position:sticky on table headers — causes severe jank on iOS
+       inside overflow:auto containers */
+    .events-table th,
+    .season-table th { position: static; }
+    /* Momentum scrolling for all scroll containers */
+    .events-table-wrap,
+    .season-table-wrap,
+    .winners-scroll,
+    .athlete-list { -webkit-overflow-scrolling: touch; }
+    /* Prevent horizontal table scroll from fighting vertical page scroll */
+    .events-table-wrap,
+    .season-table-wrap { overscroll-behavior-x: contain; }
+
     /* Topbar: row 1 = [←][→] [brand] [≡], row 2 = [search] */
     .topbar {
       flex-wrap: wrap; height: auto; gap: 4px;
@@ -809,6 +833,16 @@ function _renderView(name) {
   });
   const el = document.getElementById('view-' + name);
   if (el) el.classList.add('active');
+  // On mobile, default the events year filter to 10 years (not "all") for
+  // performance — the user can change it, but the initial render must be fast.
+  if (name === 'events' && window.innerWidth <= 768) {
+    var _ySel = document.getElementById('event-years');
+    if (_ySel && !_ySel._mobileDefaultSet) {
+      _ySel.value = '10';
+      _ySel._mobileDefaultSet = true;
+    }
+  }
+
   // Show a loading row so the user knows something is happening on slow devices
   if (name === 'events') {
     var ew = document.getElementById('event-widgets-wrap');
@@ -1730,13 +1764,14 @@ function renderEventWidgets() {
 
 function renderEventTable() {
   renderEventWidgets();
-  const evName  = document.getElementById('event-select').value;
-  const gender  = eventGender;
+  const evName     = document.getElementById('event-select').value;
+  const gender     = eventGender;
   const yearsLimit = document.getElementById('event-years').value;
+  const tbody      = document.getElementById('event-tbody');
 
   const evData = DATA.events[evName];
   if (!evData) {
-    document.getElementById('event-tbody').innerHTML = '<tr><td colspan="99" class="no-data">No data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="99" class="no-data">No data</td></tr>';
     return;
   }
 
@@ -1762,8 +1797,8 @@ function renderEventTable() {
 
   // Build header
   const arrow = (col) => {
-    const sorted = evSortCol === col;
-    const sym = sorted ? (evSortDir === 'asc' ? '▲' : '▼') : '▲';
+    const isSorted = evSortCol === col;
+    const sym = isSorted ? (evSortDir === 'asc' ? '▲' : '▼') : '▲';
     return `<span class="sort-arrow">${sym}</span>`;
   };
   const thClass = (col) => evSortCol === col ? 'sorted' : '';
@@ -1782,8 +1817,8 @@ function renderEventTable() {
       ${yearHeaders}
     </tr>`;
 
-  // Render a group of rows
-  function buildRows(entries, extraClass) {
+  // Build all row HTML strings as an array (not pre-joined) for chunked insertion.
+  function buildRowsArr(entries, extraClass) {
     return doSort(entries).map(([name, d]) => {
       const yrs = d.years || {};
       const st  = d.stats || {};
@@ -1808,21 +1843,42 @@ function renderEventTable() {
         ${statCells}
         ${yearCells}
       </tr>`;
-    }).join('');
+    });
   }
 
   const totalCols = 1 + EV_STAT_COLS.length + years.length;
-  let html = buildRows(current, '');
-
+  let allRowArr = buildRowsArr(current, '');
   if (others.length) {
-    html += `<tr class="group-divider">
-      <td colspan="${totalCols}">Historical competitors</td>
-    </tr>`;
-    html += buildRows(others, 'other-row');
+    allRowArr = allRowArr.concat(
+      [`<tr class="group-divider"><td colspan="${totalCols}">Historical competitors</td></tr>`],
+      buildRowsArr(others, 'other-row')
+    );
   }
 
-  document.getElementById('event-tbody').innerHTML = html;
+  // ── Chunked insertion ───────────────────────────────────────────────────────
+  // On mobile, insert rows in small batches separated by rAF ticks so iOS never
+  // blocks long enough to trigger a script timeout or drop the UI thread.
+  // On desktop, insert everything at once for instant display.
+  const isMobile = window.innerWidth <= 768;
+  const CHUNK    = isMobile ? 15 : allRowArr.length;
+  tbody.innerHTML = '';
+  const renderId = ++renderEventTable._renderId;
+  let idx = 0;
+
+  function insertChunk() {
+    if (renderEventTable._renderId !== renderId) return; // Newer render started, abort
+    const chunk = allRowArr.slice(idx, idx + CHUNK);
+    if (!chunk.length) return;
+    // Parse the chunk HTML via a temporary tbody, then move live rows into the real one.
+    const temp = document.createElement('tbody');
+    temp.innerHTML = chunk.join('');
+    while (temp.rows.length) tbody.appendChild(temp.rows[0]);
+    idx += CHUNK;
+    if (idx < allRowArr.length) requestAnimationFrame(insertChunk);
+  }
+  insertChunk();
 }
+renderEventTable._renderId = 0;
 
 
 // ── Seasons view ──
