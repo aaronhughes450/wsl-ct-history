@@ -511,6 +511,32 @@
     .stat-card-value { font-size: 2.6rem; }
     .bento-stat-card { min-height: 100px; }
 
+    /* ── Event accordion header: name on row 1, chips on row 2 ── */
+    /* Column layout so every event is consistent regardless of chip count */
+    .er-head {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 7px;
+      padding: 12px 44px 12px 16px; /* right padding reserves space for chevron */
+      position: relative;
+    }
+    /* Chevron always top-right of the card, vertically centred on the name */
+    .er-chevron {
+      position: absolute;
+      right: 16px;
+      top: 15px;
+      transition: transform 0.2s;
+    }
+    .er-chevron.open { transform: rotate(180deg); }
+    /* Chips fill the full width of row 2 */
+    .er-chips { width: 100%; gap: 5px; }
+
+    /* ── Event stat grid: 4 columns so sub-text has room to breathe ── */
+    /* 7 columns at ~40 px each clips year strings; 4 cols → ~87 px each */
+    .vb2-stats { grid-template-columns: repeat(4, 1fr); }
+    /* Allow the year sub-text to wrap instead of truncating with ellipsis */
+    .vb2-stat .sub { white-space: normal; overflow: visible; text-overflow: clip; }
+
     /* ── Board tables: tighter columns so values don't get clipped ── */
     .winners-table th.wins-col { width: 36px; padding: 8px 4px; }
     .winners-table td.wins-num { font-size: 0.88rem; padding: 7px 4px; }
