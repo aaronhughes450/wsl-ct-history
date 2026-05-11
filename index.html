@@ -83,18 +83,21 @@
   .stat-card-value { font-size: 4rem; font-weight: 900; font-style: italic; color: #001834; margin-top: 4px; letter-spacing: -0.05em; line-height: 1; }
   .stat-card-sub { font-size: 0.6rem; color: #64748b; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
   .wins-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
-  .wins-list li { font-size: 0.75rem; padding: 10px 12px; margin: 0; color: #001834; font-weight: 700; font-style: normal; text-transform: none; letter-spacing: 0; border-bottom: 1px solid transparent; transition: background 0.1s, border-color 0.1s; }
+  .wins-list.two-col { display: block; columns: 2; column-gap: 0; }
+  .wins-list.two-col li { break-inside: avoid; }
+  .wins-list li { font-size: 0.75rem; padding: 8px 12px; margin: 0; color: #001834; font-weight: 700; font-style: normal; text-transform: none; letter-spacing: 0; border-bottom: 1px solid transparent; transition: background 0.1s, border-color 0.1s; }
   .wins-list li:hover { background: #dde5f0; border-color: #c8d4e8; }
   .wins-list li span { color: #001834; }
+  .wins-list .win-location { display: block; font-size: 0.65rem; font-weight: 400; color: #64748b; margin-top: 1px; }
 
   /* Rankings timeline */
   .rankings-row { display: flex; flex-wrap: wrap; gap: 6px; }
   .ranking-chip { background: #fff; border: 1px solid #e2e8f0; border-radius: 2px; padding: 6px 8px; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; min-width: 44px; border-bottom: 2px solid #f1f5f9; }
   .ranking-chip .yr { font-size: 0.55rem; color: #94a3b8; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
   .ranking-chip .rk { font-weight: 900; font-style: italic; color: #001834; font-size: 1.1rem; letter-spacing: -0.03em; }
-  .ranking-chip.rk-1 { background: #f0b400; border-color: #f0b400; border-bottom-color: rgba(0,0,0,0.12); }
-  .ranking-chip.rk-1 .rk { color: #001834; font-weight: 900; }
-  .ranking-chip.rk-1 .yr { color: rgba(0,24,52,0.6); }
+  .ranking-chip.rk-1 { background: #fff; border-color: #f0b400; border-bottom-color: #f0b400; }
+  .ranking-chip.rk-1 .rk { color: #f0b400; font-weight: 900; }
+  .ranking-chip.rk-1 .yr { color: rgba(240,180,0,0.65); }
   .ranking-chip.rk-top5 { border-color: var(--teal-dim); }
   .ranking-chip.rk-top5 .rk { color: var(--navy); }
   .ranking-chip.wc { opacity: 0.65; }
@@ -297,7 +300,7 @@
   .placing-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 4px 7px; font-size: 0.76rem; display: flex; flex-direction: column; align-items: center; min-width: 36px; }
   .placing-chip .ev-nm { color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase; }
   .placing-chip .ev-pl { font-weight: 900; font-style: italic; }
-  .placing-chip.p1  { background: var(--gold); border-color: var(--gold); } .placing-chip.p1 .ev-pl  { color: var(--navy); font-weight: 900; }
+  .placing-chip.p1  { background: #fff; border-color: var(--gold); border-bottom-color: var(--gold); } .placing-chip.p1 .ev-pl  { color: var(--gold); font-weight: 900; } .placing-chip.p1 .ev-nm { color: rgba(240,180,0,0.65); }
   .placing-chip.p2  { border-color: var(--ru); }   .placing-chip.p2 .ev-pl  { color: var(--ru); }
   .placing-chip.p3  { border-color: #cd7f32; }    .placing-chip.p3 .ev-pl  { color: #cd7f32; }
   .placing-chip.p45 { border-color: var(--teal-dim); } .placing-chip.p45 .ev-pl { color: var(--navy); }
@@ -311,10 +314,10 @@
   .bento-info-field label { display: block; font-size: 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; color: #94a3b8; margin-bottom: 4px; }
   .bento-stat-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; }
   .bento-stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 2px; padding: 20px 20px 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; border-bottom: 3px solid #f1f5f9; }
-  .bento-stat-card.card-gold { background: #f0b400; border-color: #f0b400; border-bottom-color: rgba(0,0,0,0.12); }
-  .bento-stat-card.card-gold .stat-card-label { color: rgba(0,24,52,0.7); }
-  .bento-stat-card.card-gold .stat-card-value { color: #001834; }
-  .bento-stat-card.card-gold .stat-card-sub { color: rgba(0,24,52,0.65); }
+  .bento-stat-card.card-gold { background: #fff; border-color: #f0b400; border-bottom-color: #f0b400; }
+  .bento-stat-card.card-gold .stat-card-label { color: #f0b400; }
+  .bento-stat-card.card-gold .stat-card-value { color: #f0b400; }
+  .bento-stat-card.card-gold .stat-card-sub { color: rgba(240,180,0,0.7); }
   .bento-stat-card.card-bundle { display: flex; flex-direction: column; gap: 0; padding: 20px 20px 16px; min-height: 110px; justify-content: center; }
   .bento-bundle-row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #f1f5f9; padding: 6px 0; }
   .bento-bundle-row:last-child { border-bottom: none; padding-bottom: 0; }
@@ -1238,7 +1241,7 @@ function renderProfile(name) {
   const tags = [
     a.nation     ? `<div class="meta-tag"><span>${nationFlag(a.nation)}${a.nation}</span></div>` : '',
     rookieSeason ? `<div class="meta-tag">Rookie Season: <span>${rookieSeason}</span></div>` : '',
-    wcCount      ? `<div class="meta-tag" style="background:#f0b400;color:#001834;border-color:#f0b400;letter-spacing:0.18em">🏆 ${wcCount > 1 ? wcCount + '× ' : ''}World Champion</div>` : '',
+    wcCount      ? `<div class="meta-tag" style="background:#fff;color:#f0b400;border-color:#f0b400;letter-spacing:0.18em">🏆 ${wcCount > 1 ? wcCount + '× ' : ''}World Champion</div>` : '',
     isRoty       ? `<div class="meta-tag" style="background:var(--navy);color:#fff;border-color:var(--navy)">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
   ].join('');
 
@@ -1256,12 +1259,13 @@ function renderProfile(name) {
     .sort((a, b) => b.year - a.year);
   const winsHtml = allWins.length
     ? `<div class="section-title">CT Wins (${allWins.length})</div>
-       <ul class="wins-list">
+       <ul class="wins-list${allWins.length > 10 ? ' two-col' : ''}">
          ${allWins.map(w => {
-           const link = w.url
+           const label = w.url
              ? `<a href="${w.url}" target="_blank" rel="noopener" style="color:#001834;text-decoration:none;font-weight:700" title="View results on WSL">${w.name}</a>`
-             : w.name;
-           return `<li>${link}</li>`;
+             : `<span>${w.name}</span>`;
+           const loc = w.location ? `<span class="win-location">${w.location}</span>` : '';
+           return `<li>${label}${loc}</li>`;
          }).join('')}
        </ul>`
     : '';
@@ -1348,11 +1352,10 @@ function buildEventsAccordion(athleteName, gender, events) {
     const bestOrd  = ordinal(ev.best);
     const worstOrd = ordinal(ev.worst);
     const avgStr   = ev.avg != null ? Number(ev.avg).toFixed(2) : '—';
-    const pill     = bestPill(ev);
     const bestYrs  = ev.best_years  ? ` in <b>${ev.best_years}</b>` : '';
     const worstYrs = ev.worst_years ? ` in <b>${ev.worst_years}</b>` : '';
     const proseLine = `At <b>${evName}</b>, started <b>${n} event${n!==1?'s':''}</b>. ` +
-      `Best finish <b>${bestOrd}</b>${pill ? ' '+pill : ''}${bestYrs}. ` +
+      `Best finish <b>${bestOrd}</b>${bestYrs}. ` +
       `Worst <b>${worstOrd}</b>${worstYrs}. Average <b>${avgStr}</b>.`;
 
     // ── Sparkline ─────────────────────────────────────────────────────────────
