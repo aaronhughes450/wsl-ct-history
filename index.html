@@ -462,36 +462,6 @@
   }
   .nav-history-btn.nav-disabled { opacity: 0.25; cursor: default; }
 
-  /* ── Hamburger button (mobile only) ── */
-  .hamburger-btn {
-    display: none; /* shown only on mobile */
-    align-items: center; justify-content: center;
-    width: 44px; height: 44px; padding: 0;
-    font-size: 1.5rem; background: none; border: none;
-    color: var(--navy); cursor: pointer; flex-shrink: 0;
-    font-family: inherit;
-  }
-
-  /* ── Mobile slide-down navigation menu ── */
-  .mobile-menu {
-    display: none;
-    position: fixed; left: 0; right: 0;
-    background: #fff; z-index: 999;
-    box-shadow: 0 6px 24px rgba(0,24,52,0.14);
-    border-bottom: 1px solid var(--border);
-  }
-  .mobile-menu.open { display: block; }
-  .mobile-menu-item {
-    display: block; width: 100%; padding: 16px 20px;
-    background: none; border: none; border-bottom: 1px solid #f1f5f9;
-    text-align: left; font-size: 0.85rem; font-weight: 700;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--navy); cursor: pointer; font-family: inherit;
-  }
-  .mobile-menu-item:last-child { border-bottom: none; }
-  .mobile-menu-item.active { border-left: 3px solid var(--navy); padding-left: 17px; }
-  .mobile-menu-item.menu-utility { color: var(--text-dim); font-size: 0.78rem; font-weight: 600; }
-  .mobile-menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
   /* ── Back-to-list button inside profile panel (mobile) ── */
   .mobile-back-btn {
@@ -587,14 +557,11 @@
     .topbar-brand { flex: 1; text-align: center; font-size: 0.92rem; }
     .nav { display: none; }
     .updated-label { display: none; }
-    .topbar .nav-btn:not([data-view]):not(.nav-history-btn):not(.hamburger-btn) { display: none; }
+    .topbar .nav-btn:not([data-view]):not(.nav-history-btn) { display: none; }
     .topbar-search { flex: 0 0 100%; max-width: none; order: 10; margin: 0; }
 
     /* Large touch-target arrows */
     .nav-history-btn { display: flex; }
-
-    /* Hamburger */
-    .hamburger-btn { display: flex; }
 
     /* Athletes view */
     .athletes-layout { grid-template-columns: 1fr; gap: 0; }
@@ -636,7 +603,7 @@
   </nav>
   <div style="display:flex;align-items:center;gap:12px;margin-left:auto">
     <div class="topbar-search">
-      <input type="text" id="global-search" placeholder="Search athletes…" oninput="globalSearch(this.value)">
+      <input type="text" id="global-search" placeholder="Search athletes…" oninput="globalSearch(this.value)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
     <span id="sync-status" style="font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#94a3b8;transition:color 0.3s;white-space:nowrap"></span>
     <button id="fb-signin-btn" onclick="fbSignIn()" style="display:none;font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;background:none;border:1px solid #cbd5e1;border-radius:3px;padding:3px 8px;cursor:pointer;color:#001834;white-space:nowrap">Sign in</button>
@@ -2153,10 +2120,28 @@ function renderSeasonsTable() {
 }
 
 // ── Global search ──
+// Works from any tab — switches to Athletes view first if needed, then filters.
 function globalSearch(q) {
-  document.getElementById('athlete-search').value = q;
-  setGender(currentGender);
-  filterAthletes(q);
+  const athletesView = document.getElementById('view-athletes');
+  const isOnAthletes = athletesView && athletesView.classList.contains('active');
+
+  function doFilter() {
+    const searchEl = document.getElementById('athlete-search');
+    if (searchEl) searchEl.value = q;
+    setGender(currentGender);
+    filterAthletes(q);
+    // Re-focus the global search box so the user can keep typing
+    const gs = document.getElementById('global-search');
+    if (gs) { gs.focus(); gs.setSelectionRange(q.length, q.length); }
+  }
+
+  if (!isOnAthletes && q.trim()) {
+    // Switch to Athletes tab, then filter after the view has rendered
+    _renderView('athletes');
+    requestAnimationFrame(function () { setTimeout(doFilter, 60); });
+  } else {
+    doFilter();
+  }
 }
 
 // ── Utils ──
@@ -2493,55 +2478,6 @@ if ('serviceWorker' in navigator) {
   topbar.prepend(btnFwd);
   topbar.prepend(btnBack);
 
-  // ── Hamburger menu (mobile only) ──────────────────────────────────────────
-  const NAV_ITEMS = [
-    { label: 'Athletes', view: 'athletes' },
-    { label: 'Events',   view: 'events'   },
-    { label: 'Seasons',  view: 'season'   },
-    { label: 'Winners',  view: 'winners'  },
-  ];
-
-  // Build menu element
-  const mobileMenu = document.createElement('div');
-  mobileMenu.className = 'mobile-menu';
-  mobileMenu.innerHTML =
-    NAV_ITEMS.map(item =>
-      `<button class="mobile-menu-item" data-view="${item.view}"
-               onclick="showView('${item.view}')">${item.label}</button>`
-    ).join('') +
-    `<div class="mobile-menu-divider"></div>
-     <button class="mobile-menu-item menu-utility"
-             onclick="exportNotes()">Export Data</button>
-     <button class="mobile-menu-item menu-utility"
-             onclick="document.getElementById('import-input').click()">Import Data</button>`;
-  document.body.appendChild(mobileMenu);
-
-  // Close menu when a view item is tapped
-  mobileMenu.querySelectorAll('[data-view]').forEach(btn => {
-    btn.addEventListener('click', function () {
-      mobileMenu.classList.remove('open');
-    });
-  });
-  // Close menu when tapping outside
-  document.addEventListener('click', function (e) {
-    if (!hamburgerBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
-      mobileMenu.classList.remove('open');
-    }
-  });
-
-  // Hamburger button
-  const hamburgerBtn = document.createElement('button');
-  hamburgerBtn.className = 'hamburger-btn';
-  hamburgerBtn.setAttribute('aria-label', 'Menu');
-  hamburgerBtn.title = 'Menu';
-  hamburgerBtn.textContent = '☰';
-  hamburgerBtn.addEventListener('click', function () {
-    const rect = topbar.getBoundingClientRect();
-    mobileMenu.style.top = rect.bottom + 'px';
-    mobileMenu.classList.toggle('open');
-  });
-  topbar.appendChild(hamburgerBtn);
-
   // ── "← Athletes" button inside the profile panel ─────────────────────────
   const profilePanel = document.getElementById('profile-panel');
   const layout       = document.querySelector('.athletes-layout');
@@ -2564,11 +2500,8 @@ if ('serviceWorker' in navigator) {
     btnFwd.disabled  = !canFwd;
     btnFwd.classList.toggle('nav-disabled', !canFwd);
 
-    // Highlight active item in hamburger menu and bottom tab bar
+    // Highlight active item in bottom tab bar
     const currentView = (location.hash.slice(1).split('/')[0]) || 'athletes';
-    mobileMenu.querySelectorAll('[data-view]').forEach(b => {
-      b.classList.toggle('active', b.dataset.view === currentView);
-    });
     document.querySelectorAll('.bottom-tab').forEach(b => {
       b.classList.toggle('active', b.dataset.view === currentView);
     });
