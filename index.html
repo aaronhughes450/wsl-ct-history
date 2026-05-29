@@ -555,16 +555,35 @@
     .events-table-wrap,
     .season-table-wrap { overscroll-behavior-x: contain; }
 
-    /* Topbar: row 1 = [←][→] [brand] [≡], row 2 = [search] */
+    /* Topbar: row 1 = [←][→][brand][gear], row 2 = [search full-width] */
     .topbar {
-      flex-wrap: wrap; height: auto; gap: 4px;
-      padding: max(10px, env(safe-area-inset-top)) 10px 8px;
+      flex-wrap: wrap; height: auto; gap: 0;
+      padding: max(10px, env(safe-area-inset-top)) 10px 0;
+      box-sizing: border-box;
     }
+    /* Row 1 items */
     .topbar-brand { flex: 1; text-align: center; font-size: 0.92rem; }
     .nav { display: none; }
     .updated-label { display: none; }
+    #sync-status { display: none; }
+    #fb-signin-btn { display: none !important; }
     .topbar .nav-btn:not([data-view]):not(.nav-history-btn) { display: none; }
-    .topbar-search { flex: 0 0 100%; max-width: none; order: 10; margin: 0; }
+    /* Row 2: topbar-right wraps to a full-width strip containing the search */
+    .topbar-right {
+      flex: 0 0 100%;          /* full width, starts a new row */
+      margin-left: 0 !important;
+      padding: 6px 0 8px;
+      box-sizing: border-box;
+      gap: 0 !important;
+    }
+    /* Search fills the row, gear icon hidden on mobile (gear still in gear-menu) */
+    .topbar-search {
+      flex: 1;
+      max-width: none;
+    }
+    .topbar-search input { width: 100%; box-sizing: border-box; }
+    /* Gear stays visible but compact; sync/signin hidden */
+    #gear-menu { margin-left: 8px; flex-shrink: 0; }
 
     /* Large touch-target arrows */
     .nav-history-btn { display: flex; }
@@ -613,7 +632,7 @@
     <button class="nav-btn" data-view="season" onclick="showView('season')">Seasons</button>
     <button class="nav-btn" data-view="winners" onclick="showView('winners')">Winners</button>
   </nav>
-  <div style="display:flex;align-items:center;gap:12px;margin-left:auto">
+  <div class="topbar-right" style="display:flex;align-items:center;gap:12px;margin-left:auto">
     <div class="topbar-search">
       <input type="text" id="global-search" placeholder="Search athletes…" oninput="globalSearch(this.value)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
