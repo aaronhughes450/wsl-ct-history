@@ -654,6 +654,10 @@
     <button class="nav-btn" data-view="season" onclick="showView('season')">Seasons</button>
     <button class="nav-btn" data-view="winners" onclick="showView('winners')">Winners</button>
   </nav>
+  <nav class="nav" id="isa-subnav" style="display:none">
+    <button class="nav-btn active" id="isa-sub-wsg" onclick="setISASub('wsg')">World Surfing Games</button>
+    <button class="nav-btn" id="isa-sub-wj" onclick="setISASub('wj')">World Junior</button>
+  </nav>
   <div class="topbar-right" style="display:flex;align-items:center;gap:12px;margin-left:auto">
     <div class="gs-wrap" id="gs-wrap">
       <input type="text" id="global-search" placeholder="Search all athletes…" oninput="globalSearch(this.value)" onkeydown="gsKeydown(event)" onfocus="gsShowDropdown()" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -950,12 +954,6 @@
 
 <!-- ISA view -->
 <div class="view" id="view-isa">
-  <!-- ISA sub-nav: switch between World Surfing Games and World Junior -->
-  <div id="isa-subnav" style="display:flex;align-items:center;gap:6px;padding:8px 12px 0;border-bottom:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0">
-    <button class="isa-sub-btn active" id="isa-sub-wsg" onclick="setISASub('wsg')" style="padding:4px 14px;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border:1px solid transparent;border-radius:20px;cursor:pointer;background:var(--navy);color:#fff;transition:all 0.15s">World Surfing Games</button>
-    <button class="isa-sub-btn" id="isa-sub-wj" onclick="setISASub('wj')" style="padding:4px 14px;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;border:1px solid #cbd5e1;border-radius:20px;cursor:pointer;background:#fff;color:#64748b;transition:all 0.15s">World Junior</button>
-  </div>
-
   <!-- WSG sub-view (default) -->
   <div id="isa-subview-wsg" class="athletes-layout">
     <div class="athlete-list-panel">
@@ -1007,7 +1005,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260612052449"></script>
+<script src="data.js?v=20260612102339"></script>
 <script>
 // DATA moved to data.js
 let currentGender = 'women';
@@ -1119,9 +1117,11 @@ function applyHash() {
     b.classList.toggle('active', b.dataset.org === orgForHash);
   });
   var subnav2 = document.getElementById('wsl-subnav');
+  var isaSubnav2 = document.getElementById('isa-subnav');
   var divider2 = document.querySelector('.org-divider');
   if (subnav2) subnav2.style.display = orgForHash === 'wsl' ? '' : 'none';
-  if (divider2) divider2.style.display = orgForHash === 'wsl' ? '' : 'none';
+  if (isaSubnav2) isaSubnav2.style.display = orgForHash === 'isa' ? '' : 'none';
+  if (divider2) divider2.style.display = (orgForHash === 'wsl' || orgForHash === 'isa') ? '' : 'none';
   var msn2 = document.getElementById('mobile-subnav');
   if (msn2) msn2.style.display = orgForHash === 'wsl' ? '' : 'none';
 }
@@ -2960,11 +2960,13 @@ function setOrg(org) {
   document.querySelectorAll('.bottom-tab').forEach(function(b) {
     b.classList.toggle('active', b.dataset.org === org);
   });
-  // Show/hide WSL sub-nav
+  // Show/hide sub-navs
   var subnav = document.getElementById('wsl-subnav');
+  var isaSubnav = document.getElementById('isa-subnav');
   var divider = document.querySelector('.org-divider');
   if (subnav) subnav.style.display = org === 'wsl' ? '' : 'none';
-  if (divider) divider.style.display = org === 'wsl' ? '' : 'none';
+  if (isaSubnav) isaSubnav.style.display = org === 'isa' ? '' : 'none';
+  if (divider) divider.style.display = (org === 'wsl' || org === 'isa') ? '' : 'none';
   var msn = document.getElementById('mobile-subnav');
   if (msn) msn.style.display = org === 'wsl' ? '' : 'none';
   // Route to the right view
@@ -3274,16 +3276,6 @@ function setISASub(sub) {
   isaSubView = sub;
   document.getElementById('isa-sub-wsg').classList.toggle('active', sub === 'wsg');
   document.getElementById('isa-sub-wj').classList.toggle('active',  sub === 'wj');
-  // Style the active vs inactive buttons
-  ['wsg','wj'].forEach(function(s) {
-    var btn = document.getElementById('isa-sub-' + s);
-    if (!btn) return;
-    if (s === sub) {
-      btn.style.background = 'var(--navy)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--navy)';
-    } else {
-      btn.style.background = '#fff'; btn.style.color = '#64748b'; btn.style.borderColor = '#cbd5e1';
-    }
-  });
   document.getElementById('isa-subview-wsg').style.display = sub === 'wsg' ? '' : 'none';
   document.getElementById('isa-subview-wj').style.display  = sub === 'wj'  ? '' : 'none';
   if (sub === 'wj') {
