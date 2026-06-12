@@ -1007,7 +1007,7 @@
   </div>
 </div>
 
-<script src="data.js?v=0"></script>
+<script src="data.js?v=20260612052449"></script>
 <script>
 // DATA moved to data.js
 let currentGender = 'women';
@@ -1669,16 +1669,16 @@ function renderProfile(name, panelEl) {
     ${winsHtml}
     <div class="section-title">Event Record</div>
     <div class="event-accordion">${eventsHtml}</div>`}
-    ${buildOlympicsSection(name)}
     ${(() => {
       const hasWSG = !!isaOverviewAccordion;
       const hasWJ  = !!(ISA_WJ_DATA && ISA_WJ_DATA.athletes && ISA_WJ_DATA.athletes.some(a => a.name === name));
       if (!hasWSG && !hasWJ) return '';
-      const title = (hasWSG && hasWJ) ? 'ISA Overview' : hasWSG ? 'ISA World Surfing Games' : 'ISA World Junior Championship';
+      const title = 'ISA Overview';
       return `<div class="section-title">${title}</div>`
         + (hasWSG ? `<div class="event-accordion" style="margin-bottom:8px">${isaOverviewAccordion}</div>` : '')
         + buildISAWjSection(name, true);
     })()}
+    ${buildOlympicsSection(name)}
   `;
   // Auto-resize any notes textareas that have existing content
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
@@ -1849,6 +1849,20 @@ function quitApp() {
 if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   const wrap = document.getElementById('quit-btn-wrap');
   if (wrap) wrap.style.display = '';
+  // Heartbeat: tells the local server this tab is still open. The server
+  // auto-shuts-down after 10 min without one, so closed tabs never leave
+  // orphan processes (which used to steal port 8080 and break localStorage).
+  setInterval(() => { fetch('/ping').catch(() => {}); }, 60000);
+}
+
+// Warn if opened as a file:// URL — localStorage is per-origin, so notes/bio
+// typed here would be invisible in the desktop app. Always use the app.
+if (location.protocol === 'file:') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('sync-status');
+    if (el) { el.textContent = '⚠ Opened as file — notes saved here won\'t appear in the app'; el.style.color = '#dc2626'; }
+    console.warn('Opened via file:// — use the WSL CT History app instead so notes persist in one place.');
+  });
 }
 
 // ── Notes auto-resize ──
@@ -3169,7 +3183,7 @@ function renderOlyProfile(name) {
             + '<td style="padding:10px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:' + col + '">' + isaPlaceLabel(place) + '</td>'
             + '</tr>';
         }).join('');
-      panel.innerHTML += '<div class="section-title" style="margin-top:24px">ISA World Surfing Games</div>'
+      panel.innerHTML += '<div class="section-title" style="margin-top:24px">ISA Overview</div>'
         + (hasMed ? '<div style="margin:0 0 10px">' + isaMedalBadge(isaA.medals) + '</div>' : '')
         + '<table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden">'
         + '<thead><tr style="background:#f8fafc">'
@@ -3422,7 +3436,7 @@ function renderWJProfile(name) {
       .sort(function(a, b) { return b.year - a.year; })
       .map(function(ev) { return { ev: ev, place: wsgA.results[ev.id] }; });
     if (wsgMyEvs.length) {
-      panel.innerHTML += '<div class="section-title" style="margin-top:24px">ISA World Surfing Games</div>'
+      panel.innerHTML += '<div class="section-title" style="margin-top:24px">ISA Overview</div>'
         + '<div style="display:flex;flex-direction:column;gap:10px">'
         + buildWJEventAccordion('ISA World Surfing Games', wsgMyEvs, cssId(name) + '_wsg_fromwj')
         + '</div>';
@@ -3459,7 +3473,8 @@ function buildWJEventAccordion(divLabel, myEvents, idSuffix) {
     + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
     + '</svg></div></div>'
     + '<div class="er-body open" id="' + bodyId + '">'
-    + '<table style="width:100%;border-collapse:collapse">'
+    + '<table style="width:100%;border-collapse:collapse;table-layout:fixed">'
+    + '<colgroup><col style="width:110px"><col><col style="width:90px"></colgroup>'
     + '<thead><tr style="background:#f8fafc">'
     + '<th style="padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Year</th>'
     + '<th style="padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Location</th>'
