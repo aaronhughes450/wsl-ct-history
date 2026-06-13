@@ -1635,26 +1635,6 @@ function renderProfile(name, panelEl) {
       </div>
     </div>`;
 
-  let isaChips = '';
-  if (isaAthleteData) {
-    const ib    = isaAthleteData.best;
-    const ibCls = ib === 1 ? 'w' : ib === 2 ? 'ru' : ib <= 4 ? 'sf' : ib <= 8 ? 'qf' : 'ev';
-    isaChips = (ib ? `<span class="chip ${ibCls}">Best ${isaPlaceLabel(ib)}</span>` : '')
-      + `<span class="chip ev">${isaAthleteData.appearances} appearance${isaAthleteData.appearances !== 1 ? 's' : ''}</span>`;
-  }
-  const isaOverviewAccordion = isaAthleteData ? `
-    <div class="er">
-      <div class="er-head" onclick="toggleEvent('${isaBodyId}','${isaChevId}')">
-        <span class="er-loc">ISA World Surfing Games</span>
-        <div class="er-chips">${isaChips}<svg id="${isaChevId}" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12">
-          <path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg></div>
-      </div>
-      <div class="er-body open" id="${isaBodyId}">
-        ${isaOverviewBody}
-      </div>
-    </div>` : '';
-
   panel.innerHTML = `
     <div class="profile-name">${name}</div>
     <div class="profile-meta">${tags}</div>
@@ -1669,15 +1649,7 @@ function renderProfile(name, panelEl) {
     ${winsHtml}
     <div class="section-title">Event Record</div>
     <div class="event-accordion">${eventsHtml}</div>`}
-    ${(() => {
-      const hasWSG = !!isaOverviewAccordion;
-      const hasWJ  = !!(ISA_WJ_DATA && ISA_WJ_DATA.athletes && ISA_WJ_DATA.athletes.some(a => a.name === name));
-      if (!hasWSG && !hasWJ) return '';
-      const title = 'ISA Overview';
-      return `<div class="section-title">${title}</div>`
-        + (hasWSG ? `<div class="event-accordion" style="margin-bottom:8px">${isaOverviewAccordion}</div>` : '')
-        + buildISAWjSection(name, true);
-    })()}
+    ${buildISASection(name)}
     ${buildOlympicsSection(name)}
   `;
   // Auto-resize any notes textareas that have existing content
@@ -3047,6 +3019,48 @@ function buildOlympicsSection(name) {
     + '</div>';
 }
 
+// ── ISA Results section (WSG + WJ wrapped in ISA Overview accordion) ──────────
+function buildISASection(name) {
+  var innerHtml = '';
+
+  // WSG card
+  if (ISA_WSG_DATA && ISA_WSG_DATA.athletes) {
+    var wsgA = ISA_WSG_DATA.athletes.find(function(x) { return x.name === name; });
+    if (wsgA) {
+      var wsgMyEvs = ISA_WSG_DATA.events
+        .filter(function(ev) { return wsgA.results[ev.id] !== undefined; })
+        .sort(function(a, b) { return b.year - a.year; })
+        .map(function(ev) { return { ev: ev, place: wsgA.results[ev.id] }; });
+      if (wsgMyEvs.length) {
+        innerHtml += buildWJEventAccordion('ISA World Surfing Games', wsgMyEvs, cssId(name) + '_wsg_isa');
+      }
+    }
+  }
+
+  // WJ card (noTitle=true, noWrapper=true → just the .er card)
+  var wjCard = buildISAWjSection(name, true, true);
+  if (wjCard) innerHtml += wjCard;
+
+  if (!innerHtml) return '';
+
+  var bodyId = 'ovw-isa__' + cssId(name);
+  var chevId = 'chev-ovw-isa__' + cssId(name);
+
+  return '<div class="section-title">ISA Results</div>'
+    + '<div class="event-accordion" style="margin-bottom:8px">'
+    + '<div class="er">'
+    + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
+    + '<span class="er-loc">ISA Overview</span>'
+    + '<svg id="' + chevId + '" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12">'
+    + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '</svg>'
+    + '</div>'
+    + '<div class="er-body open" id="' + bodyId + '">'
+    + '<div style="display:flex;flex-direction:column;gap:12px;padding:14px 18px 18px">'
+    + innerHtml
+    + '</div></div></div></div>';
+}
+
 // ── Olympics ──────────────────────────────────────────────────────────────────
 // OLYMPIC_DATA is injected inline by generate.py from olympic-data.json
 // OLYMPIC_DATA moved to data.js
@@ -3166,35 +3180,10 @@ function renderOlyProfile(name) {
     + '</tr></thead>'
     + '<tbody>' + resultRows + '</tbody></table>';
 
-  // ── For non-CT athletes: append ISA World Surfing Games section if available ──
-  if (!(DATA && DATA.athletes && DATA.athletes[name]) && ISA_WSG_DATA) {
-    var isaA = ISA_WSG_DATA.athletes.find(function(x) { return x.name === name; });
-    if (isaA) {
-      var isaEvs = ISA_WSG_DATA.events;
-      var hasMed = isaA.medals.gold + isaA.medals.silver + isaA.medals.bronze + isaA.medals.copper > 0;
-      var isaRows = isaEvs
-        .filter(function(ev) { return isaA.results[ev.id] !== undefined; })
-        .sort(function(x, y) { return y.year - x.year; })
-        .map(function(ev) {
-          var place = isaA.results[ev.id];
-          var bg  = place === 1 ? '#fffbea' : place === 2 ? '#f0fdf4' : place === 3 ? '#fff5f0' : place === 4 ? '#fffcf5' : '#fff';
-          var col = place === 1 ? '#b54708' : place === 2 ? '#1a7549' : place <= 4 ? '#1f5fa8' : place <= 8 ? '#6b3fd8' : '#334155';
-          return '<tr style="background:' + bg + '">'
-            + '<td style="padding:10px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:#001834">' + ev.year + '</td>'
-            + '<td style="padding:10px 14px;font-size:0.8rem;color:#5a7090;border-bottom:1px solid #f1f5f9">' + ev.location + '</td>'
-            + '<td style="padding:10px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:' + col + '">' + isaPlaceLabel(place) + '</td>'
-            + '</tr>';
-        }).join('');
-      panel.innerHTML += '<div class="section-title" style="margin-top:24px">ISA Overview</div>'
-        + (hasMed ? '<div style="margin:0 0 10px">' + isaMedalBadge(isaA.medals) + '</div>' : '')
-        + '<table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden">'
-        + '<thead><tr style="background:#f8fafc">'
-        + '<th style="padding:8px 14px;text-align:left;font-size:0.6rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Year</th>'
-        + '<th style="padding:8px 14px;text-align:left;font-size:0.6rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Location</th>'
-        + '<th style="padding:8px 14px;text-align:left;font-size:0.6rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Result</th>'
-        + '</tr></thead>'
-        + '<tbody>' + isaRows + '</tbody></table>';
-    }
+  // ── For non-CT athletes: append ISA section if available ────────────────────
+  if (!(DATA && DATA.athletes && DATA.athletes[name])) {
+    var isaSection = buildISASection(name);
+    if (isaSection) panel.innerHTML += isaSection;
   }
 }
 
@@ -3414,26 +3403,7 @@ function renderWJProfile(name) {
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + bioFields
-    + '<div class="section-title">ISA World Junior Championship</div>'
-    + '<div style="display:flex;flex-direction:column;gap:10px">'
-    + accordionHtml
-    + '</div>';
-
-  // Also append WSG section if applicable
-  var wsgA = ISA_WSG_DATA && ISA_WSG_DATA.athletes ? ISA_WSG_DATA.athletes.find(function(x) { return x.name === name; }) : null;
-  if (wsgA) {
-    var wsgEvs = ISA_WSG_DATA.events;
-    var wsgMyEvs = wsgEvs
-      .filter(function(ev) { return wsgA.results[ev.id] !== undefined; })
-      .sort(function(a, b) { return b.year - a.year; })
-      .map(function(ev) { return { ev: ev, place: wsgA.results[ev.id] }; });
-    if (wsgMyEvs.length) {
-      panel.innerHTML += '<div class="section-title" style="margin-top:24px">ISA Overview</div>'
-        + '<div style="display:flex;flex-direction:column;gap:10px">'
-        + buildWJEventAccordion('ISA World Surfing Games', wsgMyEvs, cssId(name) + '_wsg_fromwj')
-        + '</div>';
-    }
-  }
+    + buildISASection(name);
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
 }
@@ -3497,7 +3467,7 @@ function buildISAWjBadges(name) {
 }
 
 // ── WJSC section for CT athlete profiles ────────────────────────────────────────
-function buildISAWjSection(name, noTitle) {
+function buildISAWjSection(name, noTitle, noWrapper) {
   if (!ISA_WJ_DATA || !ISA_WJ_DATA.athletes || !ISA_WJ_DATA.athletes.length) return '';
   var entries = ISA_WJ_DATA.athletes.filter(function(a) { return a.name === name; });
   if (!entries.length) return '';
@@ -3529,7 +3499,7 @@ function buildISAWjSection(name, noTitle) {
 
   // Wrap in an ISA World Junior section heading
   return (noTitle ? '' : '<div class="section-title">ISA World Junior Championship</div>')
-    + '<div class="event-accordion" style="margin-bottom:8px">'
+    + (noWrapper ? '' : '<div class="event-accordion" style="margin-bottom:8px">')
     + '<div class="er">'
     + '<div class="er-head" onclick="toggleEvent(\'' + wjBodyId + '\',\'' + wjChevId + '\')">'
     + '<span class="er-loc">ISA World Junior Championship</span>'
@@ -3540,7 +3510,8 @@ function buildISAWjSection(name, noTitle) {
     + '<div class="er-body open" id="' + wjBodyId + '">'
     + '<div style="display:flex;flex-direction:column;gap:12px;padding:14px 18px 18px">'
     + divAccordions
-    + '</div></div></div></div>';
+    + '</div></div></div>'
+    + (noWrapper ? '' : '</div>');
 }
 
 function setISAGender(g) {
@@ -3758,62 +3729,13 @@ function renderISAProfile(name) {
   // ── Assemble panel ─────────────────────────────────────────────────────────
   panel.innerHTML = '<div class="profile-name">' + escHtml(a.name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
-    + '<div class="section-title">Overview</div>'
-    + '<div class="bento-row"><div>' + bioFields + '</div><div>' + bentoStatGrid + '</div></div>'
-    + '<div class="section-title">ISA Results</div>'
-    + '<div style="display:flex;flex-direction:column;gap:10px">'
-    + buildISAEventAccordion('ISA World Surfing Games', wsgResults, 'wsg')
-    + '</div>';
+    + bioFields
+    + buildISASection(name);
 
   // ── For non-CT athletes: append Olympic Games section if available ──────────
-  if (!(DATA && DATA.athletes && DATA.athletes[name]) && OLYMPIC_DATA) {
-    var olyA = OLYMPIC_DATA.athletes.find(function(x) { return x.name === name; });
-    if (olyA) {
-      var olyEvs = OLYMPIC_DATA.events;
-      var olyMedals = olyA.medals.gold + olyA.medals.silver + olyA.medals.bronze;
-      var olyRows = olyEvs
-        .filter(function(ev) { return olyA.results[ev.id] !== undefined; })
-        .map(function(ev) {
-          var place = olyA.results[ev.id];
-          var rowStyle = place === 1 ? 'background:#fffbea' : place === 2 ? 'background:#f6f8fa' : place === 3 ? 'background:#fff5f0' : '';
-          return '<tr style="' + rowStyle + '">'
-            + '<td style="padding:10px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9">' + ev.name + '</td>'
-            + '<td style="padding:10px 14px;font-size:0.8rem;color:#5a7090;border-bottom:1px solid #f1f5f9">' + ev.venue + '</td>'
-            + '<td style="padding:10px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9">' + olyPlaceLabel(place) + '</td>'
-            + '</tr>';
-        }).join('');
-      panel.innerHTML += '<div class="section-title" style="margin-top:24px">Olympic Games</div>'
-        + (olyMedals > 0 ? '<div style="margin:0 0 10px">' + olyMedalBadge(olyA.medals) + '</div>' : '')
-        + '<table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden">'
-        + '<thead><tr style="background:#f8fafc">'
-        + '<th style="padding:8px 14px;text-align:left;font-size:0.6rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Games</th>'
-        + '<th style="padding:8px 14px;text-align:left;font-size:0.6rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Venue</th>'
-        + '<th style="padding:8px 14px;text-align:left;font-size:0.6rem;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Result</th>'
-        + '</tr></thead>'
-        + '<tbody>' + olyRows + '</tbody></table>';
-    }
-  }
-
-  // Append WJSC section if athlete also competed in World Junior Championship
-  if (ISA_WJ_DATA && ISA_WJ_DATA.athletes) {
-    var wjEntries = ISA_WJ_DATA.athletes.filter(function(x) { return x.name === name; });
-    if (wjEntries.length) {
-      var wjEvents = ISA_WJ_DATA.events;
-      var wjHtml = '';
-      wjEntries.forEach(function(entry) {
-        var myEvs = wjEvents
-          .filter(function(ev) { return entry.results[ev.id] !== undefined; })
-          .sort(function(a, b) { return b.year - a.year; })
-          .map(function(ev) { return { ev: ev, place: entry.results[ev.id] }; });
-        if (myEvs.length) {
-          wjHtml += buildWJEventAccordion(entry.div_label, myEvs, cssId(name) + '_' + entry.division + '_fromisa');
-        }
-      });
-      if (wjHtml) {
-        panel.innerHTML += '<div class="section-title" style="margin-top:24px">ISA World Junior Championship</div>'
-          + '<div style="display:flex;flex-direction:column;gap:10px">' + wjHtml + '</div>';
-      }
-    }
+  if (!(DATA && DATA.athletes && DATA.athletes[name])) {
+    var olySection = buildOlympicsSection(name);
+    if (olySection) panel.innerHTML += olySection;
   }
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
