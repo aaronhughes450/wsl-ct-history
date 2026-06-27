@@ -701,6 +701,12 @@
   <button class="msn-btn" data-view="winners" onclick="showView('winners')">Winners</button>
 </div>
 
+<!-- Mobile-only ISA sub-nav (WSG / World Junior) — desktop version lives in the topbar -->
+<div class="mobile-subnav" id="mobile-isa-subnav" style="display:none">
+  <button class="msn-btn active" id="m-isa-sub-wsg" onclick="setISASub('wsg')">World Surfing Games</button>
+  <button class="msn-btn" id="m-isa-sub-wj" onclick="setISASub('wj')">World Junior</button>
+</div>
+
 <!-- Winners view -->
 <div class="view" id="view-winners">
   <div class="winners-layout">
@@ -1005,7 +1011,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260612102339"></script>
+<script src="data.js?v=20260613051355"></script>
 <script>
 // DATA moved to data.js
 let currentGender = 'women';
@@ -1164,7 +1170,7 @@ function filterAthletes(query) {
     const div = document.createElement('div');
     div.className = 'athlete-item' + (name === currentAthlete ? ' selected' : '');
     const displayNation = a.wildcard_only
-      ? (localStorage.getItem(`bio__${name}__nation`) || APP_DATA[`bio__${name}__nation`] || '')
+      ? (() => { const _wn = localStorage.getItem(`bio__${name}__nation`); return _wn !== null ? _wn : (APP_DATA[`bio__${name}__nation`] || ''); })()
       : (a.nation || '');
     const nationSpan = `<span class="athlete-item-nation">${displayNation}</span>`;
     const wcBadge    = a.wildcard_only ? '<span class="athlete-item-wc">WC</span>' : '';
@@ -1333,7 +1339,7 @@ function nationFlag(n) { return NATION_FLAGS[n] ? NATION_FLAGS[n] + ' ' : ''; }
 
 // Stance lookup: user edits (localStorage) first, then embedded APP_DATA fallback.
 function getAthleteStance(name) {
-  return localStorage.getItem('bio__' + name + '__stance') || APP_DATA['bio__' + name + '__stance'] || '';
+  const _sv = localStorage.getItem('bio__' + name + '__stance'); return _sv !== null ? _sv : (APP_DATA['bio__' + name + '__stance'] || '');
 }
 
 // For wildcard-only athletes, nation is stored in localStorage/APP_DATA (not in DATA.athletes).
@@ -1342,7 +1348,7 @@ function getAthleteNation(name) {
   const a = DATA.athletes[name];
   if (!a) return '';
   if (a.wildcard_only) {
-    return localStorage.getItem(`bio__${name}__nation`) || APP_DATA[`bio__${name}__nation`] || '';
+    const _nv = localStorage.getItem(`bio__${name}__nation`); return _nv !== null ? _nv : (APP_DATA[`bio__${name}__nation`] || '');
   }
   return a.nation || '';
 }
@@ -1358,7 +1364,7 @@ function renderProfile(name, panelEl) {
   const safe           = name.replace(/'/g, "\\'");
 
   // Load editable bio fields: localStorage first (user edits), then embedded BIO_DATA fallback
-  const bioGet = (k) => localStorage.getItem(bid(k)) || APP_DATA[bid(k)] || '';
+  const bioGet = (k) => { const v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
 
   // Rookie season = year the athlete appears in DATA.rookies (sourced from Rookies tab in Google Sheets)
   const rankings     = a.rankings || {};
@@ -1430,7 +1436,8 @@ function renderProfile(name, panelEl) {
 
   // Notes
   const notesKey = 'notes__' + name;
-  const notesVal = localStorage.getItem(notesKey) || APP_DATA[notesKey] || '';
+  const _notesLs = localStorage.getItem(notesKey);
+  const notesVal = _notesLs !== null ? _notesLs : (APP_DATA[notesKey] || '');
 
   // Per-event accordion
   const eventsHtml = buildEventsAccordion(name, gender, getAthleteEvents(name, gender));
@@ -1553,53 +1560,10 @@ function renderProfile(name, panelEl) {
   const openSection = _profileOpenedFromISA ? 'isa' : 'wsl';
   _profileOpenedFromISA = false;  // consume the flag
 
-  // ── ISA bento stat grid (for athletes also in ISA_WSG_DATA) ─────────────
-  // (isaAthleteData already defined above for nation seeding)
-
-  function buildISAOverviewGrid(ia) {
-    const placements = Object.values(ia.results).filter(p => p > 0);
-    const bestP  = placements.length ? Math.min(...placements) : null;
-    const worstP = placements.length ? Math.max(...placements) : null;
-    const avgP   = placements.length ? placements.reduce((s, p) => s + p, 0) / placements.length : null;
-    const evList = ISA_WSG_DATA.events;
-    const yearList = (target) => Object.entries(ia.results)
-      .filter(([, p]) => p === target)
-      .map(([id]) => { const ev = evList.find(e => e.id === id); return ev ? ev.year : null; })
-      .filter(Boolean).sort().join(', ');
-    const bestYrs  = bestP  ? yearList(bestP)  : '';
-    const bCls     = bestP === 1 ? ' card-gold' : '';
-    return `<div class="bento-stat-grid">
-      <div class="bento-stat-card${bCls}">
-        <div class="stat-card-label">Best Result</div>
-        <div class="stat-card-value">${bestP ? isaPlaceLabel(bestP) : '—'}</div>
-        <div class="stat-card-sub"${bestYrs ? '' : ' style="visibility:hidden"'}>${bestYrs || '—'}</div>
-      </div>
-      <div class="bento-stat-card">
-        <div class="stat-card-label">Appearances</div>
-        <div class="stat-card-value">${ia.appearances || '—'}</div>
-        <div class="stat-card-sub" style="visibility:hidden">—</div>
-      </div>
-      <div class="bento-stat-card">
-        <div class="stat-card-label">Worst Result</div>
-        <div class="stat-card-value">${worstP ? isaPlaceLabel(worstP) : '—'}</div>
-        <div class="stat-card-sub" style="visibility:hidden">—</div>
-      </div>
-      <div class="bento-stat-card card-bundle">
-        <div class="bento-bundle-row"><span class="bento-bundle-label">🥇 Gold</span><span class="bento-bundle-val">${ia.medals.gold}</span></div>
-        <div class="bento-bundle-row"><span class="bento-bundle-label">🥈 Silver</span><span class="bento-bundle-val">${ia.medals.silver}</span></div>
-        <div class="bento-bundle-row"><span class="bento-bundle-label">🥉 Bronze</span><span class="bento-bundle-val">${ia.medals.bronze}</span></div>
-        <div class="bento-bundle-row"><span class="bento-bundle-label">🏅 Copper</span><span class="bento-bundle-val">${ia.medals.copper}</span></div>
-        <div class="bento-bundle-row"><span class="bento-bundle-label">Avg Placing</span><span class="bento-bundle-val">${avgP !== null ? avgP.toFixed(1) : '—'}</span></div>
-      </div>
-    </div>`;
-  }
-
   // ── Overview accordion IDs ───────────────────────────────────────────────
   const ovwId = cssId(name);
   const wslBodyId = `ovw-wsl__${ovwId}`;
   const wslChevId = `chev-ovw-wsl__${ovwId}`;
-  const isaBodyId = `ovw-isa__${ovwId}`;
-  const isaChevId = `chev-ovw-isa__${ovwId}`;
 
   const wslOverviewBody = isWildcardOnly ? '' : `
     <div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px">
@@ -1616,10 +1580,6 @@ function renderProfile(name, panelEl) {
       <div class="section-title" style="margin-top:${allWins.length ? '14px' : '0'}">Event Record</div>
     </div>
     <div class="event-accordion" style="padding:0 18px 18px">${eventsHtml}</div>`;
-
-  const isaOverviewBody = isaAthleteData
-    ? `<div style="padding:14px 18px 18px">${buildISAOverviewGrid(isaAthleteData)}</div>${buildISAWsgTable(isaAthleteData)}`
-    : '';
 
   // Accordion for WSL overview (skip entirely for wildcard-only athletes)
   const wslOverviewAccordion = isWildcardOnly ? '' : `
@@ -1697,7 +1657,8 @@ function buildEventsAccordion(athleteName, gender, events) {
   return Object.entries(events).map(([evName, ev]) => {
     const safeEv   = evName.replace(/'/g, "\\'");
     const notesKey = `evnotes__${athleteName}__${evName}`;
-    const evNotes  = localStorage.getItem(notesKey) || APP_DATA[notesKey] || '';
+    const _evNotesLs = localStorage.getItem(notesKey);
+    const evNotes  = _evNotesLs !== null ? _evNotesLs : (APP_DATA[notesKey] || '');
     const bodyId   = 'evbody__' + cssId(athleteName) + '__' + cssId(evName);
     const chevId   = 'chev__'   + cssId(athleteName) + '__' + cssId(evName);
     const notesId  = 'evnid__'  + cssId(athleteName) + '__' + cssId(evName);
@@ -2941,6 +2902,8 @@ function setOrg(org) {
   if (divider) divider.style.display = (org === 'wsl' || org === 'isa') ? '' : 'none';
   var msn = document.getElementById('mobile-subnav');
   if (msn) msn.style.display = org === 'wsl' ? '' : 'none';
+  var msnIsa = document.getElementById('mobile-isa-subnav');
+  if (msnIsa) msnIsa.style.display = org === 'isa' ? '' : 'none';
   // Route to the right view
   if (org === 'wsl') {
     var currentView = location.hash.slice(1).split('/')[0];
@@ -3022,11 +2985,49 @@ function buildOlympicsSection(name) {
 // ── ISA Results section (WSG + WJ wrapped in ISA Overview accordion) ──────────
 function buildISASection(name) {
   var innerHtml = '';
+  var statGridHtml = '';
 
-  // WSG card
+  // WSG card + stat grid
   if (ISA_WSG_DATA && ISA_WSG_DATA.athletes) {
     var wsgA = ISA_WSG_DATA.athletes.find(function(x) { return x.name === name; });
     if (wsgA) {
+      // Bento stat grid (mirrors WSL Overview structure)
+      var placements = Object.values(wsgA.results).filter(function(p) { return p > 0; });
+      var bestP  = placements.length ? Math.min.apply(null, placements) : null;
+      var worstP = placements.length ? Math.max.apply(null, placements) : null;
+      var avgP   = placements.length ? placements.reduce(function(s, p) { return s + p; }, 0) / placements.length : null;
+      var evList = ISA_WSG_DATA.events;
+      var bestYrs = bestP ? Object.entries(wsgA.results)
+        .filter(function(e) { return e[1] === bestP; })
+        .map(function(e) { var ev = evList.find(function(x) { return x.id === e[0]; }); return ev ? ev.year : null; })
+        .filter(Boolean).sort().join(', ') : '';
+      var bCls = bestP === 1 ? ' card-gold' : '';
+      var m = wsgA.medals || {};
+      statGridHtml = '<div class="bento-stat-grid" style="margin-bottom:12px">'
+        + '<div class="bento-stat-card' + bCls + '">'
+        +   '<div class="stat-card-label">Best Result</div>'
+        +   '<div class="stat-card-value">' + (bestP ? isaPlaceLabel(bestP) : '—') + '</div>'
+        +   '<div class="stat-card-sub"' + (bestYrs ? '' : ' style="visibility:hidden"') + '>' + (bestYrs || '—') + '</div>'
+        + '</div>'
+        + '<div class="bento-stat-card">'
+        +   '<div class="stat-card-label">Appearances</div>'
+        +   '<div class="stat-card-value">' + (wsgA.appearances || '—') + '</div>'
+        +   '<div class="stat-card-sub" style="visibility:hidden">—</div>'
+        + '</div>'
+        + '<div class="bento-stat-card">'
+        +   '<div class="stat-card-label">Worst Result</div>'
+        +   '<div class="stat-card-value">' + (worstP ? isaPlaceLabel(worstP) : '—') + '</div>'
+        +   '<div class="stat-card-sub" style="visibility:hidden">—</div>'
+        + '</div>'
+        + '<div class="bento-stat-card card-bundle">'
+        +   '<div class="bento-bundle-row"><span class="bento-bundle-label">🥇 Gold</span><span class="bento-bundle-val">' + (m.gold || 0) + '</span></div>'
+        +   '<div class="bento-bundle-row"><span class="bento-bundle-label">🥈 Silver</span><span class="bento-bundle-val">' + (m.silver || 0) + '</span></div>'
+        +   '<div class="bento-bundle-row"><span class="bento-bundle-label">🥉 Bronze</span><span class="bento-bundle-val">' + (m.bronze || 0) + '</span></div>'
+        +   '<div class="bento-bundle-row"><span class="bento-bundle-label">🏅 Copper</span><span class="bento-bundle-val">' + (m.copper || 0) + '</span></div>'
+        +   '<div class="bento-bundle-row"><span class="bento-bundle-label">Avg Placing</span><span class="bento-bundle-val">' + (avgP !== null ? avgP.toFixed(1) : '—') + '</span></div>'
+        + '</div>'
+        + '</div>';
+
       var wsgMyEvs = ISA_WSG_DATA.events
         .filter(function(ev) { return wsgA.results[ev.id] !== undefined; })
         .sort(function(a, b) { return b.year - a.year; })
@@ -3041,7 +3042,7 @@ function buildISASection(name) {
   var wjCard = buildISAWjSection(name, true, true);
   if (wjCard) innerHtml += wjCard;
 
-  if (!innerHtml) return '';
+  if (!innerHtml && !statGridHtml) return '';
 
   var bodyId = 'ovw-isa__' + cssId(name);
   var chevId = 'chev-ovw-isa__' + cssId(name);
@@ -3056,7 +3057,8 @@ function buildISASection(name) {
     + '</svg>'
     + '</div>'
     + '<div class="er-body open" id="' + bodyId + '">'
-    + '<div style="display:flex;flex-direction:column;gap:12px;padding:14px 18px 18px">'
+    + '<div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:12px">'
+    + statGridHtml
     + innerHtml
     + '</div></div></div></div>';
 }
@@ -3265,6 +3267,10 @@ function setISASub(sub) {
   isaSubView = sub;
   document.getElementById('isa-sub-wsg').classList.toggle('active', sub === 'wsg');
   document.getElementById('isa-sub-wj').classList.toggle('active',  sub === 'wj');
+  var mWsg = document.getElementById('m-isa-sub-wsg');
+  var mWj  = document.getElementById('m-isa-sub-wj');
+  if (mWsg) mWsg.classList.toggle('active', sub === 'wsg');
+  if (mWj)  mWj.classList.toggle('active',  sub === 'wj');
   document.getElementById('isa-subview-wsg').style.display = sub === 'wsg' ? '' : 'none';
   document.getElementById('isa-subview-wj').style.display  = sub === 'wj'  ? '' : 'none';
   if (sub === 'wj') {
@@ -3357,7 +3363,7 @@ function renderWJProfile(name) {
 
   // Bio helpers
   var bid    = function(k) { return 'bio__' + name + '__' + k; };
-  var bioGet = function(k) { return localStorage.getItem(bid(k)) || APP_DATA[bid(k)] || ''; };
+  var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
   var safeName = name.replace(/'/g, "\\'");
 
   var dobVal = bioGet('dob');
@@ -3435,8 +3441,7 @@ function buildWJEventAccordion(divLabel, myEvents, idSuffix) {
     + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
     + '</svg></div></div>'
     + '<div class="er-body open" id="' + bodyId + '">'
-    + '<table style="width:100%;border-collapse:collapse;table-layout:fixed">'
-    + '<colgroup><col style="width:110px"><col><col style="width:90px"></colgroup>'
+    + '<table style="width:100%;border-collapse:collapse">'
     + '<thead><tr style="background:#f8fafc">'
     + '<th style="padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Year</th>'
     + '<th style="padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Location</th>'
@@ -3586,67 +3591,18 @@ function renderISAProfile(name) {
 
   // ── Bio helpers (same pattern as WSL renderProfile) ────────────────────────
   var bid = function(k) { return 'bio__' + name + '__' + k; };
-  var bioGet = function(k) { return localStorage.getItem(bid(k)) || APP_DATA[bid(k)] || ''; };
+  var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
 
   var dobVal = bioGet('dob');
   var age    = calcAge(dobVal);
   var safeName = name.replace(/'/g, "\\'");
 
-  // ── Compute stats from results ──────────────────────────────────────────────
-  var placements = Object.values(a.results).filter(function(p) { return p > 0; });
-  var bestPlace  = placements.length ? Math.min.apply(null, placements) : null;
-  var worstPlace = placements.length ? Math.max.apply(null, placements) : null;
-  var avgPlace   = placements.length ? (placements.reduce(function(s, p) { return s + p; }, 0) / placements.length) : null;
-
-  // Years for best/worst annotations
-  var bestYears  = bestPlace  ? Object.entries(a.results).filter(function(e) { return e[1] === bestPlace;  }).map(function(e) {
-    var ev = events.find(function(x) { return x.id === e[0]; }); return ev ? ev.year : null;
-  }).filter(Boolean).sort().join(', ') : '';
-  var worstYears = worstPlace ? Object.entries(a.results).filter(function(e) { return e[1] === worstPlace; }).map(function(e) {
-    var ev = events.find(function(x) { return x.id === e[0]; }); return ev ? ev.year : null;
-  }).filter(Boolean).sort().join(', ') : '';
-
   var hasMedals  = a.medals.gold + a.medals.silver + a.medals.bronze + a.medals.copper > 0;
-  var bestCls    = bestPlace === 1 ? ' card-gold' : '';
-
-  // ── Bento stat grid ────────────────────────────────────────────────────────
-  var bentoStatGrid = '<div class="bento-stat-grid">'
-    // Top-left: Best Result
-    + '<div class="bento-stat-card' + bestCls + '">'
-    +   '<div class="stat-card-label">Best Result</div>'
-    +   '<div class="stat-card-value">' + (bestPlace ? isaPlaceLabel(bestPlace) : '—') + '</div>'
-    +   '<div class="stat-card-sub"' + (bestYears ? '' : ' style="visibility:hidden"') + '>' + (bestYears || '—') + '</div>'
-    + '</div>'
-    // Top-right: Appearances
-    + '<div class="bento-stat-card">'
-    +   '<div class="stat-card-label">Appearances</div>'
-    +   '<div class="stat-card-value">' + (a.appearances || '—') + '</div>'
-    +   '<div class="stat-card-sub" style="visibility:hidden">—</div>'
-    + '</div>'
-    // Bottom-left: Worst Result
-    + '<div class="bento-stat-card">'
-    +   '<div class="stat-card-label">Worst Result</div>'
-    +   '<div class="stat-card-value">' + (worstPlace ? isaPlaceLabel(worstPlace) : '—') + '</div>'
-    +   '<div class="stat-card-sub" style="visibility:hidden">—</div>'
-    + '</div>'
-    // Bottom-right: bundle — medals + Avg Placing
-    + '<div class="bento-stat-card card-bundle">'
-    +   '<div class="bento-bundle-row"><span class="bento-bundle-label">🥇 Gold</span>'
-    +     '<span class="bento-bundle-val">' + a.medals.gold + '</span></div>'
-    +   '<div class="bento-bundle-row"><span class="bento-bundle-label">🥈 Silver</span>'
-    +     '<span class="bento-bundle-val">' + a.medals.silver + '</span></div>'
-    +   '<div class="bento-bundle-row"><span class="bento-bundle-label">🥉 Bronze</span>'
-    +     '<span class="bento-bundle-val">' + a.medals.bronze + '</span></div>'
-    +   '<div class="bento-bundle-row"><span class="bento-bundle-label">🏅 Copper</span>'
-    +     '<span class="bento-bundle-val">' + a.medals.copper + '</span></div>'
-    +   '<div class="bento-bundle-row"><span class="bento-bundle-label">Avg Placing</span>'
-    +     '<span class="bento-bundle-val">' + (avgPlace !== null ? avgPlace.toFixed(1) : '—') + '</span></div>'
-    + '</div>'
-    + '</div>';
 
   // ── Bio card (same layout as WSL) ──────────────────────────────────────────
   var notesKey = 'notes__' + name;
-  var notesVal = localStorage.getItem(notesKey) || APP_DATA[notesKey] || '';
+  var _notesLsIsa = localStorage.getItem(notesKey);
+  var notesVal = _notesLsIsa !== null ? _notesLsIsa : (APP_DATA[notesKey] || '');
 
   var bioFields = '<div class="bento-info-card">'
     + '<div class="section-title" style="margin-top:0">Bio</div>'
@@ -3681,50 +3637,6 @@ function renderISAProfile(name) {
   var tags = '<span class="meta-tag">' + nationFlag(a.country) + escHtml(a.country) + '</span>'
     + '<span class="meta-tag">' + (a.gender === 'men' ? 'Men' : 'Women') + '</span>'
     + (hasMedals ? '<span style="display:flex;gap:4px;align-items:center">' + isaMedalBadge(a.medals) + '</span>' : '');
-
-  // ── Results accordion (reused inner helper) ────────────────────────────────
-  function buildISAEventAccordion(eventLabel, myEvents, seriesKey) {
-    if (!myEvents.length) return '';
-    var bodyId = 'isaev__' + seriesKey + '__' + cssId(name);
-    var chevId = 'isachev__' + seriesKey + '__' + cssId(name);
-
-    var best = myEvents.reduce(function(b, r) { return r.place < b ? r.place : b; }, 9999);
-    var bestCls2 = best === 1 ? 'w' : best === 2 ? 'ru' : best <= 4 ? 'sf' : best <= 8 ? 'qf' : 'ev';
-    var chips = '<span class="chip ' + bestCls2 + '">Best ' + isaPlaceLabel(best) + '</span>'
-      + '<span class="chip ev">' + myEvents.length + ' appearance' + (myEvents.length !== 1 ? 's' : '') + '</span>';
-
-    var yearRows = myEvents.map(function(r) {
-      var place = r.place;
-      var bg  = place === 1 ? '#fffbea' : place === 2 ? '#f0fdf4' : place === 3 ? '#fff5f0' : place === 4 ? '#fffcf5' : '#fff';
-      var col = place === 1 ? '#b54708' : place === 2 ? '#1a7549' : place <= 4 ? '#1f5fa8' : place <= 8 ? '#6b3fd8' : '#334155';
-      return '<tr style="background:' + bg + '">'
-        + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:#001834">' + r.ev.year + '</td>'
-        + '<td style="padding:9px 14px;font-size:0.78rem;color:#5a7090;border-bottom:1px solid #f1f5f9">' + r.ev.location + '</td>'
-        + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:' + col + '">' + isaPlaceLabel(place) + '</td>'
-        + '</tr>';
-    }).join('');
-
-    return '<div class="er">'
-      + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
-      + '<span class="er-loc">' + eventLabel + '</span>'
-      + '<div class="er-chips">' + chips
-      + '<svg id="' + chevId + '" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12">'
-      + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-      + '</svg></div></div>'
-      + '<div class="er-body open" id="' + bodyId + '">'
-      + '<table style="width:100%;border-collapse:collapse">'
-      + '<thead><tr style="background:#f8fafc">'
-      + '<th style="padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Year</th>'
-      + '<th style="padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Location</th>'
-      + '<th style="padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Result</th>'
-      + '</tr></thead><tbody>' + yearRows + '</tbody></table>'
-      + '</div></div>';
-  }
-
-  var wsgResults = events
-    .filter(function(ev) { return a.results[ev.id] !== undefined; })
-    .sort(function(x, y) { return y.year - x.year; })
-    .map(function(ev) { return { ev: ev, place: a.results[ev.id] }; });
 
   // ── Assemble panel ─────────────────────────────────────────────────────────
   panel.innerHTML = '<div class="profile-name">' + escHtml(a.name) + '</div>'
