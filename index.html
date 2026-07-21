@@ -67,7 +67,8 @@
   #view-isa.active { padding: 0; display: flex; flex-direction: column; }
   #view-isa #isa-subnav { padding: 10px 20px 0; }
   #view-isa #isa-subview-wsg,
-  #view-isa #isa-subview-wj { padding: 20px; flex: 1; min-height: 0; }
+  #view-isa #isa-subview-wj,
+  #view-isa #isa-subview-wlc { padding: 20px; flex: 1; min-height: 0; }
 
   /* ── Athletes view ── */
   .athletes-layout { display: grid; grid-template-columns: 260px 1fr; gap: 16px; align-items: start; }
@@ -657,6 +658,7 @@
   <nav class="nav" id="isa-subnav" style="display:none">
     <button class="nav-btn active" id="isa-sub-wsg" onclick="setISASub('wsg')">World Surfing Games</button>
     <button class="nav-btn" id="isa-sub-wj" onclick="setISASub('wj')">World Junior</button>
+    <button class="nav-btn" id="isa-sub-wlc" onclick="setISASub('wlc')">World Longboard</button>
   </nav>
   <div class="topbar-right" style="display:flex;align-items:center;gap:12px;margin-left:auto">
     <div class="gs-wrap" id="gs-wrap">
@@ -705,6 +707,7 @@
 <div class="mobile-subnav" id="mobile-isa-subnav" style="display:none">
   <button class="msn-btn active" id="m-isa-sub-wsg" onclick="setISASub('wsg')">World Surfing Games</button>
   <button class="msn-btn" id="m-isa-sub-wj" onclick="setISASub('wj')">World Junior</button>
+  <button class="msn-btn" id="m-isa-sub-wlc" onclick="setISASub('wlc')">World Longboard</button>
 </div>
 
 <!-- Winners view -->
@@ -991,6 +994,23 @@
       <div class="profile-empty">Select an athlete to view their ISA World Junior Championship history</div>
     </div>
   </div>
+
+  <!-- World Longboard sub-view (hidden by default) -->
+  <div id="isa-subview-wlc" class="athletes-layout" style="display:none">
+    <div class="athlete-list-panel">
+      <div class="list-filters">
+        <div class="gender-tabs">
+          <button class="gender-tab active" id="wlc-tab-women" onclick="setWLCDiv('women')">Women</button>
+          <button class="gender-tab" id="wlc-tab-men" onclick="setWLCDiv('men')">Men</button>
+          <button class="gender-tab" id="wlc-tab-junior" onclick="setWLCDiv('junior')">Junior</button>
+        </div>
+      </div>
+      <div class="athlete-list" id="wlc-list"></div>
+    </div>
+    <div class="profile-panel" id="wlc-profile">
+      <div class="profile-empty">Select an athlete to view their ISA World Longboard Championship history</div>
+    </div>
+  </div>
 </div>
 
 <!-- Olympics view -->
@@ -1011,7 +1031,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260613051355"></script>
+<script src="data.js?v=20260721150633"></script>
 <script>
 // DATA moved to data.js
 let currentGender = 'women';
@@ -1030,8 +1050,10 @@ function _renderView(name) {
     b.classList.toggle('active', b.dataset.view === name);
   });
   // Update bottom tab bar active state (bottom tabs are org-level now)
-  // 'wj' is a sub-view inside 'view-isa', so treat it as isa for org routing
-  var resolvedName = name === 'wj' ? 'isa' : name;
+  // 'wj' and 'wlc' are sub-views inside 'view-isa', so treat them as isa for
+  // org routing — otherwise getElementById('view-wlc') is null and no view
+  // ever gets the 'active' class, leaving a blank page on deep links.
+  var resolvedName = (name === 'wj' || name === 'wlc') ? 'isa' : name;
   var orgForView = (resolvedName === 'olympics') ? 'olympics' : (resolvedName === 'isa') ? 'isa' : 'wsl';
   document.querySelectorAll('.bottom-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.org === orgForView);
@@ -1074,6 +1096,7 @@ function _renderView(name) {
       if (name === 'olympics')  renderOlympics();
       if (name === 'isa')       renderISA();
       if (name === 'wj')        { setISASub('wj'); filterWJ(document.getElementById('global-search')?.value || ''); }
+      if (name === 'wlc')       { setISASub('wlc'); filterWLC(document.getElementById('global-search')?.value || ''); }
     }, 0);
   });
 }
@@ -1116,9 +1139,15 @@ function applyHash() {
       setISASub('wj');
     }
     setTimeout(() => _selectWJAthlete(name), 80);
+  } else if (view === 'wlc' && name) {
+    // Ensure ISA view is active and Longboard sub-view is showing
+    if (document.getElementById('isa-subview-wlc')) {
+      setISASub('wlc');
+    }
+    setTimeout(() => _selectWLCAthlete(name), 80);
   }
   // Keep org tabs in sync with current view
-  var orgForHash = (view === 'olympics') ? 'olympics' : (view === 'isa' || view === 'wj') ? 'isa' : 'wsl';
+  var orgForHash = (view === 'olympics') ? 'olympics' : (view === 'isa' || view === 'wj' || view === 'wlc') ? 'isa' : 'wsl';
   document.querySelectorAll('.org-btn').forEach(function(b) {
     b.classList.toggle('active', b.dataset.org === orgForHash);
   });
@@ -1528,7 +1557,7 @@ function renderProfile(name, panelEl) {
         rookieSeason ? `<div class="meta-tag">Rookie Season: <span>${rookieSeason}</span></div>` : '',
         wcCount      ? `<div class="meta-tag" style="background:#fff;color:#f0b400;border-color:#f0b400">🏆 ${wcCount > 1 ? wcCount + '× ' : ''}World Champion</div>` : '',
         isRoty       ? `<div class="meta-tag" style="background:var(--navy);color:#fff;border-color:var(--navy)">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
-      ].join('') + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name);
+      ].join('') + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name);
 
   // Rookie class
   const rookieClassHtml = rookieSeason && rookieClass.length
@@ -2481,6 +2510,12 @@ function gsAllAthletes() {
       if (seen[a.name].sources.indexOf('WJSC') === -1) seen[a.name].sources.push('WJSC');
     });
   }
+  if (typeof ISA_WLC_DATA !== 'undefined' && ISA_WLC_DATA && ISA_WLC_DATA.athletes) {
+    ISA_WLC_DATA.athletes.forEach(function(a) {
+      if (!seen[a.name]) { seen[a.name] = { name: a.name, sources: [] }; results.push(seen[a.name]); }
+      if (seen[a.name].sources.indexOf('WLC') === -1) seen[a.name].sources.push('WLC');
+    });
+  }
   return results;
 }
 
@@ -2493,6 +2528,7 @@ function globalSearch(q) {
   if (currentOrg === 'wsl') filterAthletes(q);
   else if (currentOrg === 'isa') {
     if (isaSubView === 'wj') filterWJ(q);
+    else if (isaSubView === 'wlc') filterWLC(q);
     else filterISA(q);
   }
   else if (currentOrg === 'olympics') filterOlympics(q);
@@ -2544,6 +2580,12 @@ function gsSelect(name, primarySource) {
     setISASub('wj');
     requestAnimationFrame(function() {
       setTimeout(function() { location.hash = '#wj/' + encodeURIComponent(name); }, 120);
+    });
+  } else if (primarySource === 'WLC') {
+    if (currentOrg !== 'isa') { setOrg('isa'); }
+    setISASub('wlc');
+    requestAnimationFrame(function() {
+      setTimeout(function() { location.hash = '#wlc/' + encodeURIComponent(name); }, 120);
     });
   }
 }
@@ -2913,6 +2955,7 @@ function setOrg(org) {
     showView('isa');
     renderISA();
     if (isaSubView === 'wj') filterWJ(document.getElementById('global-search')?.value || '');
+    else if (isaSubView === 'wlc') filterWLC(document.getElementById('global-search')?.value || '');
   } else if (org === 'olympics') {
     showView('olympics');
   }
@@ -3042,6 +3085,10 @@ function buildISASection(name) {
   var wjCard = buildISAWjSection(name, true, true);
   if (wjCard) innerHtml += wjCard;
 
+  // World Longboard card
+  var wlcCard = buildISAWlcSection(name, true, true);
+  if (wlcCard) innerHtml += wlcCard;
+
   if (!innerHtml && !statGridHtml) return '';
 
   var bodyId = 'ovw-isa__' + cssId(name);
@@ -3068,6 +3115,7 @@ function buildISASection(name) {
 // OLYMPIC_DATA moved to data.js
 // ISA_WSG_DATA moved to data.js
 // ISA_WJ_DATA moved to data.js
+// ISA_WLC_DATA moved to data.js
 var olyGender = 'women';
 var olySelected = null;
 
@@ -3198,9 +3246,11 @@ function renderOlympics() {
 var isaGender = 'women';
 var isaSelected = null;
 var _profileOpenedFromISA = false;  // set by ISA tab click-through to WSL athlete
-var isaSubView = 'wsg';             // 'wsg' or 'wj'
+var isaSubView = 'wsg';             // 'wsg', 'wj' or 'wlc'
 var wjGender = 'women';
 var wjSelected = null;
+var wlcDiv = 'women';               // 'women', 'men' or 'junior'
+var wlcSelected = null;
 
 function isaPlaceLabel(p) {
   if (!p) return '—';
@@ -3262,20 +3312,30 @@ function buildISAWsgTable(ia) {
 }
 
 
-// ── ISA sub-nav (WSG / World Junior) ─────────────────────────────────────────
+// ── ISA sub-nav (WSG / World Junior / World Longboard) ───────────────────────
 function setISASub(sub) {
   isaSubView = sub;
   document.getElementById('isa-sub-wsg').classList.toggle('active', sub === 'wsg');
   document.getElementById('isa-sub-wj').classList.toggle('active',  sub === 'wj');
+  var lbBtn = document.getElementById('isa-sub-wlc');
+  if (lbBtn) lbBtn.classList.toggle('active', sub === 'wlc');
   var mWsg = document.getElementById('m-isa-sub-wsg');
   var mWj  = document.getElementById('m-isa-sub-wj');
+  var mWlc = document.getElementById('m-isa-sub-wlc');
   if (mWsg) mWsg.classList.toggle('active', sub === 'wsg');
   if (mWj)  mWj.classList.toggle('active',  sub === 'wj');
+  if (mWlc) mWlc.classList.toggle('active', sub === 'wlc');
   document.getElementById('isa-subview-wsg').style.display = sub === 'wsg' ? '' : 'none';
   document.getElementById('isa-subview-wj').style.display  = sub === 'wj'  ? '' : 'none';
+  var lbView = document.getElementById('isa-subview-wlc');
+  if (lbView) lbView.style.display = sub === 'wlc' ? '' : 'none';
   if (sub === 'wj') {
     filterWJ(document.getElementById('global-search')?.value || '');
     if (wjSelected) renderWJProfile(wjSelected);
+  }
+  if (sub === 'wlc') {
+    filterWLC(document.getElementById('global-search')?.value || '');
+    if (wlcSelected) renderWLCProfile(wlcSelected);
   }
 }
 
@@ -3392,7 +3452,14 @@ function renderWJProfile(name) {
     + ' oninput="saveNotes(\'' + safeName + '\', this.value); autoResizeNotes(this)">' + escHtml(notesVal) + '</textarea>'
     + '</div></div>';
 
-  var tags = '<div class="meta-tag"><span>' + nationFlag(country) + country + '</span></div>';
+  // WJSC-only athletes render here rather than through renderProfile(), so the
+  // medal badges have to be built explicitly. WJSC first (this is the World
+  // Junior view), then the other sources this athlete may appear in.
+  var tags = '<div class="meta-tag"><span>' + nationFlag(country) + escHtml(country) + '</span></div>'
+    + buildISAWjBadges(name)
+    + buildISAWsgBadges(name)
+    + buildISAWlcBadges(name)
+    + buildOlympicBadges(name);
 
   // Build one accordion per division
   var events = ISA_WJ_DATA.events;
@@ -3513,6 +3580,210 @@ function buildISAWjSection(name, noTitle, noWrapper) {
     + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
     + '</svg></div></div>'
     + '<div class="er-body open" id="' + wjBodyId + '">'
+    + '<div style="display:flex;flex-direction:column;gap:12px;padding:14px 18px 18px">'
+    + divAccordions
+    + '</div></div></div>'
+    + (noWrapper ? '' : '</div>');
+}
+
+// ── World Longboard division tab ────────────────────────────────────────────────
+function setWLCDiv(d) {
+  wlcDiv = d;
+  ['women', 'men', 'junior'].forEach(function(k) {
+    var el = document.getElementById('wlc-tab-' + k);
+    if (el) el.classList.toggle('active', d === k);
+  });
+  filterWLC(document.getElementById('global-search')?.value || '');
+  document.getElementById('wlc-profile').innerHTML = '<div class="profile-empty">Select an athlete to view their ISA World Longboard Championship history</div>';
+  wlcSelected = null;
+}
+
+// Which division tab an entry belongs to
+function _wlcTabOf(a) { return a.division === 'junior' ? 'junior' : a.gender; }
+
+// ── World Longboard athlete list ────────────────────────────────────────────────
+function filterWLC(query) {
+  var list = document.getElementById('wlc-list');
+  if (!list) return;
+  if (typeof ISA_WLC_DATA === 'undefined' || !ISA_WLC_DATA || !ISA_WLC_DATA.athletes || !ISA_WLC_DATA.athletes.length) {
+    list.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:0.8rem">No data available.</div>';
+    return;
+  }
+  var q = (query || '').toLowerCase();
+  list.innerHTML = '';
+  // Deduplicate by name within the division — keep entry with best placing
+  var seen = {};
+  ISA_WLC_DATA.athletes
+    .filter(function(a) { return _wlcTabOf(a) === wlcDiv; })
+    .forEach(function(a) {
+      var existing = seen[a.name];
+      if (!existing || (a.best && (!existing.best || a.best < existing.best))) {
+        seen[a.name] = a;
+      }
+    });
+  var athletes = Object.values(seen)
+    .filter(function(a) { return !q || a.name.toLowerCase().includes(q) || (a.country || '').toLowerCase().includes(q); })
+    .sort(function(a, b) { return a.name.localeCompare(b.name); });
+  athletes.forEach(function(a) {
+    var div = document.createElement('div');
+    div.className = 'athlete-item' + (a.name === wlcSelected ? ' selected' : '');
+    div.innerHTML = '<span class="athlete-item-name">' + escHtml(a.name) + '</span><span class="athlete-item-nation">' + escHtml(a.country || '') + '</span>';
+    div.onclick = function() {
+      var newHash = '#wlc/' + encodeURIComponent(a.name);
+      if (location.hash === newHash) _selectWLCAthlete(a.name);
+      else location.hash = newHash;
+    };
+    list.appendChild(div);
+  });
+}
+
+function _selectWLCAthlete(name) {
+  if (typeof ISA_WLC_DATA === 'undefined' || !ISA_WLC_DATA || !ISA_WLC_DATA.athletes) return;
+  var entries = ISA_WLC_DATA.athletes.filter(function(a) { return a.name === name; });
+  if (!entries.length) return;
+  var tabForName = _wlcTabOf(entries[0]);
+  if (tabForName !== wlcDiv) {
+    wlcDiv = tabForName;
+    ['women', 'men', 'junior'].forEach(function(k) {
+      var el = document.getElementById('wlc-tab-' + k);
+      if (el) el.classList.toggle('active', wlcDiv === k);
+    });
+    filterWLC(document.getElementById('global-search')?.value || '');
+  }
+  if (![].some.call(document.querySelectorAll('#wlc-list .athlete-item-name'), function(el) { return el.textContent === name; })) {
+    filterWLC(document.getElementById('global-search')?.value || '');
+  }
+  wlcSelected = name;
+  document.querySelectorAll('#wlc-list .athlete-item').forEach(function(el) {
+    var n = el.querySelector('.athlete-item-name');
+    el.classList.toggle('selected', n && n.textContent === name);
+  });
+  var sel = document.querySelector('#wlc-list .athlete-item.selected');
+  if (sel) sel.scrollIntoView({ block: 'nearest' });
+  if (DATA && DATA.athletes && DATA.athletes[name]) {
+    // CT surfer — render full profile in the Longboard panel
+    renderProfile(name, document.getElementById('wlc-profile'));
+  } else {
+    renderWLCProfile(name);
+  }
+}
+
+// ── World Longboard-only athlete profile ────────────────────────────────────────
+function renderWLCProfile(name) {
+  if (typeof ISA_WLC_DATA === 'undefined' || !ISA_WLC_DATA) return;
+  var entries = ISA_WLC_DATA.athletes.filter(function(a) { return a.name === name; });
+  if (!entries.length) return;
+  var panel = document.getElementById('wlc-profile');
+  if (!panel) return;
+  var country = entries[0].country;
+
+  var bid    = function(k) { return 'bio__' + name + '__' + k; };
+  var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
+  var safeName = name.replace(/'/g, "\\'");
+
+  var dobVal   = bioGet('dob');
+  var age      = calcAge(dobVal);
+  var notesVal = bioGet('notes') || '';
+
+  var bioFields = '<div class="bento-info-card" style="height:auto;margin-bottom:14px">'
+    + '<div class="section-title" style="margin-top:0">Bio</div>'
+    + '<div class="bento-info-grid">'
+    + '<div class="bento-info-field"><label>Date of Birth</label>'
+    + '<input class="bio-input" placeholder="e.g. 1988-02-15" value="' + escHtml(dobVal) + '"'
+    + ' onchange="saveBio(\'' + safeName + '\',\'dob\',this.value);renderWLCProfile(\'' + safeName + '\')"></div>'
+    + '<div class="bento-info-field"><label>Age</label>'
+    + '<div class="bio-input" style="background:transparent;border-color:transparent;padding-top:7px;color:var(--navy);font-weight:900;font-style:italic;font-size:1.1rem">'
+    + (age !== null ? age : '<span style="color:var(--text-dim);font-size:0.9rem;font-style:normal;font-weight:400">—</span>') + '</div></div>'
+    + '<div class="bento-info-field"><label>Born</label>'
+    + '<input class="bio-input" placeholder="e.g. Oceanside, USA" value="' + escHtml(bioGet('born')) + '"'
+    + ' onchange="saveBio(\'' + safeName + '\',\'born\',this.value)"></div>'
+    + '<div class="bento-info-field"><label>Resides</label>'
+    + '<input class="bio-input" placeholder="e.g. Gold Coast, AUS" value="' + escHtml(bioGet('location')) + '"'
+    + ' onchange="saveBio(\'' + safeName + '\',\'location\',this.value)"></div>'
+    + '</div>'
+    + '<div class="bento-notes-wrap">'
+    + '<label style="display:block;font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:#94a3b8;margin-bottom:6px">Notes</label>'
+    + '<textarea class="notes-area" id="notes-wlc-' + cssId(name) + '"'
+    + ' oninput="saveNotes(\'' + safeName + '\', this.value); autoResizeNotes(this)">' + escHtml(notesVal) + '</textarea>'
+    + '</div></div>';
+
+  // Longboard-only athletes render here rather than through renderProfile(),
+  // so the medal badges have to be built explicitly. Longboard first (this is
+  // the longboard view), then the other sources this athlete may appear in.
+  var tags = '<div class="meta-tag"><span>' + nationFlag(country) + escHtml(country) + '</span></div>'
+    + buildISAWlcBadges(name)
+    + buildISAWsgBadges(name)
+    + buildISAWjBadges(name)
+    + buildOlympicBadges(name);
+
+  panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
+    + '<div class="profile-meta">' + tags + '</div>'
+    + bioFields
+    + buildISASection(name);
+
+  panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
+}
+
+// ── World Longboard badges for CT athlete profile header ────────────────────────
+function buildISAWlcBadges(name) {
+  if (typeof ISA_WLC_DATA === 'undefined' || !ISA_WLC_DATA || !ISA_WLC_DATA.athletes || !ISA_WLC_DATA.athletes.length) return '';
+  var entries = ISA_WLC_DATA.athletes.filter(function(a) { return a.name === name; });
+  if (!entries.length) return '';
+  var medals = entries.reduce(function(acc, e) {
+    acc.gold   += (e.medals.gold   || 0);
+    acc.silver += (e.medals.silver || 0);
+    acc.bronze += (e.medals.bronze || 0);
+    acc.copper += (e.medals.copper || 0);
+    return acc;
+  }, { gold: 0, silver: 0, bronze: 0, copper: 0 });
+  var parts = [];
+  if (medals.gold)   parts.push('<div class="meta-tag" style="background:#fff8dc;color:#b8860b;border-color:#f0d060">🥇 WLC Gold'   + (medals.gold   > 1 ? ' ×' + medals.gold   : '') + '</div>');
+  if (medals.silver) parts.push('<div class="meta-tag" style="background:#f4f6f8;color:#607080;border-color:#c8d0da">🥈 WLC Silver' + (medals.silver > 1 ? ' ×' + medals.silver : '') + '</div>');
+  if (medals.bronze) parts.push('<div class="meta-tag" style="background:#fdf0e8;color:#a0623c;border-color:#e8c0a0">🥉 WLC Bronze' + (medals.bronze > 1 ? ' ×' + medals.bronze : '') + '</div>');
+  if (medals.copper) parts.push('<div class="meta-tag" style="background:#fef9f0;color:#9a7240;border-color:#d4b896">🏅 WLC Copper' + (medals.copper > 1 ? ' ×' + medals.copper : '') + '</div>');
+  return parts.join('');
+}
+
+// ── World Longboard section for CT athlete profiles ─────────────────────────────
+function buildISAWlcSection(name, noTitle, noWrapper) {
+  if (typeof ISA_WLC_DATA === 'undefined' || !ISA_WLC_DATA || !ISA_WLC_DATA.athletes || !ISA_WLC_DATA.athletes.length) return '';
+  var entries = ISA_WLC_DATA.athletes.filter(function(a) { return a.name === name; });
+  if (!entries.length) return '';
+  var events = ISA_WLC_DATA.events;
+
+  var allResults = [];
+  entries.forEach(function(e) { allResults = allResults.concat(Object.values(e.results)); });
+  var totalApps   = entries.reduce(function(s, e) { return s + e.appearances; }, 0);
+  var bestOverall = allResults.length ? Math.min.apply(null, allResults) : null;
+  var bestCls = bestOverall === 1 ? 'w' : bestOverall === 2 ? 'ru' : bestOverall <= 4 ? 'sf' : bestOverall <= 8 ? 'qf' : 'ev';
+  var chips = (bestOverall ? '<span class="chip ' + bestCls + '">Best ' + isaPlaceLabel(bestOverall) + '</span>' : '')
+    + '<span class="chip ev">' + totalApps + ' appearance' + (totalApps !== 1 ? 's' : '') + '</span>';
+
+  var bodyId = 'ovw-wlc__' + cssId(name);
+  var chevId = 'chev-ovw-wlc__' + cssId(name);
+
+  // One accordion per division the athlete appears in
+  var divAccordions = '';
+  entries.forEach(function(entry) {
+    var myEvs = events
+      .filter(function(ev) { return entry.results[ev.id] !== undefined; })
+      .sort(function(a, b) { return b.year - a.year; })
+      .map(function(ev) { return { ev: ev, place: entry.results[ev.id] }; });
+    if (myEvs.length) {
+      divAccordions += buildWJEventAccordion(entry.div_label, myEvs, cssId(name) + '_wlc_' + entry.division);
+    }
+  });
+
+  return (noTitle ? '' : '<div class="section-title">ISA World Longboard Championship</div>')
+    + (noWrapper ? '' : '<div class="event-accordion" style="margin-bottom:8px">')
+    + '<div class="er">'
+    + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
+    + '<span class="er-loc">ISA World Longboard Championship</span>'
+    + '<div class="er-chips">' + chips
+    + '<svg id="' + chevId + '" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12">'
+    + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '</svg></div></div>'
+    + '<div class="er-body open" id="' + bodyId + '">'
     + '<div style="display:flex;flex-direction:column;gap:12px;padding:14px 18px 18px">'
     + divAccordions
     + '</div></div></div>'
