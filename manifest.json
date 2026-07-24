@@ -1,7 +1,7 @@
 {
-  "name": "WSL CT History",
-  "short_name": "WSL CT",
-  "description": "World Surf League Championship Tour historical data",
+  "name": "Surf Comp Archive",
+  "short_name": "Surf Comp",
+  "description": "Competitive surfing results archive across tours and disciplines",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#f8fafc",

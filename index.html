@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>WSL CT History</title>
+<!-- Discourage caching of the HTML shell (belt-and-suspenders; the service
+     worker's no-store fetch is what actually keeps the published copy fresh). -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Surf Comp Archive</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#001834">
@@ -73,7 +78,7 @@
   #view-isa #isa-subview-nations { padding: 20px; flex: 1; min-height: 0; }
 
   /* ── Athletes view ── */
-  .athletes-layout { display: grid; grid-template-columns: 260px 1fr; gap: 16px; align-items: start; }
+  .athletes-layout { display: grid; grid-template-columns: 290px 1fr; gap: 16px; align-items: start; }
   .athlete-list-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 2px; overflow: hidden; position: sticky; top: 68px; max-height: calc(100vh - 88px); display: flex; flex-direction: column; }
   .list-filters { padding: 12px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
   .list-filters input { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 2px; padding: 6px 10px; color: #001834; font-size: 0.8rem; outline: none; }
@@ -82,11 +87,11 @@
   .gender-tab { flex: 1; padding: 5px; border: 1px solid #e2e8f0; border-radius: 2px; background: none; color: #64748b; cursor: pointer; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; transition: all 0.15s; }
   .gender-tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
   .athlete-list { overflow-y: auto; flex: 1; }
-  .athlete-item { padding: 9px 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.1s; display: flex; justify-content: space-between; align-items: center; }
+  .athlete-item { padding: 9px 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.1s; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .athlete-item:hover { background: var(--surface2); }
   .athlete-item.selected { background: #f1f5f9; border-left: 3px solid #001834; }
-  .athlete-item-name { font-size: 0.8rem; font-weight: 700; color: #001834; }
-  .athlete-item-nation { font-size: 0.62rem; color: #94a3b8; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .athlete-item-name { font-size: 0.8rem; font-weight: 700; color: #001834; min-width: 0; }
+  .athlete-item-nation { font-size: 0.62rem; color: #94a3b8; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; text-align: right; }
   .athlete-item-wc { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.1em; color: #fff; background: #64748b; border-radius: 2px; padding: 1px 5px; text-transform: uppercase; flex-shrink: 0; }
   .athlete-list-section-header { padding: 6px 14px 5px; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #94a3b8; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
 
@@ -644,13 +649,19 @@
 <body>
 
 <div class="topbar">
-  <div class="topbar-brand">WSL CT History</div>
+  <div class="topbar-brand">Surf Comp Archive</div>
   <nav class="org-nav">
     <button class="org-btn active" data-org="wsl" onclick="setOrg('wsl')">WSL</button>
     <button class="org-btn" data-org="isa" onclick="setOrg('isa')">ISA</button>
     <button class="org-btn" data-org="olympics" onclick="setOrg('olympics')">Olympics</button>
   </nav>
   <span class="org-divider"></span>
+  <nav class="nav" id="wsl-tour-nav">
+    <button class="nav-btn active" id="wsl-tour-ct" onclick="setWSLTour('ct')">CT</button>
+    <button class="nav-btn" id="wsl-tour-cs" onclick="setWSLTour('cs')">CS</button>
+    <button class="nav-btn nav-disabled" id="wsl-tour-lt" title="Longboard Tour — coming soon">LT</button>
+  </nav>
+  <span class="org-divider" id="wsl-tour-divider"></span>
   <nav class="nav" id="wsl-subnav">
     <button class="nav-btn active" data-view="athletes" onclick="showView('athletes')">Athletes</button>
     <button class="nav-btn" data-view="events" onclick="showView('events')">Events</button>
@@ -1071,7 +1082,13 @@
 
 <script src="data.js?v=20260723101050"></script>
 <script>
-// DATA moved to data.js
+// DATA moved to data.js.
+// Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
+// data.js provides CT_* and CS_* consts; these `let`s are what the whole app reads.
+let DATA           = (typeof CT_DATA           !== 'undefined') ? CT_DATA           : {athletes:{},events:{},seasons:{},tour_seasons:{},rookies:{},event_results:{women:[],men:[]}};
+let WINNERS_DATA   = (typeof CT_WINNERS_DATA   !== 'undefined') ? CT_WINNERS_DATA   : {women:[],men:[]};
+let EVENTS_BY_YEAR = (typeof CT_EVENTS_BY_YEAR !== 'undefined') ? CT_EVENTS_BY_YEAR : {women:{},men:{}};
+let currentWSLTour = 'ct';
 let currentGender = 'women';
 let currentAthlete = null;
 
@@ -1255,7 +1272,7 @@ function filterAthletes(query) {
       : (a.nation || '');
     const nationSpan = `<span class="athlete-item-nation">${displayNation}</span>`;
     const wcBadge    = a.wildcard_only ? '<span class="athlete-item-wc">WC</span>' : '';
-    div.innerHTML = `<span class="athlete-item-name">${name}</span><span style="display:flex;align-items:center;gap:5px">${wcBadge}${nationSpan}</span>`;
+    div.innerHTML = `<span class="athlete-item-name">${name}</span><span style="display:flex;align-items:center;gap:5px;flex-shrink:0">${wcBadge}${nationSpan}</span>`;
     div.onclick = () => selectAthlete(name);
     return div;
   }
@@ -1435,6 +1452,14 @@ function getAthleteNation(name) {
 }
 
 function renderProfile(name, panelEl) {
+  // Profiles aggregate all tours. Render the base section from the tour the
+  // athlete belongs to (CT if present, else CS) regardless of the active tour,
+  // then append the CS / ISA / Olympics accordions. Pointers are restored after.
+  const _pD = DATA, _pW = WINNERS_DATA, _pE = EVENTS_BY_YEAR;
+  const _srcTour = (CT_DATA.athletes && CT_DATA.athletes[name]) ? 'ct' : 'cs';
+  if (_srcTour === 'ct') { DATA = CT_DATA; WINNERS_DATA = CT_WINNERS_DATA; EVENTS_BY_YEAR = CT_EVENTS_BY_YEAR; }
+  else if (typeof CS_DATA !== 'undefined' && CS_DATA.athletes && CS_DATA.athletes[name]) { DATA = CS_DATA; WINNERS_DATA = CS_WINNERS_DATA; EVENTS_BY_YEAR = CS_EVENTS_BY_YEAR; }
+  try {
   const a = DATA.athletes[name];
   if (!a) return;
 
@@ -1599,17 +1624,17 @@ function renderProfile(name, panelEl) {
   // Nation / CT debut / WC / ROTY meta tags
   const wcCount = st.wc || 0;
   const wcNation = isWildcardOnly ? resolvedNation : '';
-  const tags = isWildcardOnly
+  const tags = (isWildcardOnly
     ? [
-        wcNation ? `<div class="meta-tag"><span>${nationFlag(wcNation)}${wcNation}</span></div>` : '',
-        `<div class="meta-tag" style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1">Wildcard Competitor</div>`,
-      ].join('')
+        (wcNation || a.nation) ? `<div class="meta-tag"><span>${nationFlag(wcNation || a.nation)}${wcNation || a.nation}</span></div>` : '',
+      ]
     : [
         a.nation     ? `<div class="meta-tag"><span>${nationFlag(a.nation)}${a.nation}</span></div>` : '',
         rookieSeason ? `<div class="meta-tag">Rookie Season: <span>${rookieSeason}</span></div>` : '',
         wcCount      ? `<div class="meta-tag" style="background:#fff;color:#f0b400;border-color:#f0b400">🏆 ${wcCount > 1 ? wcCount + '× ' : ''}World Champion</div>` : '',
         isRoty       ? `<div class="meta-tag" style="background:var(--navy);color:#fff;border-color:var(--navy)">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
-      ].join('') + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name);
+      ]
+  ).join('') + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name);
 
   // Rookie class
   const rookieClassHtml = rookieSeason && rookieClass.length
@@ -1646,7 +1671,9 @@ function renderProfile(name, panelEl) {
   const wslBodyId = `ovw-wsl__${ovwId}`;
   const wslChevId = `chev-ovw-wsl__${ovwId}`;
 
-  const wslOverviewBody = isWildcardOnly ? '' : `
+  // Stats/rankings block is skipped for wildcard-only athletes (they have no
+  // season ranking), but they still get the Championship Tour card + event record.
+  const wslStatsBlock = isWildcardOnly ? '' : `
     <div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px">
       ${bentoStatGrid}
       <div>
@@ -1655,18 +1682,21 @@ function renderProfile(name, panelEl) {
         <div class="rankings-row">${rankingChips || '<span style="color:var(--text-dim);font-size:0.85rem">No ranking data</span>'}</div>
         ${buildSeasonProgression(name, gender)}
       </div>
-    </div>
-    <div style="padding:0 18px 4px">
+    </div>`;
+  const wslOverviewBody = `
+    ${wslStatsBlock}
+    <div style="padding:${isWildcardOnly ? '14px 18px 4px' : '0 18px 4px'}">
       ${winsHtml}
-      <div class="section-title" style="margin-top:${allWins.length ? '14px' : '0'}">Event Record</div>
+      <div class="section-title" style="margin-top:${(!isWildcardOnly && allWins.length) ? '14px' : '0'}">Event Record</div>
     </div>
     <div class="event-accordion" style="padding:0 18px 18px">${eventsHtml}</div>`;
 
-  // Accordion for WSL overview (skip entirely for wildcard-only athletes)
-  const wslOverviewAccordion = isWildcardOnly ? '' : `
+  // Accordion for WSL overview (CT card). Built for all CT athletes, including
+  // wildcard-only ones (whose card shows just their event record).
+  const wslOverviewAccordion = `
     <div class="er">
       <div class="er-head" onclick="toggleEvent('${wslBodyId}','${wslChevId}')">
-        <span class="er-loc">WSL Overview</span>
+        <span class="er-loc">${_srcTour === 'cs' ? 'Challenger Series' : 'Championship Tour'}</span>
         <svg id="${wslChevId}" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12">
           <path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -1676,28 +1706,54 @@ function renderProfile(name, panelEl) {
       </div>
     </div>`;
 
+  // ── WSL Results: outer "WSL Overview" accordion holding CT / CS / LT sub-cards
+  // (mirrors the ISA Results → ISA Overview → per-competition structure) ───────
+  const wslOuterBodyId = 'ovw-wsl-outer__' + ovwId;
+  const wslOuterChevId = 'chev-ovw-wsl-outer__' + ovwId;
+  // CT athletes: CT card (inline) + CS card appended. CS-only athletes: the CS
+  // card IS the base (buildCSSection carries the correct CS labels, so we skip
+  // the CT-labelled inline card for them).
+  const csCard   = buildCSSection(name, true);   // '' if athlete isn't in CS_DATA
+  const wslInner = (_srcTour === 'ct' ? (wslOverviewAccordion || '') : '') + csCard;
+  const wslResultsSection = wslInner
+    ? '<div class="section-title">WSL Results</div>'
+      + '<div class="event-accordion" style="margin-bottom:8px">'
+      +   '<div class="er">'
+      +     '<div class="er-head" onclick="toggleEvent(\'' + wslOuterBodyId + '\',\'' + wslOuterChevId + '\')">'
+      +       '<span class="er-loc">WSL Overview</span>'
+      +       '<svg id="' + wslOuterChevId + '" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      +     '</div>'
+      +     '<div class="er-body open" id="' + wslOuterBodyId + '">'
+      +       '<div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:12px">' + wslInner + '</div>'
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+    : (winsHtml + '<div class="section-title">Event Record</div><div class="event-accordion">' + eventsHtml + '</div>');
+
   panel.innerHTML = `
     <div class="profile-name">${name}</div>
     <div class="profile-meta">${tags}</div>
 
     ${bioFields}
 
-    ${wslOverviewAccordion ? `
-    <div class="section-title">WSL Championship Tour</div>
-    <div class="event-accordion" style="margin-bottom:8px">
-      ${wslOverviewAccordion}
-    </div>` : `
-    ${winsHtml}
-    <div class="section-title">Event Record</div>
-    <div class="event-accordion">${eventsHtml}</div>`}
+    ${wslResultsSection}
     ${buildISASection(name)}
     ${buildOlympicsSection(name)}
   `;
+  // Load every accordion collapsed — strip the default-open state from all
+  // accordion bodies/chevrons so the profile opens fully closed.
+  panel.querySelectorAll(
+    '.er-body.open, .er-chevron.open, .season-acc-body.open, .season-acc-chevron.open, .acc-body.open, .acc-year-hdr.open'
+  ).forEach(el => el.classList.remove('open'));
   // Auto-resize any notes textareas that have existing content
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
+  } finally {
+    DATA = _pD; WINNERS_DATA = _pW; EVENTS_BY_YEAR = _pE;
+  }
 }
 
-function buildEventsAccordion(athleteName, gender, events) {
+function buildEventsAccordion(athleteName, gender, events, idPrefix) {
+  idPrefix = idPrefix || '';   // CS passes 'cs_' so its accordions/notes don't collide with CT (shared venue names)
   if (!Object.keys(events).length)
     return '<div class="no-data" style="padding:16px">No event data available</div>';
 
@@ -1737,12 +1793,12 @@ function buildEventsAccordion(athleteName, gender, events) {
   const safeA = athleteName.replace(/'/g, "\\'");
   return Object.entries(events).map(([evName, ev]) => {
     const safeEv   = evName.replace(/'/g, "\\'");
-    const notesKey = `evnotes__${athleteName}__${evName}`;
+    const notesKey = `${idPrefix}evnotes__${athleteName}__${evName}`;
     const _evNotesLs = localStorage.getItem(notesKey);
     const evNotes  = _evNotesLs !== null ? _evNotesLs : (APP_DATA[notesKey] || '');
-    const bodyId   = 'evbody__' + cssId(athleteName) + '__' + cssId(evName);
-    const chevId   = 'chev__'   + cssId(athleteName) + '__' + cssId(evName);
-    const notesId  = 'evnid__'  + cssId(athleteName) + '__' + cssId(evName);
+    const bodyId   = idPrefix + 'evbody__' + cssId(athleteName) + '__' + cssId(evName);
+    const chevId   = idPrefix + 'chev__'   + cssId(athleteName) + '__' + cssId(evName);
+    const notesId  = idPrefix + 'evnid__'  + cssId(athleteName) + '__' + cssId(evName);
 
     // ── Header chips ──────────────────────────────────────────────────────────
     const chips = [
@@ -2023,8 +2079,8 @@ function buildChampions(gender) {
   out.sort((a, b) => b.y - a.y);
   return out;
 }
-const CHAMPS_WOMEN = buildChampions('women');
-const CHAMPS_MEN = buildChampions('men');
+let CHAMPS_WOMEN = buildChampions('women');
+let CHAMPS_MEN = buildChampions('men');
 function renderChampions() {
   function buildTable(tbodyId, champs) {
     const tbody = document.getElementById(tbodyId);
@@ -2990,6 +3046,34 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── Org switching ─────────────────────────────────────────────────────────────
+// ── WSL tour switch (CT / CS / LT) — swaps the live data pointers ────────────
+function setWSLTour(tour) {
+  if (tour === 'lt') return;  // Longboard Tour not built yet
+  currentWSLTour = tour;
+  if (tour === 'cs' && typeof CS_DATA !== 'undefined' && CS_DATA && CS_DATA.athletes) {
+    DATA           = CS_DATA;
+    WINNERS_DATA   = (typeof CS_WINNERS_DATA   !== 'undefined') ? CS_WINNERS_DATA   : {women:[],men:[]};
+    EVENTS_BY_YEAR = (typeof CS_EVENTS_BY_YEAR !== 'undefined') ? CS_EVENTS_BY_YEAR : {women:{},men:{}};
+  } else {
+    DATA = CT_DATA; WINNERS_DATA = CT_WINNERS_DATA; EVENTS_BY_YEAR = CT_EVENTS_BY_YEAR;
+    currentWSLTour = 'ct';
+  }
+  document.querySelectorAll('#wsl-tour-nav .nav-btn').forEach(function(b){
+    b.classList.toggle('active', b.id === 'wsl-tour-' + currentWSLTour);
+  });
+  // Recompute caches derived from the active tour's DATA
+  try { CHAMPS_WOMEN = buildChampions('women'); CHAMPS_MEN = buildChampions('men'); } catch(e) {}
+  // Clear any open profile (it may belong to the other tour) and re-render the
+  // athlete list from the new tour — _renderView('athletes') doesn't rebuild it.
+  currentAthlete = null;
+  var pp = document.getElementById('profile-panel');
+  if (pp) pp.innerHTML = '<div class="profile-empty">Select an athlete to view their profile</div>';
+  try { filterAthletes(document.getElementById('global-search') ? document.getElementById('global-search').value : ''); } catch(e) {}
+  var v = (location.hash.slice(1).split('/')[0]) || 'athletes';
+  var wslViews = ['athletes','events','season','seasons','winners'];
+  showView(wslViews.includes(v) ? v : 'athletes');
+}
+
 var currentOrg = 'wsl';
 function setOrg(org) {
   currentOrg = org;
@@ -3005,9 +3089,13 @@ function setOrg(org) {
   var subnav = document.getElementById('wsl-subnav');
   var isaSubnav = document.getElementById('isa-subnav');
   var divider = document.querySelector('.org-divider');
+  var tourNav = document.getElementById('wsl-tour-nav');
+  var tourDiv = document.getElementById('wsl-tour-divider');
   if (subnav) subnav.style.display = org === 'wsl' ? '' : 'none';
   if (isaSubnav) isaSubnav.style.display = org === 'isa' ? '' : 'none';
   if (divider) divider.style.display = (org === 'wsl' || org === 'isa') ? '' : 'none';
+  if (tourNav) tourNav.style.display = org === 'wsl' ? '' : 'none';
+  if (tourDiv) tourDiv.style.display = org === 'wsl' ? '' : 'none';
   var msn = document.getElementById('mobile-subnav');
   if (msn) msn.style.display = org === 'wsl' ? '' : 'none';
   var msnIsa = document.getElementById('mobile-isa-subnav');
@@ -3091,6 +3179,111 @@ function buildOlympicsSection(name) {
     + '</tr></thead><tbody>' + resultRows + '</tbody></table>'
     + '</div></div>'
     + '</div>';
+}
+
+// ── WSL Challenger Series section for a WSL athlete profile ───────────────────
+// Reads CS_DATA directly (independent of the active tour), so an athlete's page
+// shows their CS record as its own accordion alongside the CT section.
+function csOrdinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+function buildCSSection(name, innerOnly) {
+  if (typeof CS_DATA === 'undefined' || !CS_DATA || !CS_DATA.athletes) return '';
+  const a = CS_DATA.athletes[name];
+  if (!a) return '';
+  const gender = a.gender || 'women';
+  const st     = a.stats || {};
+  const rk     = a.rankings || {};
+  const rankYears = Object.keys(rk).map(Number).sort((x, y) => y - x);
+
+  // ── Build the event record with the shared CT helpers, temporarily pointed at
+  // CS data (getAthleteEvents/buildEventsAccordion both key off the global DATA).
+  // 'cs_' id-prefix keeps CS accordions from colliding with CT's shared venue names.
+  const _pD = DATA, _pW = WINNERS_DATA, _pE = EVENTS_BY_YEAR;
+  DATA = CS_DATA;
+  if (typeof CS_WINNERS_DATA   !== 'undefined') WINNERS_DATA   = CS_WINNERS_DATA;
+  if (typeof CS_EVENTS_BY_YEAR !== 'undefined') EVENTS_BY_YEAR = CS_EVENTS_BY_YEAR;
+  let eventsHtml = '';
+  try { eventsHtml = buildEventsAccordion(name, gender, getAthleteEvents(name, gender), 'cs_'); }
+  catch (e) { eventsHtml = '<div class="no-data" style="padding:16px">No event data available</div>'; }
+  finally { DATA = _pD; WINNERS_DATA = _pW; EVENTS_BY_YEAR = _pE; }
+
+  if (!rankYears.length && (eventsHtml.indexOf('No event data') !== -1)) return '';
+
+  // ── Bento stat grid (CS-labelled, mirrors the CT card) ──────────────────────
+  const rankYrs = (target) => rankYears
+    .filter(y => (typeof rk[y] === 'object' ? rk[y].rank : rk[y]) === target)
+    .sort((x, z) => x - z).join(', ');
+  const wcYears    = st.wc    ? rankYrs(1)        : '';
+  const bestYears  = st.best  ? rankYrs(st.best)  : '';
+  const hasWc      = !!(st.wc && st.wc > 0);
+  const bentoStatGrid =
+      '<div class="bento-stat-grid">'
+    +   '<div class="bento-stat-card' + (hasWc ? ' card-gold' : '') + '">'
+    +     '<div class="stat-card-label">CS Titles</div>'
+    +     '<div class="stat-card-value">' + (st.wc != null ? st.wc : '—') + '</div>'
+    +     '<div class="stat-card-sub"' + (wcYears ? '' : ' style="visibility:hidden"') + '>' + (wcYears || '—') + '</div>'
+    +   '</div>'
+    +   '<div class="bento-stat-card">'
+    +     '<div class="stat-card-label">Event Wins</div>'
+    +     '<div class="stat-card-value">' + (st.ew || '—') + '</div>'
+    +     '<div class="stat-card-sub" style="visibility:hidden">—</div>'
+    +   '</div>'
+    +   '<div class="bento-stat-card">'
+    +     '<div class="stat-card-label">Best Ranking</div>'
+    +     '<div class="stat-card-value">' + (st.best != null ? st.best : '—') + '</div>'
+    +     '<div class="stat-card-sub"' + (bestYears ? '' : ' style="visibility:hidden"') + '>' + (bestYears || '—') + '</div>'
+    +   '</div>'
+    +   '<div class="bento-stat-card card-bundle">'
+    +     '<div class="bento-bundle-row"><span class="bento-bundle-label">Runner-Up</span><span class="bento-bundle-val">' + (st.ru != null ? st.ru : '—') + '</span></div>'
+    +     '<div class="bento-bundle-row"><span class="bento-bundle-label">Worst Ranking</span><span class="bento-bundle-val">' + (st.worst != null ? st.worst : '—') + '</span></div>'
+    +     '<div class="bento-bundle-row"><span class="bento-bundle-label">Avg Ranking</span><span class="bento-bundle-val">' + (st.avg != null ? Number(st.avg).toFixed(1) : '—') + '</span></div>'
+    +     '<div class="bento-bundle-row"><span class="bento-bundle-label">Seasons</span><span class="bento-bundle-val">' + (st.seasons != null ? st.seasons : '—') + '</span></div>'
+    +   '</div>'
+    + '</div>';
+
+  // ── Year-by-year ranking chips (reuse the CT ranking-chip styling) ──────────
+  const rankingChips = rankYears.map(yr => {
+    const r    = rk[yr];
+    const rank = typeof r === 'object' ? r.rank : r;
+    const isInj = r && r.inj;
+    const cls  = rank === 1 ? 'rk-1' : rank <= 5 ? 'rk-top5' : '';
+    const label = rank + (isInj ? ' ^' : '');
+    const title = ' title="' + yr + (isInj ? ' — injury season' : '') + '"';
+    return '<div class="ranking-chip ' + cls + '"' + title + '><span class="yr">' + yr + '</span><span class="rk">' + label + '</span></div>';
+  }).join('');
+
+  // ── Header chips ────────────────────────────────────────────────────────────
+  const bestRank = st.best != null ? st.best
+    : (rankYears.length ? Math.min.apply(null, rankYears.map(y => (typeof rk[y] === 'object' ? rk[y].rank : rk[y]))) : null);
+  const chips = [];
+  if (bestRank) chips.push('<span class="chip ' + (bestRank === 1 ? 'w' : bestRank === 2 ? 'ru' : bestRank <= 4 ? 'sf' : 'ev') + '">Best CS #' + bestRank + '</span>');
+  if (st.seasons) chips.push('<span class="chip ev">' + st.seasons + ' season' + (st.seasons !== 1 ? 's' : '') + '</span>');
+  if (st.ew) chips.push('<span class="chip w">' + st.ew + ' event win' + (st.ew !== 1 ? 's' : '') + '</span>');
+
+  const bodyId = 'cs_ovw__' + cssId(name);
+  const chevId = 'cs_chev__' + cssId(name);
+  const card = '<div class="er">'
+    + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
+    +   '<span class="er-loc">Challenger Series</span>'
+    +   '<div class="er-chips">' + chips.join('')
+    +     '<svg id="' + chevId + '" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12">'
+    +     '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="er-body open" id="' + bodyId + '">'
+    +   '<div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px">'
+    +     bentoStatGrid
+    +     '<div><div class="section-title" style="margin-top:0">Year-by-Year Rankings</div>'
+    +       '<div class="rankings-row">' + (rankingChips || '<span style="color:var(--text-dim);font-size:0.85rem">No ranking data</span>') + '</div></div>'
+    +   '</div>'
+    +   '<div style="padding:0 18px 4px"><div class="section-title" style="margin-top:0">Event Record</div></div>'
+    +   '<div class="event-accordion" style="padding:0 18px 18px">' + eventsHtml + '</div>'
+    + '</div></div>';
+  if (innerOnly) return card;
+  return '<div class="section-title">WSL Challenger Series</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">' + card + '</div>';
 }
 
 // ── Bento stat grid, shared by every ISA event section ───────────────────────
@@ -4461,6 +4654,37 @@ if ('serviceWorker' in navigator) {
   });
   caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
 }
+</script>
+
+<!-- ── Auto-refresh on a newer build ──────────────────────────────────────────
+     Locally the server sends no-store, so the HTML is always current. On a host
+     that caches HTML (e.g. the published GitHub Pages copy), a stale index.html
+     could linger. generate.py stamps a fresh `data.js?v=<build>` into this file
+     on every build, so we use that as the version: fetch a no-store copy of the
+     HTML, and if its build stamp is newer than the one we loaded, reload once. -->
+<script>
+(function () {
+  if (!window.fetch) return;
+  try {
+    var tag = document.querySelector('script[src*="data.js"]');
+    var loadedV = tag && (tag.getAttribute('src').match(/[?&]v=([^&"']+)/) || [])[1];
+    if (!loadedV) return;
+    fetch(location.pathname + '?_v=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (html) {
+        var m = html.match(/data\.js\?v=([^&"']+)/);
+        var latestV = m && m[1];
+        if (latestV && latestV !== loadedV) {
+          var key = '_cbReloaded_' + latestV;      // guard against a reload loop
+          if (!sessionStorage.getItem(key)) {
+            sessionStorage.setItem(key, '1');
+            location.reload();
+          }
+        }
+      })
+      .catch(function () {});
+  } catch (e) {}
+})();
 </script>
 
 <!-- ── PWA: Navigation history + mobile layout ── -->
