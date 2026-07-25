@@ -508,6 +508,9 @@
     .mobile-subnav { display: flex; gap: 4px; background: rgba(255,255,255,0.99); border-bottom: 1px solid var(--border); padding: 8px 10px; }
     .msn-btn { flex: 1; padding: 8px 4px; border: 1px solid #e2e8f0; border-radius: 2px; background: none; color: #64748b; cursor: pointer; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-family: 'Inter', sans-serif; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
     .msn-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .msn-btn.nav-disabled { opacity: 0.4; cursor: default; }
+    /* Tour selector sits directly above the view sub-nav — trim the gap between them */
+    .mobile-tour-nav { padding-bottom: 0; border-bottom: none; }
     /* Org tabs live in the bottom nav on mobile — hide the topbar duplicates */
     .org-nav, .org-divider { display: none; }
     /* Reserve space for bottom tab bar + safe area */
@@ -673,6 +676,9 @@
     <button class="nav-btn" id="isa-sub-wj" onclick="setISASub('wj')">WJSC</button>
     <button class="nav-btn" id="isa-sub-wlc" onclick="setISASub('wlc')">WLC</button>
     <button class="nav-btn" id="isa-sub-sup" onclick="setISASub('sup')">WSUPPC</button>
+  </nav>
+  <span class="org-divider" id="isa-nations-divider" style="display:none"></span>
+  <nav class="nav" id="isa-nations-nav" style="display:none">
     <button class="nav-btn" id="isa-sub-nations" onclick="setISASub('nations')">Nations</button>
   </nav>
   <div class="topbar-right" style="display:flex;align-items:center;gap:12px;margin-left:auto">
@@ -710,6 +716,13 @@
   </div>
 </div>
 
+<!-- Mobile-only WSL tour sub-nav (CT / CS / LT) — desktop version lives in the topbar -->
+<div class="mobile-subnav mobile-tour-nav" id="mobile-wsl-tour-nav">
+  <button class="msn-btn active" id="m-wsl-tour-ct" onclick="setWSLTour('ct')">CT</button>
+  <button class="msn-btn" id="m-wsl-tour-cs" onclick="setWSLTour('cs')">CS</button>
+  <button class="msn-btn nav-disabled" id="m-wsl-tour-lt" title="Longboard Tour — coming soon">LT</button>
+</div>
+
 <!-- Mobile-only WSL sub-nav (org-level nav lives in the bottom tab bar) -->
 <div class="mobile-subnav" id="mobile-subnav">
   <button class="msn-btn active" data-view="athletes" onclick="showView('athletes')">Athletes</button>
@@ -719,11 +732,15 @@
 </div>
 
 <!-- Mobile-only ISA sub-nav (WSG / World Junior) — desktop version lives in the topbar -->
-<div class="mobile-subnav" id="mobile-isa-subnav" style="display:none">
+<div class="mobile-subnav mobile-tour-nav" id="mobile-isa-subnav" style="display:none">
   <button class="msn-btn active" id="m-isa-sub-wsg" onclick="setISASub('wsg')">WSG</button>
   <button class="msn-btn" id="m-isa-sub-wj" onclick="setISASub('wj')">WJSC</button>
   <button class="msn-btn" id="m-isa-sub-wlc" onclick="setISASub('wlc')">WLC</button>
   <button class="msn-btn" id="m-isa-sub-sup" onclick="setISASub('sup')">WSUPPC</button>
+</div>
+
+<!-- Mobile-only ISA Nations nav — separated from the competition tabs above -->
+<div class="mobile-subnav" id="mobile-isa-nations-nav" style="display:none">
   <button class="msn-btn" id="m-isa-sub-nations" onclick="setISASub('nations')">Nations</button>
 </div>
 
@@ -1101,7 +1118,7 @@ function _renderView(name) {
   document.querySelectorAll('.nav-btn[data-view]').forEach(b => {
     b.classList.toggle('active', b.dataset.view === name);
   });
-  document.querySelectorAll('.msn-btn').forEach(b => {
+  document.querySelectorAll('.msn-btn[data-view]').forEach(b => {
     b.classList.toggle('active', b.dataset.view === name);
   });
   // Update bottom tab bar active state (bottom tabs are org-level now)
@@ -1226,8 +1243,25 @@ function applyHash() {
   if (subnav2) subnav2.style.display = orgForHash === 'wsl' ? '' : 'none';
   if (isaSubnav2) isaSubnav2.style.display = orgForHash === 'isa' ? '' : 'none';
   if (divider2) divider2.style.display = (orgForHash === 'wsl' || orgForHash === 'isa') ? '' : 'none';
+  // WSL tour selector (CT/CS/LT) + its divider
+  var tourNav2 = document.getElementById('wsl-tour-nav');
+  var tourDiv2 = document.getElementById('wsl-tour-divider');
+  if (tourNav2) tourNav2.style.display = orgForHash === 'wsl' ? '' : 'none';
+  if (tourDiv2) tourDiv2.style.display = orgForHash === 'wsl' ? '' : 'none';
+  // ISA Nations selector (separated) + its divider
+  var isaNatDiv2 = document.getElementById('isa-nations-divider');
+  var isaNatNav2 = document.getElementById('isa-nations-nav');
+  if (isaNatDiv2) isaNatDiv2.style.display = orgForHash === 'isa' ? '' : 'none';
+  if (isaNatNav2) isaNatNav2.style.display = orgForHash === 'isa' ? '' : 'none';
+  // Mobile sub-navs
   var msn2 = document.getElementById('mobile-subnav');
   if (msn2) msn2.style.display = orgForHash === 'wsl' ? '' : 'none';
+  var msnTour2 = document.getElementById('mobile-wsl-tour-nav');
+  if (msnTour2) msnTour2.style.display = orgForHash === 'wsl' ? '' : 'none';
+  var msnIsa2 = document.getElementById('mobile-isa-subnav');
+  if (msnIsa2) msnIsa2.style.display = orgForHash === 'isa' ? '' : 'none';
+  var msnIsaNat2 = document.getElementById('mobile-isa-nations-nav');
+  if (msnIsaNat2) msnIsaNat2.style.display = orgForHash === 'isa' ? '' : 'none';
 }
 
 window.addEventListener('hashchange', applyHash);
@@ -3058,8 +3092,8 @@ function setWSLTour(tour) {
     DATA = CT_DATA; WINNERS_DATA = CT_WINNERS_DATA; EVENTS_BY_YEAR = CT_EVENTS_BY_YEAR;
     currentWSLTour = 'ct';
   }
-  document.querySelectorAll('#wsl-tour-nav .nav-btn').forEach(function(b){
-    b.classList.toggle('active', b.id === 'wsl-tour-' + currentWSLTour);
+  document.querySelectorAll('#wsl-tour-nav .nav-btn, #mobile-wsl-tour-nav .msn-btn').forEach(function(b){
+    b.classList.toggle('active', b.id === 'wsl-tour-' + currentWSLTour || b.id === 'm-wsl-tour-' + currentWSLTour);
   });
   // Recompute caches derived from the active tour's DATA
   try { CHAMPS_WOMEN = buildChampions('women'); CHAMPS_MEN = buildChampions('men'); } catch(e) {}
@@ -3093,13 +3127,21 @@ function setOrg(org) {
   var tourDiv = document.getElementById('wsl-tour-divider');
   if (subnav) subnav.style.display = org === 'wsl' ? '' : 'none';
   if (isaSubnav) isaSubnav.style.display = org === 'isa' ? '' : 'none';
+  var isaNatDiv = document.getElementById('isa-nations-divider');
+  var isaNatNav = document.getElementById('isa-nations-nav');
+  if (isaNatDiv) isaNatDiv.style.display = org === 'isa' ? '' : 'none';
+  if (isaNatNav) isaNatNav.style.display = org === 'isa' ? '' : 'none';
   if (divider) divider.style.display = (org === 'wsl' || org === 'isa') ? '' : 'none';
   if (tourNav) tourNav.style.display = org === 'wsl' ? '' : 'none';
   if (tourDiv) tourDiv.style.display = org === 'wsl' ? '' : 'none';
   var msn = document.getElementById('mobile-subnav');
   if (msn) msn.style.display = org === 'wsl' ? '' : 'none';
+  var msnTour = document.getElementById('mobile-wsl-tour-nav');
+  if (msnTour) msnTour.style.display = org === 'wsl' ? '' : 'none';
   var msnIsa = document.getElementById('mobile-isa-subnav');
   if (msnIsa) msnIsa.style.display = org === 'isa' ? '' : 'none';
+  var msnIsaNat = document.getElementById('mobile-isa-nations-nav');
+  if (msnIsaNat) msnIsaNat.style.display = org === 'isa' ? '' : 'none';
   // Route to the right view
   if (org === 'wsl') {
     var currentView = location.hash.slice(1).split('/')[0];
