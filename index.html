@@ -662,7 +662,7 @@
   <nav class="nav" id="wsl-tour-nav">
     <button class="nav-btn active" id="wsl-tour-ct" onclick="setWSLTour('ct')">CT</button>
     <button class="nav-btn" id="wsl-tour-cs" onclick="setWSLTour('cs')">CS</button>
-    <button class="nav-btn nav-disabled" id="wsl-tour-lt" title="Longboard Tour — coming soon">LT</button>
+    <button class="nav-btn" id="wsl-tour-lt" onclick="setWSLTour('lt')">LT</button>
   </nav>
   <span class="org-divider" id="wsl-tour-divider"></span>
   <nav class="nav" id="wsl-subnav">
@@ -720,7 +720,7 @@
 <div class="mobile-subnav mobile-tour-nav" id="mobile-wsl-tour-nav">
   <button class="msn-btn active" id="m-wsl-tour-ct" onclick="setWSLTour('ct')">CT</button>
   <button class="msn-btn" id="m-wsl-tour-cs" onclick="setWSLTour('cs')">CS</button>
-  <button class="msn-btn nav-disabled" id="m-wsl-tour-lt" title="Longboard Tour — coming soon">LT</button>
+  <button class="msn-btn" id="m-wsl-tour-lt" onclick="setWSLTour('lt')">LT</button>
 </div>
 
 <!-- Mobile-only WSL sub-nav (org-level nav lives in the bottom tab bar) -->
@@ -1097,7 +1097,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260723101050"></script>
+<script src="data.js?v=20260726183337"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -3082,12 +3082,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── Org switching ─────────────────────────────────────────────────────────────
 // ── WSL tour switch (CT / CS / LT) — swaps the live data pointers ────────────
 function setWSLTour(tour) {
-  if (tour === 'lt') return;  // Longboard Tour not built yet
   currentWSLTour = tour;
   if (tour === 'cs' && typeof CS_DATA !== 'undefined' && CS_DATA && CS_DATA.athletes) {
     DATA           = CS_DATA;
     WINNERS_DATA   = (typeof CS_WINNERS_DATA   !== 'undefined') ? CS_WINNERS_DATA   : {women:[],men:[]};
     EVENTS_BY_YEAR = (typeof CS_EVENTS_BY_YEAR !== 'undefined') ? CS_EVENTS_BY_YEAR : {women:{},men:{}};
+  } else if (tour === 'lt' && typeof LT_DATA !== 'undefined' && LT_DATA && LT_DATA.athletes) {
+    DATA           = LT_DATA;
+    WINNERS_DATA   = (typeof LT_WINNERS_DATA   !== 'undefined') ? LT_WINNERS_DATA   : {women:[],men:[]};
+    EVENTS_BY_YEAR = (typeof LT_EVENTS_BY_YEAR !== 'undefined') ? LT_EVENTS_BY_YEAR : {women:{},men:{}};
   } else {
     DATA = CT_DATA; WINNERS_DATA = CT_WINNERS_DATA; EVENTS_BY_YEAR = CT_EVENTS_BY_YEAR;
     currentWSLTour = 'ct';
