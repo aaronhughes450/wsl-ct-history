@@ -147,6 +147,7 @@
   .chip.sf { background: #d8e6f7; color: #1f5fa8; }
   .chip.qf { background: #e7e0fb; color: #6b3fd8; }
   .chip.ev { background: #f3f6fc; color: #334155; }
+  .chip.wc { background: #fef08a; color: #854d0e; }
   .er-chevron { color: #475569; transition: transform 0.2s; flex-shrink: 0; }
   .er-chevron.open { transform: rotate(180deg); }
   .er-body { display: none; }
@@ -1097,7 +1098,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260731154040"></script>
+<script src="data.js?v=20260801134732"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -3304,9 +3305,26 @@ function buildCSSection(name, innerOnly) {
   const bestRank = st.best != null ? st.best
     : (rankYears.length ? Math.min.apply(null, rankYears.map(y => (typeof rk[y] === 'object' ? rk[y].rank : rk[y]))) : null);
   const chips = [];
+  if (st.wc) chips.push('<span class="chip wc">🏆 ' + st.wc + ' CS Title' + (st.wc !== 1 ? 's' : '') + '</span>');
   if (bestRank) chips.push('<span class="chip ' + (bestRank === 1 ? 'w' : bestRank === 2 ? 'ru' : bestRank <= 4 ? 'sf' : 'ev') + '">Best CS #' + bestRank + '</span>');
   if (st.seasons) chips.push('<span class="chip ev">' + st.seasons + ' season' + (st.seasons !== 1 ? 's' : '') + '</span>');
   if (st.ew) chips.push('<span class="chip w">' + st.ew + ' event win' + (st.ew !== 1 ? 's' : '') + '</span>');
+
+  // ── Event wins list (event name + location + WSL link) — mirrors the CT card ─
+  const csWins = (CS_DATA.event_results[gender] || [])
+    .filter(e => e.winner === name).sort((x, y) => y.year - x.year);
+  const csWinsHtml = csWins.length
+    ? '<div><div class="section-title" style="margin-top:0">CS Wins (' + csWins.length + ')</div>'
+      + '<ul class="wins-list' + (csWins.length > 10 ? ' two-col' : '') + '">'
+      + csWins.map(function (w) {
+          var label = w.url
+            ? '<a href="' + w.url + '" target="_blank" rel="noopener" style="color:#001834;text-decoration:none;font-weight:700" title="View results on WSL">' + w.name + '</a>'
+            : '<span>' + w.name + '</span>';
+          var loc = w.location ? '<span class="win-location">' + w.location + '</span>' : '';
+          return '<li>' + label + loc + '</li>';
+        }).join('')
+      + '</ul></div>'
+    : '';
 
   const bodyId = 'cs_ovw__' + cssId(name);
   const chevId = 'cs_chev__' + cssId(name);
@@ -3323,6 +3341,7 @@ function buildCSSection(name, innerOnly) {
     +     bentoStatGrid
     +     '<div><div class="section-title" style="margin-top:0">Year-by-Year Rankings</div>'
     +       '<div class="rankings-row">' + (rankingChips || '<span style="color:var(--text-dim);font-size:0.85rem">No ranking data</span>') + '</div></div>'
+    +     csWinsHtml
     +   '</div>'
     +   '<div style="padding:0 18px 4px"><div class="section-title" style="margin-top:0">Event Record</div></div>'
     +   '<div class="event-accordion" style="padding:0 18px 18px">' + eventsHtml + '</div>'
@@ -3407,6 +3426,22 @@ function buildLTSection(name, innerOnly) {
   if (st.seasons) chips.push('<span class="chip ev">' + st.seasons + ' season' + (st.seasons !== 1 ? 's' : '') + '</span>');
   if (st.ew) chips.push('<span class="chip w">' + st.ew + ' event win' + (st.ew !== 1 ? 's' : '') + '</span>');
 
+  // ── Event wins list (event name + location + WSL link) — mirrors the CT card ─
+  const ltWins = (LT_DATA.event_results[gender] || [])
+    .filter(e => e.winner === name).sort((x, y) => y.year - x.year);
+  const ltWinsHtml = ltWins.length
+    ? '<div><div class="section-title" style="margin-top:0">LT Wins (' + ltWins.length + ')</div>'
+      + '<ul class="wins-list' + (ltWins.length > 10 ? ' two-col' : '') + '">'
+      + ltWins.map(function (w) {
+          var label = w.url
+            ? '<a href="' + w.url + '" target="_blank" rel="noopener" style="color:#001834;text-decoration:none;font-weight:700" title="View results on WSL">' + w.name + '</a>'
+            : '<span>' + w.name + '</span>';
+          var loc = w.location ? '<span class="win-location">' + w.location + '</span>' : '';
+          return '<li>' + label + loc + '</li>';
+        }).join('')
+      + '</ul></div>'
+    : '';
+
   const bodyId = 'lt_ovw__' + cssId(name);
   const chevId = 'lt_chev__' + cssId(name);
   const card = '<div class="er">'
@@ -3422,6 +3457,7 @@ function buildLTSection(name, innerOnly) {
     +     bentoStatGrid
     +     '<div><div class="section-title" style="margin-top:0">Year-by-Year Rankings</div>'
     +       '<div class="rankings-row">' + (rankingChips || '<span style="color:var(--text-dim);font-size:0.85rem">No ranking data</span>') + '</div></div>'
+    +     ltWinsHtml
     +   '</div>'
     +   '<div style="padding:0 18px 4px"><div class="section-title" style="margin-top:0">Event Record</div></div>'
     +   '<div class="event-accordion" style="padding:0 18px 18px">' + eventsHtml + '</div>'
