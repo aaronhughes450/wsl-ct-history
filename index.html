@@ -1098,7 +1098,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260801134732"></script>
+<script src="data.js?v=20260905104609"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1473,6 +1473,95 @@ function nationFlag(n) { return NATION_FLAGS[n] ? NATION_FLAGS[n] + ' ' : ''; }
 // Stance lookup: user edits (localStorage) first, then embedded APP_DATA fallback.
 function getAthleteStance(name) {
   const _sv = localStorage.getItem('bio__' + name + '__stance'); return _sv !== null ? _sv : (APP_DATA['bio__' + name + '__stance'] || '');
+}
+
+// ── Dates of birth (front-end only — nothing here comes from the Sheet) ──────
+// Feeds the Youngest / Oldest Winner stat on the event pages. Precedence: a DOB
+// typed into the profile panel beats the exported app data, which beats
+// ATHLETE_DOB — the map generate.py bakes in from the WSL athlete profiles.
+const _DOB_MONTHS = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6,
+                      jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
+
+// Accepts '2005-10-26' (what the date input saves), '26-Oct-2005'
+// (bio-migration.json's format) and 'Jan-9-1994' / 'October 26, 2005'.
+// Anything else returns null rather than a guess.
+function dobToISO(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  const pad = n => String(n).padStart(2, '0');
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return `${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+  m = s.match(/^(\d{1,2})[-\s]([A-Za-z]+)\.?[-\s](\d{4})$/);
+  if (m) {
+    const mo = _DOB_MONTHS[m[2].slice(0, 3).toLowerCase()];
+    if (mo) return `${m[3]}-${pad(mo)}-${pad(m[1])}`;
+  }
+  m = s.match(/^([A-Za-z]+)\.?[-\s]+(\d{1,2})[-,\s]+(\d{4})$/);
+  if (m) {
+    const mo = _DOB_MONTHS[m[1].slice(0, 3).toLowerCase()];
+    if (mo) return `${m[3]}-${pad(mo)}-${pad(m[2])}`;
+  }
+  return null;
+}
+
+// Punctuation- and accent-insensitive view of ATHLETE_DOB, built once. The
+// venue tabs and the bio data don't always spell a name identically —
+// "C.J. Hobgood" on one, "CJ Hobgood" on the other — and that shouldn't cost
+// us a birthday.
+let _dobLoose = null;
+function _dobKey(s) {
+  return String(s || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9]+/g, '').toLowerCase();
+}
+function _looseDob(name) {
+  if (_dobLoose === null) {
+    _dobLoose = {};
+    const src = (typeof ATHLETE_DOB !== 'undefined' && ATHLETE_DOB) || {};
+    for (const k in src) {
+      const key = _dobKey(k);
+      // Only keep unambiguous keys — if two spellings collapse to the same
+      // key with different dates, trust neither.
+      if (key in _dobLoose && _dobLoose[key] !== src[k]) _dobLoose[key] = null;
+      else if (!(key in _dobLoose)) _dobLoose[key] = src[k];
+    }
+  }
+  return _dobLoose[_dobKey(name)] || null;
+}
+
+function getAthleteDob(name) {
+  const baked = (typeof ATHLETE_DOB !== 'undefined' && ATHLETE_DOB) ? ATHLETE_DOB[name] : null;
+  return dobToISO(localStorage.getItem('bio__' + name + '__dob'))
+      || dobToISO(APP_DATA['bio__' + name + '__dob'])
+      || dobToISO(baked)
+      || dobToISO(_looseDob(name));
+}
+
+// Finish date of one event-year, from event-dates.json via generate.py.
+function getEventDate(venue, gender, year) {
+  const src = (typeof EVENT_DATES !== 'undefined' && EVENT_DATES) ? EVENT_DATES : null;
+  const rec = src && src[venue] && src[venue][gender] && src[venue][gender][String(year)];
+  return (rec && rec.end) || null;
+}
+
+// Outside this band an age is treated as a data error rather than a record.
+const MIN_WIN_AGE = 14, MAX_WIN_AGE = 60;
+
+// Exact age on a given day: {years, days, total} where days is the remainder
+// past the last birthday and total is days lived (used for sorting).
+function ageOn(dobISO, onISO) {
+  if (!dobISO || !onISO) return null;
+  const born = new Date(dobISO + 'T00:00:00');
+  const day  = new Date(onISO  + 'T00:00:00');
+  if (isNaN(born) || isNaN(day) || day < born) return null;
+  let years = day.getFullYear() - born.getFullYear();
+  const anniv = new Date(born);
+  anniv.setFullYear(born.getFullYear() + years);
+  if (anniv > day) { years--; anniv.setFullYear(anniv.getFullYear() - 1); }
+  return {
+    years,
+    days:  Math.round((day - anniv) / 86400000),
+    total: Math.round((day - born)  / 86400000),
+  };
 }
 
 // For wildcard-only athletes, nation is stored in localStorage/APP_DATA (not in DATA.athletes).
@@ -2358,6 +2447,36 @@ function renderEventWidgets() {
     else unknownStanceWins += w;
   }
 
+  // ── Youngest / oldest winner ──────────────────────────────────────────────
+  // One entry per win, aged against that event-year's finish date. A win only
+  // counts once both its date and the surfer's DOB are known, so the card
+  // reports how much of the event's history it actually covers.
+  const winAges = [];
+  let totalWins = 0, winsNoDob = 0, winsNoDate = 0, winsOdd = 0;
+  for (const [name, d] of Object.entries(athletes)) {
+    for (const [year, place] of Object.entries(d.years || {})) {
+      if (place !== 1) continue;
+      totalWins++;
+      const dob     = getAthleteDob(name);
+      const evDate  = getEventDate(evName, gender, year);
+      if (!dob)    winsNoDob++;
+      if (!evDate) winsNoDate++;
+      const age = ageOn(dob, evDate);
+      if (!age) continue;
+      // A DOB implying a child or a pensioner is a data error, not a record.
+      // WSL's own profile for Matt Hoy says born 1990 next to a 1995 CT debut,
+      // which would have made him 7 when he won Bells. Drop it rather than let
+      // it headline the card — audit_winner_ages.py lists these so a bad
+      // birthday gets fixed instead of quietly disappearing.
+      if (age.years < MIN_WIN_AGE || age.years > MAX_WIN_AGE) { winsOdd++; continue; }
+      winAges.push(Object.assign({ name, year }, age));
+    }
+  }
+  winAges.sort((a, b) => a.total - b.total);
+  const youngestWin = winAges[0] || null;
+  const oldestWin   = winAges.length ? winAges[winAges.length - 1] : null;
+  const ageCoverage = winAges.length;
+
   if (!winsBoard.length) { wrap.innerHTML = ''; return; }
 
   // ── Summary values for stat cards ────────────────────────────────────────
@@ -2383,6 +2502,29 @@ function renderEventWidgets() {
       : escHtml(name);
   }
   function rankCls(i) { return i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':''; }
+
+  function ageCard(label, rec) {
+    const note = (rec && ageCoverage < totalWins)
+      ? `<div class="ev-widget-sub" style="color:var(--text-dim);text-transform:none;letter-spacing:0.02em;font-weight:600">
+           ${ageCoverage} of ${totalWins} wins have a birthday and event date${
+             winsOdd ? ` · ${winsOdd} birthday${winsOdd !== 1 ? 's' : ''} look wrong` : ''}
+         </div>`
+      : '';
+    const body = rec
+      ? `<div class="ev-widget-val">${rec.years}<span style="font-size:0.34em;font-style:normal;font-weight:800;letter-spacing:0"> YRS ${rec.days} D</span></div>
+         <div class="ev-widget-sub">${escHtml(rec.name)} · ${rec.year}</div>${note}`
+      : `<div class="ev-widget-val">–</div>
+         <div class="ev-widget-sub">${
+             winsNoDob && winsNoDate ? 'No birthdays or event dates yet'
+           : winsNoDob               ? 'No birthdays on file yet'
+           : winsNoDate              ? 'No event dates on file yet'
+           :                           'No data'
+         }</div>`;
+    return `<div class="ev-widget-card" style="grid-column: span 2">
+      <div class="ev-widget-label">${label}</div>
+      ${body}
+    </div>`;
+  }
 
   function board(title, sub, colLabel, rows) {
     const trs = rows.map((r, i) => `<tr class="${rankCls(i)}">
@@ -2430,6 +2572,8 @@ function renderEventWidgets() {
         <div class="ev-widget-val">${topNationW}</div>
         <div class="ev-widget-sub">${nationFlag(topNation)}${escHtml(topNation)}</div>
       </div>
+      ${ageCard('Youngest Winner', youngestWin)}
+      ${ageCard('Oldest Winner',   oldestWin)}
       <div class="ev-widget-card" style="grid-column: 1 / -1">
         <div class="ev-widget-label">Wins by Stance</div>
         <div class="ev-stance-row">
@@ -2476,7 +2620,24 @@ function renderEventWidgets() {
   </div>`;
 }
 
+// Fill the venue dropdown from the ACTIVE tour's events (CT venues on CT, CS on
+// CS, LT on LT). Preserves the current pick if it still exists on this tour,
+// else falls back to the first venue. Safe to call on every render.
+function populateEventVenues() {
+  var sel = document.getElementById('event-select');
+  if (!sel) return;
+  var venues = (DATA && DATA.events) ? Object.keys(DATA.events) : [];
+  var cur = sel.value;
+  sel.innerHTML = venues.map(function(v){
+    var s = String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return '<option value="' + s + '">' + s + '</option>';
+  }).join('');
+  if (venues.indexOf(cur) >= 0) sel.value = cur;
+  else if (venues.length) sel.value = venues[0];
+}
+
 function renderEventTable() {
+  populateEventVenues();
   renderEventWidgets();
   const evName     = document.getElementById('event-select').value;
   const gender     = eventGender;
@@ -3973,6 +4134,26 @@ function renderWJProfile(name) {
 // ── WJSC accordion builder ─────────────────────────────────────────────────────
 // preBodyHtml (optional) is rendered inside the accordion body, above the
 // results table — used to place each event's bento stat grid with its results.
+// Year cell for an ISA results row. Links to that event's results page when
+// the sheet's "Results URL" column has one for it, plain year otherwise (older
+// events were never online). This accordion is shared by WSG, WJ, WLC, SUP and
+// the nations view, so every ISA source gets the link from this one place.
+function isaYearCell(ev) {
+  if (!ev || ev.year == null) return '';
+  // Prefer the ISA's own results page; fall back to this event's tab in the
+  // source sheet (all the pre-2013 events, which were never online).
+  // Solid underline = ISA site, dotted = source sheet.
+  var href = ev.resultUrl || ev.sheetUrl;
+  if (!href) return String(ev.year);
+  var isSheet = !ev.resultUrl;
+  return '<a href="' + escHtml(href) + '" target="_blank" rel="noopener"'
+    + ' title="' + (isSheet ? 'Open this event&#39;s tab in the source sheet'
+                            : 'View results on the ISA site') + '"'
+    + ' style="color:inherit;text-decoration:none;border-bottom:1px '
+    + (isSheet ? 'dotted #94a3b8' : 'solid #cbd5e1') + '">'
+    + ev.year + '</a>';
+}
+
 function buildWJEventAccordion(divLabel, myEvents, idSuffix, preBodyHtml) {
   if (!myEvents.length) return '';
   var bodyId = 'wjev__' + idSuffix;
@@ -3986,7 +4167,7 @@ function buildWJEventAccordion(divLabel, myEvents, idSuffix, preBodyHtml) {
     var bg  = place === 1 ? '#fffbea' : place === 2 ? '#f0fdf4' : place === 3 ? '#fff5f0' : place === 4 ? '#fffcf5' : '#fff';
     var col = place === 1 ? '#b54708' : place === 2 ? '#1a7549' : place <= 4 ? '#1f5fa8' : place <= 8 ? '#6b3fd8' : '#334155';
     return '<tr style="background:' + bg + '">'
-      + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:#001834">' + r.ev.year + '</td>'
+      + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:#001834">' + isaYearCell(r.ev) + '</td>'
       + '<td style="padding:9px 14px;font-size:0.78rem;color:#5a7090;border-bottom:1px solid #f1f5f9">' + r.ev.location + '</td>'
       + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:' + col + '">' + isaPlaceLabel(place) + '</td>'
       + '</tr>';
