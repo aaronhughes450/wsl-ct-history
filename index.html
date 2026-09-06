@@ -53,11 +53,11 @@
   .nav-btn { background: none; border: none; border-bottom: 2px solid transparent; color: #64748b; padding: 6px 14px; border-radius: 0; cursor: pointer; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; transition: all 0.15s; }
   .nav-btn:hover { color: #001834; }
   .nav-btn.active { color: #001834; border-bottom-color: #001834; }
-  .gs-wrap { position: relative; flex: 0 0 240px; }
+  .gs-wrap { position: relative; flex: 0 1 240px; width: 240px; min-width: 120px; }
   .gs-wrap input { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 2px; padding: 5px 10px; color: #001834; font-size: 0.78rem; outline: none; box-sizing: border-box; }
   .gs-wrap input:focus { border-color: #001834; }
   .gs-wrap input::placeholder { color: #94a3b8; }
-  .gs-dropdown { display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 300px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; overflow: hidden; max-height: 340px; overflow-y: auto; }
+  .gs-dropdown { display: none; position: absolute; top: calc(100% + 4px); right: 0; width: 100%; min-width: 260px; background: #fff; border: 1px solid #e2e8f0; border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; overflow: hidden; max-height: 340px; overflow-y: auto; }
   .gs-dropdown.open { display: block; }
   .gs-item { padding: 7px 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #f1f5f9; }
   .gs-item:last-child { border-bottom: none; }
@@ -76,6 +76,19 @@
   #view-isa #isa-subview-wlc,
   #view-isa #isa-subview-sup,
   #view-isa #isa-subview-nations { padding: 20px; flex: 1; min-height: 0; }
+  #view-isa #isa-subview-events { padding: 20px; flex: 1; min-height: 0; display: block; overflow: auto; }
+  .isaev-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .isaev-note { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #94a3b8; border-radius: 3px;
+                padding: 9px 13px; font-size: 0.72rem; color: #5a7090; margin-bottom: 14px; line-height: 1.5; }
+  .isaev-derived { font-style: italic; opacity: 0.75; }
+  .isaev-derived-dot { color: #94a3b8; font-size: 0.9em; margin-left: 3px; }
+  .isaev-edition-head { margin-bottom: 16px; }
+  .isaev-back { background: none; border: 1px solid #cbd5e1; border-radius: 3px; padding: 4px 10px; cursor: pointer;
+                font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+                color: #001834; margin-bottom: 12px; }
+  .isaev-back:hover { background: #f1f5f9; }
+  .isaev-edition-title { font-size: 1.5rem; font-weight: 800; color: #001834; letter-spacing: -0.02em; }
+  .isaev-edition-sub { font-size: 0.78rem; color: #5a7090; margin-top: 4px; }
 
   /* ── Athletes view ── */
   .athletes-layout { display: grid; grid-template-columns: 290px 1fr; gap: 16px; align-items: start; }
@@ -504,6 +517,46 @@
   .mobile-subnav { display: none; }
 
   /* ── Mobile layout (max 768px) ── */
+  @media (min-width: 769px) and (max-width: 1450px) {
+    .topbar { gap: 14px; padding: 0 12px; }
+    /* Keep the full 240px whenever it fits and give ground only under
+       pressure — the WSL org carries an extra tour nav, so it runs out of
+       room ~150px earlier than the ISA one. */
+    .gs-wrap { flex: 0 1 240px; min-width: 130px; }
+    .topbar-right { min-width: 0; gap: 8px; }
+    .topbar-brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    /* Tighten the nav typography before anything scrolls, so labels stay whole
+       words rather than clipping mid-way ("OLYMI", "EVEN"). */
+    .topbar .nav-btn { padding: 6px 8px; letter-spacing: 0.08em; }
+    .topbar .org-btn { padding: 4px 9px; letter-spacing: 0.08em; }
+    .topbar .nav { gap: 2px; }
+    #wsl-subnav, #isa-subnav, #isa-nations-nav, #wsl-tour-nav, .org-nav {
+      min-width: 0; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+    }
+    #wsl-subnav::-webkit-scrollbar, #isa-subnav::-webkit-scrollbar,
+    #isa-nations-nav::-webkit-scrollbar, #wsl-tour-nav::-webkit-scrollbar,
+    .org-nav::-webkit-scrollbar { display: none; }
+  }
+
+  /* Tightest desktop band, just above the mobile layout — trim the gaps and
+     let the search go a little narrower so nothing spills off the right. */
+  /* The WSL org carries three nav groups (org + tour + sub), so it needs the
+     smaller nav type ~150px earlier than the ISA one. Applied by width since
+     CSS can't see which org is active. */
+  @media (min-width: 769px) and (max-width: 1150px) {
+    .topbar .nav-btn { padding: 6px 6px; font-size: 0.64rem; letter-spacing: 0.05em; }
+    .topbar .org-btn { padding: 4px 8px; font-size: 0.64rem; letter-spacing: 0.05em; }
+  }
+
+  @media (min-width: 769px) and (max-width: 980px) {
+    .topbar { gap: 8px; padding: 0 8px; }
+    .gs-wrap { min-width: 86px; }
+    .topbar-right { gap: 6px; }
+    .topbar .nav-btn { padding: 6px 4px; }
+    .topbar .org-btn { padding: 4px 6px; }
+    .topbar-brand { font-size: 0.86rem; }
+  }
+
   @media (max-width: 768px) {
     /* WSL sub-nav: Athletes / Events / Seasons / Winners */
     .mobile-subnav { display: flex; gap: 4px; background: rgba(255,255,255,0.99); border-bottom: 1px solid var(--border); padding: 8px 10px; }
@@ -681,6 +734,7 @@
   <span class="org-divider" id="isa-nations-divider" style="display:none"></span>
   <nav class="nav" id="isa-nations-nav" style="display:none">
     <button class="nav-btn" id="isa-sub-nations" onclick="setISASub('nations')">Nations</button>
+    <button class="nav-btn" id="isa-sub-events" onclick="setISASub('events')">Events</button>
   </nav>
   <div class="topbar-right" style="display:flex;align-items:center;gap:12px;margin-left:auto">
     <div class="gs-wrap" id="gs-wrap">
@@ -743,6 +797,7 @@
 <!-- Mobile-only ISA Nations nav — separated from the competition tabs above -->
 <div class="mobile-subnav" id="mobile-isa-nations-nav" style="display:none">
   <button class="msn-btn" id="m-isa-sub-nations" onclick="setISASub('nations')">Nations</button>
+  <button class="msn-btn" id="m-isa-sub-events" onclick="setISASub('events')">Events</button>
 </div>
 
 <!-- Winners view -->
@@ -1078,6 +1133,23 @@
       <div class="profile-empty">Select a nation to view its ISA team history</div>
     </div>
   </div>
+
+  <div id="isa-subview-events" style="display:none">
+    <div class="isaev-controls">
+      <select id="isaev-source" onchange="isaEvSetSource(this.value)">
+        <option value="wsg">World Surfing Games</option>
+        <option value="wj">World Junior Championship</option>
+        <option value="wlc">World Longboard Championship</option>
+        <option value="sup">World SUP &amp; Paddleboard</option>
+      </select>
+      <select id="isaev-years" onchange="renderIsaEvents()">
+        <option value="all" selected>All editions</option>
+        <option value="10">Last 10</option>
+        <option value="5">Last 5</option>
+      </select>
+    </div>
+    <div id="isaev-wrap"></div>
+  </div>
 </div>
 
 <!-- Olympics view -->
@@ -1098,7 +1170,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260905115012"></script>
+<script src="data.js?v=20260905153203"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1126,7 +1198,8 @@ function _renderView(name) {
   // 'wj', 'wlc' and 'sup' are sub-views inside 'view-isa', so treat them as isa
   // for org routing — otherwise getElementById('view-sup') is null and no view
   // ever gets the 'active' class, leaving a blank page on deep links.
-  var resolvedName = (name === 'wj' || name === 'wlc' || name === 'sup' || name === 'nations') ? 'isa' : name;
+  var resolvedName = (name === 'wj' || name === 'wlc' || name === 'sup' || name === 'nations'
+                      || name === 'isaev') ? 'isa' : name;
   var orgForView = (resolvedName === 'olympics') ? 'olympics' : (resolvedName === 'isa') ? 'isa' : 'wsl';
   document.querySelectorAll('.bottom-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.org === orgForView);
@@ -1172,6 +1245,7 @@ function _renderView(name) {
       if (name === 'wlc')       { setISASub('wlc'); filterWLC(document.getElementById('global-search')?.value || ''); }
       if (name === 'sup')       { setISASub('sup'); filterSUP(document.getElementById('global-search')?.value || ''); }
       if (name === 'nations')   { setISASub('nations'); filterNations(document.getElementById('global-search')?.value || ''); }
+      if (name === 'isaev')     { setISASub('events'); }
     }, 0);
   });
 }
@@ -1207,6 +1281,9 @@ function applyHash() {
   } else if (view === 'olympics' && name) {
     setTimeout(() => _selectOlyAthlete(name), 50);
   } else if (view === 'isa' && name) {
+    // Ensure the WSG sub-view is the visible one (mirrors the wj/wlc/sup/
+    // nations branches below) — otherwise the profile lands in a hidden panel.
+    if (document.getElementById('isa-subview-wsg')) setISASub('wsg');
     setTimeout(() => _selectISAAthlete(name), 50);
   } else if (view === 'wj' && name) {
     // Ensure ISA view is active and WJSC sub-view is showing
@@ -1226,6 +1303,13 @@ function applyHash() {
       setISASub('sup');
     }
     setTimeout(() => _selectSUPAthlete(name), 80);
+  } else if (view === 'isaev') {
+    // #isaev/<src>[/<year>] — championship, optionally drilled into one edition
+    var parts = (name || '').split('/');
+    var wantSrc = parts[0] || isaEvSrc;
+    if (ISA_EV_SOURCES.some(function(s) { return s.key === wantSrc; })) isaEvSrc = wantSrc;
+    isaEvEdition = parts[1] ? (isaEvSrc + '-' + parts[1]) : null;
+    if (document.getElementById('isa-subview-events')) setISASub('events');
   } else if (view === 'nations' && name) {
     // Ensure ISA view is active and Nations sub-view is showing
     if (document.getElementById('isa-subview-nations')) {
@@ -1234,7 +1318,7 @@ function applyHash() {
     setTimeout(() => _selectNation(name), 80);
   }
   // Keep org tabs in sync with current view
-  var orgForHash = (view === 'olympics') ? 'olympics' : (view === 'isa' || view === 'wj' || view === 'wlc' || view === 'sup' || view === 'nations') ? 'isa' : 'wsl';
+  var orgForHash = (view === 'olympics') ? 'olympics' : (view === 'isa' || view === 'wj' || view === 'wlc' || view === 'sup' || view === 'nations' || view === 'isaev') ? 'isa' : 'wsl';
   document.querySelectorAll('.org-btn').forEach(function(b) {
     b.classList.toggle('active', b.dataset.org === orgForHash);
   });
@@ -2880,6 +2964,10 @@ function gsSelect(name, primarySource) {
     });
   } else if (primarySource === 'ISA') {
     if (currentOrg !== 'isa') { setOrg('isa'); }
+    // Bring the WSG sub-view forward — without this the profile renders into a
+    // hidden panel whenever another ISA sub-view is showing, and the click
+    // looks like it did nothing.
+    if (document.getElementById('isa-subview-wsg')) setISASub('wsg');
     requestAnimationFrame(function() {
       setTimeout(function() { location.hash = '#isa/' + encodeURIComponent(name); }, 120);
     });
@@ -3941,6 +4029,307 @@ function buildISAWsgTable(ia) {
 }
 
 
+// ══ ISA Events — nations × editions ═══════════════════════════════════════════
+// The nation-side mirror of the WSL events page: rows are nations, columns are
+// editions of one ISA championship, cells are that nation's team placing.
+// Reached from the ISA sub-nav ("Events"); deep link #isaev/<src>[/<year>].
+
+var ISA_EV_SOURCES = [
+  { key: 'wsg', short: 'WSG',    label: 'ISA World Surfing Games',
+    data: function() { return typeof ISA_WSG_DATA !== 'undefined' ? ISA_WSG_DATA : null; } },
+  { key: 'wj',  short: 'WJSC',   label: 'ISA World Junior Surfing Championship',
+    data: function() { return typeof ISA_WJ_DATA  !== 'undefined' ? ISA_WJ_DATA  : null; } },
+  { key: 'wlc', short: 'WLC',    label: 'ISA World Longboard Championship',
+    data: function() { return typeof ISA_WLC_DATA !== 'undefined' ? ISA_WLC_DATA : null; } },
+  { key: 'sup', short: 'WSUPPC', label: 'ISA World SUP & Paddleboard Championship',
+    data: function() { return typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null; } }
+];
+
+// A few nations are spelled two ways across the roster and Teams tabs. Folding
+// them here stops one nation splitting into two rows. This is a display-layer
+// patch — the real fix is in the sheet (see the console warning below).
+var ISA_NATION_ALIASES = { 'United States': 'USA', 'Swizerland': 'Switzerland' };
+function isaNationName(n) {
+  n = (n || '').trim();
+  return ISA_NATION_ALIASES[n] || n;
+}
+
+var ISA_EV_STAT_COLS = [
+  { key: 'avg',    label: 'Avg',   title: 'Average team placing' },
+  { key: 'best',   label: 'Best',  title: 'Best team placing' },
+  { key: 'worst',  label: 'Worst', title: 'Worst team placing' },
+  { key: 'apps',   label: 'Eds',   title: 'Editions contested' },
+  { key: 'gold',   label: '🥇',    title: 'Gold medals won by this nation' },
+  { key: 'silver', label: '🥈',    title: 'Silver medals' },
+  { key: 'bronze', label: '🥉',    title: 'Bronze medals' },
+  { key: 'copper', label: '🏅',    title: 'Copper medals' },
+  { key: 'team',   label: 'T',     title: 'Team world titles' }
+];
+
+var _isaEvIndex = {};
+
+// Build the nations × editions index for one championship.
+// Recorded team placings come from the sheet's Teams tab. Editions with no
+// recorded standings at all (the pre-2013 longboard years, WJSC 1994-2002) get
+// a placing DERIVED from individual results — ranked by the nation's best
+// individual finish, then squad size, then name. Derived cells are flagged and
+// rendered differently; they are never presented as official.
+function isaEventsIndex(srcKey) {
+  if (_isaEvIndex[srcKey]) return _isaEvIndex[srcKey];
+  var src = null;
+  for (var i = 0; i < ISA_EV_SOURCES.length; i++)
+    if (ISA_EV_SOURCES[i].key === srcKey) src = ISA_EV_SOURCES[i];
+  var d = src && src.data();
+  if (!d || !d.events) return null;
+
+  var events = d.events.slice().sort(function(a, b) { return b.year - a.year; });
+  var byNation = {};
+  function row(n) {
+    return byNation[n] || (byNation[n] = {
+      nation: n, results: {}, squads: {},
+      medals: { gold: 0, silver: 0, bronze: 0, copper: 0, team: 0 }
+    });
+  }
+
+  // 1. Recorded team standings.
+  var recorded = {};
+  (d.teams || []).forEach(function(t) {
+    var r = row(isaNationName(t.nation));
+    ['gold', 'silver', 'bronze', 'copper', 'team'].forEach(function(k) {
+      r.medals[k] += (t.medals && t.medals[k]) || 0;
+    });
+    Object.keys(t.results || {}).forEach(function(eid) {
+      var p = t.results[eid];
+      if (p > 0) { r.results[eid] = { place: p, derived: false }; recorded[eid] = true; }
+    });
+  });
+
+  // 2. Squad roll-up per edition: how many athletes, and their best finish.
+  var per = {};
+  (d.athletes || []).forEach(function(a) {
+    var n = isaNationName(a.country);
+    if (!n) return;
+    Object.keys(a.results || {}).forEach(function(eid) {
+      var p = a.results[eid];
+      if (!(p > 0)) return;
+      var e = per[eid] || (per[eid] = {});
+      var s = e[n] || (e[n] = { count: 0, best: null });
+      s.count++;
+      if (s.best == null || p < s.best) s.best = p;
+      var r = row(n);
+      r.squads[eid] = s;
+    });
+  });
+
+  // 3. Derive placings only where nothing official exists for that edition.
+  var derivedEvents = {};
+  events.forEach(function(ev) {
+    if (recorded[ev.id] || !per[ev.id]) return;
+    derivedEvents[ev.id] = true;
+    var e = per[ev.id];
+    Object.keys(e).sort(function(a, b) {
+      if (e[a].best !== e[b].best) return e[a].best - e[b].best;
+      if (e[a].count !== e[b].count) return e[b].count - e[a].count;
+      return a.localeCompare(b);
+    }).forEach(function(n, i) {
+      row(n).results[ev.id] = { place: i + 1, derived: true };
+    });
+  });
+
+  var nations = Object.keys(byNation).map(function(n) {
+    var r = byNation[n];
+    var ps = Object.keys(r.results).map(function(k) { return r.results[k].place; });
+    var sum = 0;
+    ps.forEach(function(p) { sum += p; });
+    r.stats = {
+      apps:  ps.length,
+      best:  ps.length ? Math.min.apply(null, ps) : null,
+      worst: ps.length ? Math.max.apply(null, ps) : null,
+      avg:   ps.length ? sum / ps.length : null,
+      gold: r.medals.gold, silver: r.medals.silver,
+      bronze: r.medals.bronze, copper: r.medals.copper, team: r.medals.team
+    };
+    return r;
+  }).filter(function(r) { return r.stats.apps > 0; });
+
+  _isaEvIndex[srcKey] = {
+    src: src, events: events, nations: nations,
+    derivedEvents: derivedEvents,
+    eventsWithData: events.filter(function(e) {
+      return recorded[e.id] || derivedEvents[e.id];
+    })
+  };
+  return _isaEvIndex[srcKey];
+}
+
+var isaEvSrc     = 'wsg';
+var isaEvSortCol = 'avg';
+var isaEvSortDir = 'asc';
+var isaEvEdition = null;   // event id when drilled into one edition
+
+function isaEvSetSource(key) {
+  isaEvSrc = key;
+  isaEvEdition = null;
+  isaEvSortCol = 'avg';
+  isaEvSortDir = 'asc';
+  location.hash = '#isaev/' + key;
+}
+
+function isaEvSetSort(col) {
+  if (isaEvSortCol === col) isaEvSortDir = isaEvSortDir === 'asc' ? 'desc' : 'asc';
+  else { isaEvSortCol = col; isaEvSortDir = (col === 'nation') ? 'asc' : 'asc'; }
+  renderIsaEvents();
+}
+
+function isaEvSortVal(r, col) {
+  if (col === 'nation') return r.nation;
+  if (ISA_EV_STAT_COLS.some(function(c) { return c.key === col; })) {
+    var v = r.stats[col];
+    return v == null ? Infinity : v;
+  }
+  var hit = r.results[col];                    // col is an event id
+  return hit ? hit.place : Infinity;
+}
+
+function isaEvPlaceClass(p) {
+  return p === 1 ? 'place-1' : p === 2 ? 'place-2' : p === 3 ? 'place-3' : p <= 5 ? 'place-top5' : '';
+}
+
+function renderIsaEvents() {
+  var wrap = document.getElementById('isaev-wrap');
+  if (!wrap) return;
+  var idx = isaEventsIndex(isaEvSrc);
+  if (!idx || !idx.nations.length) {
+    wrap.innerHTML = '<div class="no-data" style="padding:32px 12px">No nation data available for this championship.</div>';
+    return;
+  }
+  if (isaEvEdition) { renderIsaEvEdition(idx, isaEvEdition); return; }
+
+  var limit  = document.getElementById('isaev-years') ? document.getElementById('isaev-years').value : 'all';
+  var events = idx.eventsWithData.slice();
+  if (limit !== 'all') events = events.slice(0, Number(limit));
+
+  // ── Widgets ──
+  var mostGold = idx.nations.slice().sort(function(a, b) { return b.stats.gold - a.stats.gold; })[0];
+  var mostApps = idx.nations.slice().sort(function(a, b) { return b.stats.apps - a.stats.apps; })[0];
+  var nDerived = Object.keys(idx.derivedEvents).length;
+  function card(label, val, sub, isName) {
+    return '<div class="ev-widget-card"><div class="ev-widget-label">' + label + '</div>'
+      + '<div class="ev-widget-val' + (isName ? ' name' : '') + '">' + val + '</div>'
+      + '<div class="ev-widget-sub">' + (sub || '&nbsp;') + '</div></div>';
+  }
+  var widgets = '<div class="ev-widget-cards">'
+    + card('Editions', idx.eventsWithData.length,
+           idx.eventsWithData.length ? idx.eventsWithData[idx.eventsWithData.length - 1].year + '–' + idx.eventsWithData[0].year : '')
+    + card('Nations', idx.nations.length, 'all-time')
+    + card('Most golds', nationFlag(mostGold.nation) + escHtml(mostGold.nation), mostGold.stats.gold + ' gold', true)
+    + card('Most editions', nationFlag(mostApps.nation) + escHtml(mostApps.nation), mostApps.stats.apps + ' entered', true)
+    + '</div>';
+
+  // ── Header ──
+  function arrow(col) {
+    return '<span class="sort-arrow">' + (isaEvSortCol === col ? (isaEvSortDir === 'asc' ? '▲' : '▼') : '▲') + '</span>';
+  }
+  function thCls(col) { return isaEvSortCol === col ? 'sorted' : ''; }
+  var statHead = ISA_EV_STAT_COLS.map(function(c) {
+    return '<th class="' + thCls(c.key) + '" title="' + c.title + '" onclick="isaEvSetSort(\'' + c.key + '\')">'
+      + c.label + arrow(c.key) + '</th>';
+  }).join('');
+  var yearHead = events.map(function(ev, i) {
+    var der = idx.derivedEvents[ev.id];
+    return '<th class="' + thCls(ev.id) + (i === 0 ? ' year-divider' : '') + '"'
+      + ' title="' + escHtml(ev.name || '') + (ev.location ? ' — ' + escHtml(ev.location) : '')
+      + (der ? ' (derived from individual results)' : '') + '. Click to open this edition."'
+      + ' onclick="isaEvOpenEdition(\'' + ev.id + '\')" style="cursor:pointer">'
+      + ev.year + (der ? '<span class="isaev-derived-dot">•</span>' : '') + '</th>';
+  }).join('');
+
+  var rows = idx.nations.slice().sort(function(a, b) {
+    var av = isaEvSortVal(a, isaEvSortCol), bv = isaEvSortVal(b, isaEvSortCol);
+    var cmp = typeof av === 'string' ? av.localeCompare(bv) : av - bv;
+    if (cmp === 0) cmp = a.nation.localeCompare(b.nation);
+    return isaEvSortDir === 'asc' ? cmp : -cmp;
+  }).map(function(r) {
+    var statCells = ISA_EV_STAT_COLS.map(function(c) {
+      var v = r.stats[c.key];
+      var hi = (c.key === 'avg' || c.key === 'best' || c.key === 'worst') && v != null;
+      var disp = v == null ? '–' : (c.key === 'avg' ? Number(v).toFixed(1) : v);
+      if (['gold','silver','bronze','copper','team'].indexOf(c.key) >= 0 && !v) disp = '–';
+      return '<td class="stat-col' + (hi ? ' stat-highlight' : '') + '">' + disp + '</td>';
+    }).join('');
+    var yearCells = events.map(function(ev, i) {
+      var hit = r.results[ev.id];
+      var div = i === 0 ? ' year-divider' : '';
+      if (!hit) return '<td class="' + div + '" style="color:var(--text-dim)">–</td>';
+      return '<td class="' + isaEvPlaceClass(hit.place) + div + (hit.derived ? ' isaev-derived' : '') + '"'
+        + (hit.derived ? ' title="Derived from individual results — no official team standing recorded for this edition"' : '')
+        + '>' + hit.place + '</td>';
+    }).join('');
+    return '<tr><td><a class="athlete-link" href="#nations/' + encodeURIComponent(r.nation)
+      + '" style="display:block">' + nationFlag(r.nation) + escHtml(r.nation) + '</a></td>'
+      + statCells + yearCells + '</tr>';
+  }).join('');
+
+  wrap.innerHTML = widgets
+    + (nDerived ? '<div class="isaev-note">' + nDerived + ' of these editions have no official team standings recorded. '
+        + 'Those columns are marked <span class="isaev-derived-dot">•</span> and their placings are '
+        + '<span class="isaev-derived" style="padding:0 4px">derived</span> from individual results — best finish first, then squad size.</div>' : '')
+    + '<div class="events-table-wrap"><table class="events-table">'
+    + '<thead><tr><th class="' + thCls('nation') + '" onclick="isaEvSetSort(\'nation\')">Nation' + arrow('nation') + '</th>'
+    + statHead + yearHead + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+// ── One edition: that year's nation standings ────────────────────────────────
+function isaEvOpenEdition(eid) {
+  isaEvEdition = eid;
+  var yr = (eid.split('-')[1] || '');
+  location.hash = '#isaev/' + isaEvSrc + '/' + yr;
+}
+function isaEvCloseEdition() {
+  isaEvEdition = null;
+  location.hash = '#isaev/' + isaEvSrc;
+}
+
+function renderIsaEvEdition(idx, eid) {
+  var wrap = document.getElementById('isaev-wrap');
+  var ev = null;
+  idx.events.forEach(function(e) { if (e.id === eid) ev = e; });
+  if (!ev) { isaEvEdition = null; renderIsaEvents(); return; }
+  var derived = !!idx.derivedEvents[eid];
+
+  var standings = idx.nations.filter(function(r) { return r.results[eid]; })
+    .sort(function(a, b) { return a.results[eid].place - b.results[eid].place; });
+
+  var link = ev.resultUrl
+    ? '<a href="' + escHtml(ev.resultUrl) + '" target="_blank" rel="noopener" class="athlete-link">Official results ↗</a>'
+    : (ev.sheetUrl ? '<a href="' + escHtml(ev.sheetUrl) + '" target="_blank" rel="noopener" class="athlete-link">Source sheet ↗</a>' : '');
+
+  var rows = standings.map(function(r) {
+    var hit = r.results[eid];
+    var sq  = r.squads[eid];
+    return '<tr>'
+      + '<td class="' + isaEvPlaceClass(hit.place) + '" style="font-weight:700">' + hit.place + '</td>'
+      + '<td><a class="athlete-link" href="#nations/' + encodeURIComponent(r.nation) + '">'
+      + nationFlag(r.nation) + escHtml(r.nation) + '</a></td>'
+      + '<td class="stat-col">' + (sq ? sq.count : '–') + '</td>'
+      + '<td class="stat-col">' + (sq && sq.best != null ? isaPlaceLabel(sq.best) : '–') + '</td>'
+      + '</tr>';
+  }).join('');
+
+  wrap.innerHTML = '<div class="isaev-edition-head">'
+    + '<button class="isaev-back" onclick="isaEvCloseEdition()">← All editions</button>'
+    + '<div class="isaev-edition-title">' + escHtml(ev.name || (idx.src.label + ' ' + ev.year)) + '</div>'
+    + '<div class="isaev-edition-sub">' + ev.year + (ev.location ? ' · ' + escHtml(ev.location) : '')
+    + (link ? ' · ' + link : '') + '</div></div>'
+    + (derived ? '<div class="isaev-note">No official team standings were recorded for this edition. '
+        + 'The order below is derived from individual results — best finish first, then squad size.</div>' : '')
+    + '<div class="events-table-wrap"><table class="events-table">'
+    + '<thead><tr><th style="width:60px">' + (derived ? 'Order' : 'Place') + '</th><th>Nation</th>'
+    + '<th title="Athletes entered">Athletes</th><th title="Best individual result">Best</th></tr></thead>'
+    + '<tbody>' + (rows || '<tr><td colspan="4" class="no-data">No nation data for this edition</td></tr>')
+    + '</tbody></table></div>';
+}
+
 // ── ISA sub-nav (WSG / World Junior / World Longboard) ───────────────────────
 function setISASub(sub) {
   isaSubView = sub;
@@ -3952,6 +4341,8 @@ function setISASub(sub) {
   if (supBtn) supBtn.classList.toggle('active', sub === 'sup');
   var natBtn = document.getElementById('isa-sub-nations');
   if (natBtn) natBtn.classList.toggle('active', sub === 'nations');
+  var evBtn = document.getElementById('isa-sub-events');
+  if (evBtn) evBtn.classList.toggle('active', sub === 'events');
   var mWsg = document.getElementById('m-isa-sub-wsg');
   var mWj  = document.getElementById('m-isa-sub-wj');
   var mWlc = document.getElementById('m-isa-sub-wlc');
@@ -3962,6 +4353,8 @@ function setISASub(sub) {
   if (mWlc) mWlc.classList.toggle('active', sub === 'wlc');
   if (mSup) mSup.classList.toggle('active', sub === 'sup');
   if (mNat) mNat.classList.toggle('active', sub === 'nations');
+  var mEv = document.getElementById('m-isa-sub-events');
+  if (mEv) mEv.classList.toggle('active', sub === 'events');
   document.getElementById('isa-subview-wsg').style.display = sub === 'wsg' ? '' : 'none';
   document.getElementById('isa-subview-wj').style.display  = sub === 'wj'  ? '' : 'none';
   var lbView = document.getElementById('isa-subview-wlc');
@@ -3970,6 +4363,13 @@ function setISASub(sub) {
   if (supView) supView.style.display = sub === 'sup' ? '' : 'none';
   var natView = document.getElementById('isa-subview-nations');
   if (natView) natView.style.display = sub === 'nations' ? '' : 'none';
+  var evView = document.getElementById('isa-subview-events');
+  if (evView) evView.style.display = sub === 'events' ? '' : 'none';
+  if (sub === 'events') {
+    var ss = document.getElementById('isaev-source');
+    if (ss) ss.value = isaEvSrc;
+    renderIsaEvents();
+  }
   if (sub === 'nations') {
     filterNations(document.getElementById('global-search')?.value || '');
     if (nationsSelected) renderNationProfile(nationsSelected);
