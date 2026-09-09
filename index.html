@@ -1170,7 +1170,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260905153203"></script>
+<script src="data.js?v=20260909075707"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1482,6 +1482,7 @@ const NATION_FLAGS = {
   'China': '🇨🇳',
   'Chinese Taipei': '🇹🇼',
   'Colombia': '🇨🇴',
+  'Cook Islands': '🇨🇰',
   'Costa Rica': '🇨🇷',
   'Czech Republic': '🇨🇿',
   "Côte d'Ivoire": '🇨🇮',
@@ -1489,6 +1490,7 @@ const NATION_FLAGS = {
   'Dominican Republic': '🇩🇴',
   'Ecuador': '🇪🇨',
   'El Salvador': '🇸🇻',
+  'England': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
   'Fiji': '🇫🇯',
   'Finland': '🇫🇮',
   'France': '🇫🇷',
@@ -1499,6 +1501,7 @@ const NATION_FLAGS = {
   'Guatemala': '🇬🇹',
   'Hawaii': '🌺',
   'Hungary': '🇭🇺',
+  'Hong Kong': '🇭🇰',
   'India': '🇮🇳',
   'Indonesia': '🇮🇩',
   'Iran': '🇮🇷',
@@ -1524,19 +1527,24 @@ const NATION_FLAGS = {
   'Philippines': '🇵🇭',
   'Poland': '🇵🇱',
   'Portugal': '🇵🇹',
+  'Romania': '🇷🇴',
   'Puerto Rico': '🇵🇷',
   'RSA': '🇿🇦',
   'Reunion': '🇷🇪',
   'Russia': '🇷🇺',
+  'Saint Lucia': '🇱🇨',
+  'Samoa': '🇼🇸',
   'Saudi Arabia': '🇸🇦',
   'Scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
   'Senegal': '🇸🇳',
   'Slovakia': '🇸🇰',
+  'Slovenia': '🇸🇮',
   'South Africa': '🇿🇦',
   'South Korea': '🇰🇷',
   'Spain': '🇪🇸',
   'Sri Lanka': '🇱🇰',
   'Sweden': '🇸🇪',
+  'São Tomé and Príncipe': '🇸🇹',
   'Switzerland': '🇨🇭',
   'Tahiti': '🇵🇫',
   'Thailand': '🇹🇭',
@@ -1553,6 +1561,129 @@ const NATION_FLAGS = {
   'Wales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿',
 };
 function nationFlag(n) { return NATION_FLAGS[n] ? NATION_FLAGS[n] + ' ' : ''; }
+
+// ── ISA nation history ────────────────────────────────────────────────────────
+// An ISA roster row records the nation the athlete competed under for the events
+// ON THAT ROW. A surfer who changed nations therefore has more than one row —
+// within a source (Roberto Diaz: Venezuela 2004-09, Panama 2014-15 in WSG) or
+// across them (Carissa Moore: Hawaii in WJSC, USA in WSG). Identity is the name;
+// the nation belongs to the result, not to the person. These helpers keep the two
+// apart so one profile can carry a per-result flag.
+
+// Every roster row for a name in one ISA dataset. WSG previously used .find(),
+// which silently dropped the second nation's row and every result on it.
+function isaRows(ds, name) {
+  if (!ds || !ds.athletes) return [];
+  return ds.athletes.filter(function(a) { return a.name === name; });
+}
+
+// {eventId: nation} for the rows handed in.
+function isaNationByEvent(rows) {
+  var map = {};
+  (rows || []).forEach(function(r) {
+    if (!r.country) return;
+    Object.keys(r.results || {}).forEach(function(eid) {
+      if (!map[eid]) map[eid] = r.country;
+    });
+  });
+  return map;
+}
+
+// {nation: [years]} → [{nation, first, last}], most recent nation first.
+function _isaSpansFrom(years) {
+  return Object.keys(years).map(function(n) {
+    var ys = years[n].sort(function(a, b) { return a - b; });
+    return { nation: n, first: ys[0], last: ys[ys.length - 1] };
+  }).sort(function(a, b) { return b.last - a.last || b.first - a.first; });
+}
+
+// Collect {nation: [years]} from rows of one dataset.
+function _isaYearsByNation(rows, events, into) {
+  var years = into || {};
+  var yearOf = {};
+  (events || []).forEach(function(ev) { yearOf[ev.id] = ev.year; });
+  (rows || []).forEach(function(r) {
+    if (!r.country) return;
+    Object.keys(r.results || {}).forEach(function(eid) {
+      var y = yearOf[eid];
+      if (y == null) return;
+      (years[r.country] = years[r.country] || []).push(y);
+    });
+  });
+  return years;
+}
+
+// Nations competed under in ONE source, most recent first. Rows that share a
+// nation (WJSC age divisions, SUP disciplines) collapse into one span.
+function isaNationSpans(rows, events) {
+  return _isaSpansFrom(_isaYearsByNation(rows, events));
+}
+
+function isaAllSources() {
+  return [
+    typeof ISA_WSG_DATA !== 'undefined' ? ISA_WSG_DATA : null,
+    typeof ISA_WJ_DATA  !== 'undefined' ? ISA_WJ_DATA  : null,
+    typeof ISA_WLC_DATA !== 'undefined' ? ISA_WLC_DATA : null,
+    typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null
+  ].filter(Boolean);
+}
+
+// Every nation this athlete has competed under ANYWHERE in the ISA, most recent
+// first. A profile header needs this rather than one source's answer: Carissa
+// Moore is USA in the WSG sheet and Hawaii in the WJSC sheet, and both are hers.
+function isaAllNationSpans(name) {
+  var years = {};
+  isaAllSources().forEach(function(ds) {
+    _isaYearsByNation(isaRows(ds, name), ds.events, years);
+  });
+  return _isaSpansFrom(years);
+}
+
+// Header tags. A single-nation athlete renders exactly as before; two or more
+// nations each get their year range so the switch reads at a glance.
+function isaNationTags(rows, events, asSpan, spansIn) {
+  var open  = asSpan ? '<span class="meta-tag">' : '<div class="meta-tag"><span>';
+  var close = asSpan ? '</span>' : '</span></div>';
+  var spans = spansIn || isaNationSpans(rows, events);
+  if (!spans.length) {
+    var c = (rows && rows[0] && rows[0].country) || '';
+    return c ? open + nationFlag(c) + escHtml(c) + close : '';
+  }
+  return spans.map(function(s) {
+    var range = spans.length > 1
+      ? ' <span style="opacity:0.6;letter-spacing:0.08em">'
+        + (s.first === s.last ? s.first : s.first + '\u2013' + s.last) + '</span>'
+      : '';
+    return open + nationFlag(s.nation) + escHtml(s.nation) + range + close;
+  }).join('');
+}
+
+// One athlete's whole record in a source, merged across however many rows it
+// took to record it: results carry their own nation, medals and appearances sum.
+function isaMergeRows(rows) {
+  var out = { results: {}, nations: {}, medals: { gold:0, silver:0, bronze:0, copper:0, team:0 },
+              appearances: 0, best: null, gender: '', country: '' };
+  (rows || []).forEach(function(r) {
+    out.appearances += (r.appearances || 0);
+    if (r.best != null && (out.best == null || r.best < out.best)) out.best = r.best;
+    if (!out.gender)  out.gender  = r.gender  || '';
+    if (!out.country) out.country = r.country || '';
+    Object.keys(r.medals || {}).forEach(function(k) {
+      out.medals[k] = (out.medals[k] || 0) + (r.medals[k] || 0);
+    });
+    Object.keys(r.results || {}).forEach(function(eid) {
+      out.results[eid] = r.results[eid];
+      if (r.country) out.nations[eid] = r.country;
+    });
+  });
+  return out;
+}
+
+// Compact per-result cell: flag + nation, for the Nation column of an ISA table.
+function isaNationCell(nat) {
+  if (!nat) return '<span style="color:#cbd5e1">\u2014</span>';
+  return '<span title="' + escHtml(nat) + '">' + nationFlag(nat) + escHtml(nat) + '</span>';
+}
 
 // Stance lookup: user edits (localStorage) first, then embedded APP_DATA fallback.
 function getAthleteStance(name) {
@@ -3771,12 +3902,15 @@ function buildISASection(name) {
   // WSG card — stat grid now lives inside the WSG accordion, so each event's
   // numbers sit under the event they describe.
   if (ISA_WSG_DATA && ISA_WSG_DATA.athletes) {
-    var wsgA = ISA_WSG_DATA.athletes.find(function(x) { return x.name === name; });
-    if (wsgA) {
+    // Merged across rows: a surfer who changed nations has one WSG row per
+    // nation, and each row holds only the results won under that flag.
+    var wsgRows = isaRows(ISA_WSG_DATA, name);
+    if (wsgRows.length) {
+      var wsgA = isaMergeRows(wsgRows);
       var wsgMyEvs = ISA_WSG_DATA.events
         .filter(function(ev) { return wsgA.results[ev.id] !== undefined; })
         .sort(function(a, b) { return b.year - a.year; })
-        .map(function(ev) { return { ev: ev, place: wsgA.results[ev.id] }; });
+        .map(function(ev) { return { ev: ev, place: wsgA.results[ev.id], nat: wsgA.nations[ev.id] }; });
       if (wsgMyEvs.length) {
         var wsgGrid = buildIsaStatGrid(wsgMyEvs, wsgA.medals, wsgA.appearances);
         innerHtml += buildWJEventAccordion('ISA World Surfing Games', wsgMyEvs, cssId(name) + '_wsg_isa', wsgGrid);
@@ -3991,8 +4125,9 @@ function isaMedalBadge(medals) {
 
 function buildISAWsgBadges(name) {
   if (!ISA_WSG_DATA || !ISA_WSG_DATA.athletes || !ISA_WSG_DATA.athletes.length) return '';
-  var ia = ISA_WSG_DATA.athletes.find(function(x) { return x.name === name; });
-  if (!ia) return '';
+  var iaRows = isaRows(ISA_WSG_DATA, name);
+  if (!iaRows.length) return '';
+  var ia = isaMergeRows(iaRows);
   var parts = [];
   if (ia.medals.gold)   parts.push('<div class="meta-tag" style="background:#fff8dc;color:#b8860b;border-color:#f0d060">🥇 WSG Gold'   + (ia.medals.gold   > 1 ? ' ×' + ia.medals.gold   : '') + '</div>');
   if (ia.medals.silver) parts.push('<div class="meta-tag" style="background:#f4f6f8;color:#607080;border-color:#c8d0da">🥈 WSG Silver' + (ia.medals.silver > 1 ? ' ×' + ia.medals.silver : '') + '</div>');
@@ -4467,7 +4602,10 @@ function renderWJProfile(name) {
   var entries = ISA_WJ_DATA.athletes.filter(function(a) { return a.name === name; });
   if (!entries.length) return;
   var panel = document.getElementById('wj-profile');
-  var country = entries[0].country;
+  // The nation belongs to the result, not the profile — entries[0] pinned a
+  // whole career to whichever row happened to be scraped first.
+  var country    = entries[0].country;
+  var nationTags = isaNationTags(entries, ISA_WJ_DATA.events, false, isaAllNationSpans(name));
   var gender  = entries[0].gender;
 
   // Bio helpers
@@ -4504,7 +4642,7 @@ function renderWJProfile(name) {
   // WJSC-only athletes render here rather than through renderProfile(), so the
   // medal badges have to be built explicitly. WJSC first (this is the World
   // Junior view), then the other sources this athlete may appear in.
-  var tags = '<div class="meta-tag"><span>' + nationFlag(country) + escHtml(country) + '</span></div>'
+  var tags = nationTags
     + buildISAWjBadges(name)
     + buildISAWsgBadges(name)
     + buildISAWlcBadges(name)
@@ -4518,7 +4656,7 @@ function renderWJProfile(name) {
     var myEvs = events
       .filter(function(ev) { return entry.results[ev.id] !== undefined; })
       .sort(function(a, b) { return b.year - a.year; })
-      .map(function(ev) { return { ev: ev, place: entry.results[ev.id] }; });
+      .map(function(ev) { return { ev: ev, place: entry.results[ev.id], nat: entry.country }; });
     if (!myEvs.length) return;
     accordionHtml += buildWJEventAccordion(entry.div_label, myEvs, cssId(name) + '_' + entry.division);
   });
@@ -4562,6 +4700,9 @@ function buildWJEventAccordion(divLabel, myEvents, idSuffix, preBodyHtml) {
   var bestCls = best === 1 ? 'w' : best === 2 ? 'ru' : best <= 4 ? 'sf' : best <= 8 ? 'qf' : 'ev';
   var chips = '<span class="chip ' + bestCls + '">Best ' + isaPlaceLabel(best) + '</span>'
     + '<span class="chip ev">' + myEvents.length + ' appearance' + (myEvents.length !== 1 ? 's' : '') + '</span>';
+  // A Nation column appears only when the caller supplies a per-result nation
+  // (r.nat), so the nations view and any other caller keep the old three columns.
+  var hasNat = myEvents.some(function(r) { return !!r.nat; });
   var yearRows = myEvents.map(function(r) {
     var place = r.place;
     var bg  = place === 1 ? '#fffbea' : place === 2 ? '#f0fdf4' : place === 3 ? '#fff5f0' : place === 4 ? '#fffcf5' : '#fff';
@@ -4569,6 +4710,7 @@ function buildWJEventAccordion(divLabel, myEvents, idSuffix, preBodyHtml) {
     return '<tr style="background:' + bg + '">'
       + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:#001834">' + isaYearCell(r.ev) + '</td>'
       + '<td style="padding:9px 14px;font-size:0.78rem;color:#5a7090;border-bottom:1px solid #f1f5f9">' + r.ev.location + '</td>'
+      + (hasNat ? '<td style="padding:9px 14px;font-size:0.72rem;font-weight:700;letter-spacing:0.06em;color:#334155;border-bottom:1px solid #f1f5f9;overflow:hidden;text-overflow:ellipsis">' + isaNationCell(r.nat) + '</td>' : '')
       + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:' + col + '">' + isaPlaceLabel(place) + '</td>'
       + '</tr>';
   }).join('');
@@ -4587,9 +4729,10 @@ function buildWJEventAccordion(divLabel, myEvents, idSuffix, preBodyHtml) {
     // x-positions purely because their venue names differ in length.
     + '<table style="width:100%;border-collapse:collapse;table-layout:fixed">'
     + '<thead><tr style="background:#f8fafc">'
-    + '<th style="width:18%;padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Year</th>'
-    + '<th style="width:57%;padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Location</th>'
-    + '<th style="width:25%;padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Result</th>'
+    + '<th style="width:' + (hasNat ? '14%' : '18%') + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Year</th>'
+    + '<th style="width:' + (hasNat ? '42%' : '57%') + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Location</th>'
+    + (hasNat ? '<th style="width:22%;padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Nation</th>' : '')
+    + '<th style="width:' + (hasNat ? '22%' : '25%') + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Result</th>'
     + '</tr></thead><tbody>' + yearRows + '</tbody></table>'
     + '</div></div>';
 }
@@ -4642,7 +4785,7 @@ function buildISAWjSection(name, noTitle, noWrapper) {
     var myEvs = events
       .filter(function(ev) { return entry.results[ev.id] !== undefined; })
       .sort(function(a, b) { return b.year - a.year; })
-      .map(function(ev) { return { ev: ev, place: entry.results[ev.id] }; });
+      .map(function(ev) { return { ev: ev, place: entry.results[ev.id], nat: entry.country }; });
     if (myEvs.length) {
       allPairs = allPairs.concat(myEvs);
       divAccordions += buildWJEventAccordion(entry.div_label, myEvs, cssId(name) + '_' + entry.division);
@@ -4765,7 +4908,10 @@ function renderWLCProfile(name) {
   if (!entries.length) return;
   var panel = document.getElementById('wlc-profile');
   if (!panel) return;
-  var country = entries[0].country;
+  // The nation belongs to the result, not the profile — entries[0] pinned a
+  // whole career to whichever row happened to be scraped first.
+  var country    = entries[0].country;
+  var nationTags = isaNationTags(entries, ISA_WLC_DATA.events, false, isaAllNationSpans(name));
 
   var bid    = function(k) { return 'bio__' + name + '__' + k; };
   var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
@@ -4800,7 +4946,7 @@ function renderWLCProfile(name) {
   // Longboard-only athletes render here rather than through renderProfile(),
   // so the medal badges have to be built explicitly. Longboard first (this is
   // the longboard view), then the other sources this athlete may appear in.
-  var tags = '<div class="meta-tag"><span>' + nationFlag(country) + escHtml(country) + '</span></div>'
+  var tags = nationTags
     + buildISAWlcBadges(name)
     + buildISAWsgBadges(name)
     + buildISAWjBadges(name)
@@ -4861,7 +5007,7 @@ function buildISAWlcSection(name, noTitle, noWrapper) {
     var myEvs = events
       .filter(function(ev) { return entry.results[ev.id] !== undefined; })
       .sort(function(a, b) { return b.year - a.year; })
-      .map(function(ev) { return { ev: ev, place: entry.results[ev.id] }; });
+      .map(function(ev) { return { ev: ev, place: entry.results[ev.id], nat: entry.country }; });
     if (myEvs.length) {
       allPairs = allPairs.concat(myEvs);
       divAccordions += buildWJEventAccordion(entry.div_label, myEvs, cssId(name) + '_wlc_' + entry.division);
@@ -4988,7 +5134,10 @@ function renderSUPProfile(name) {
   if (!entries.length) return;
   var panel = document.getElementById('sup-profile');
   if (!panel) return;
-  var country = entries[0].country;
+  // The nation belongs to the result, not the profile — entries[0] pinned a
+  // whole career to whichever row happened to be scraped first.
+  var country    = entries[0].country;
+  var nationTags = isaNationTags(entries, ISA_SUP_DATA.events, false, isaAllNationSpans(name));
 
   var bid    = function(k) { return 'bio__' + name + '__' + k; };
   var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
@@ -5020,7 +5169,7 @@ function renderSUPProfile(name) {
     + ' oninput="saveNotes(\'' + safeName + '\', this.value); autoResizeNotes(this)">' + escHtml(notesVal) + '</textarea>'
     + '</div></div>';
 
-  var tags = '<div class="meta-tag"><span>' + nationFlag(country) + escHtml(country) + '</span></div>'
+  var tags = nationTags
     + buildISASUPBadges(name)
     + buildISAWsgBadges(name)
     + buildISAWjBadges(name)
@@ -5082,7 +5231,7 @@ function buildISASUPSection(name, noTitle, noWrapper) {
     var myEvs = events
       .filter(function(ev) { return entry.results[ev.id] !== undefined; })
       .sort(function(a, b) { return b.year - a.year; })
-      .map(function(ev) { return { ev: ev, place: entry.results[ev.id] }; });
+      .map(function(ev) { return { ev: ev, place: entry.results[ev.id], nat: entry.country }; });
     if (myEvs.length) {
       var grid = buildIsaStatGrid(myEvs, entry.medals, entry.appearances);
       discAccordions += buildWJEventAccordion(entry.disc_label, myEvs, cssId(name) + '_sup_' + entry.discipline, grid);
@@ -5170,8 +5319,12 @@ function filterISA(query) {
 
 function renderISAProfile(name) {
   if (!ISA_WSG_DATA) return;
-  var a = ISA_WSG_DATA.athletes.find(function(x) { return x.name === name; });
-  if (!a) return;
+  // All of this athlete's WSG rows — a nation change is recorded as a second
+  // row, so .find() used to hide half the career.
+  var wsgRows = isaRows(ISA_WSG_DATA, name);
+  if (!wsgRows.length) return;
+  var a = isaMergeRows(wsgRows);
+  a.name = name;
   var panel = document.getElementById('isa-profile');
   var events = ISA_WSG_DATA.events;
 
@@ -5222,7 +5375,7 @@ function renderISAProfile(name) {
   // ── Meta tags ──────────────────────────────────────────────────────────────
   // isaMedalBadge already covers this athlete's WSG medals, so only the other
   // sources are added here (buildISAWsgBadges would duplicate them).
-  var tags = '<span class="meta-tag">' + nationFlag(a.country) + escHtml(a.country) + '</span>'
+  var tags = isaNationTags(wsgRows, events, true, isaAllNationSpans(name))
     + '<span class="meta-tag">' + (a.gender === 'men' ? 'Men' : 'Women') + '</span>'
     + (hasMedals ? '<span style="display:flex;gap:4px;align-items:center">' + isaMedalBadge(a.medals) + '</span>' : '')
     + buildISAWjBadges(name)
