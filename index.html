@@ -77,6 +77,18 @@
   #view-isa #isa-subview-sup,
   #view-isa #isa-subview-nations { padding: 20px; flex: 1; min-height: 0; }
   #view-isa #isa-subview-events { padding: 20px; flex: 1; min-height: 0; display: block; overflow: auto; }
+  /* Nation page — individual medal list. Five columns fit a desktop panel but
+     not a phone, so below 620px the Championship and Division columns fold
+     into the Year and Athlete cells instead of being dropped. */
+  .nmed-sub { display: none; }
+  .nmed-table td, .nmed-table th { vertical-align: top; }
+  .nmed-nowrap { white-space: nowrap; }
+  @media (max-width: 620px) {
+    .nmed-table .nmed-col-champ, .nmed-table .nmed-col-div { display: none; }
+    .nmed-table .nmed-sub { display: block; font-size: 0.63rem; color: #7b8ca3;
+                            font-weight: 600; letter-spacing: 0.03em; margin-top: 3px; line-height: 1.35; }
+    .nmed-table td, .nmed-table th { padding-left: 9px !important; padding-right: 9px !important; }
+  }
   .isaev-controls { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
   .isaev-note { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #94a3b8; border-radius: 3px;
                 padding: 9px 13px; font-size: 0.72rem; color: #5a7090; margin-bottom: 14px; line-height: 1.5; }
@@ -1170,7 +1182,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260909075707"></script>
+<script src="data.js?v=20260909154403"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -5410,11 +5422,42 @@ function renderISA() {
 // nation's page unifies them with combined stats on top and a per-championship
 // accordion below.
 var NATION_DISCIPLINES = [
-  { key: 'wsg', label: 'ISA World Surfing Games',              data: function() { return typeof ISA_WSG_DATA !== 'undefined' ? ISA_WSG_DATA : null; } },
-  { key: 'wj',  label: 'ISA World Junior Surfing Championship', data: function() { return typeof ISA_WJ_DATA  !== 'undefined' ? ISA_WJ_DATA  : null; } },
-  { key: 'wlc', label: 'ISA World Longboard Championship',      data: function() { return typeof ISA_WLC_DATA !== 'undefined' ? ISA_WLC_DATA : null; } },
-  { key: 'sup', label: 'ISA World SUP & Paddleboard Championship', data: function() { return typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null; } }
+  { key: 'wsg', label: 'ISA World Surfing Games',              short: 'WSG',    data: function() { return typeof ISA_WSG_DATA !== 'undefined' ? ISA_WSG_DATA : null; } },
+  { key: 'wj',  label: 'ISA World Junior Surfing Championship', short: 'WJSC',   data: function() { return typeof ISA_WJ_DATA  !== 'undefined' ? ISA_WJ_DATA  : null; } },
+  { key: 'wlc', label: 'ISA World Longboard Championship',      short: 'WLC',    data: function() { return typeof ISA_WLC_DATA !== 'undefined' ? ISA_WLC_DATA : null; } },
+  { key: 'sup', label: 'ISA World SUP & Paddleboard Championship', short: 'WSUPPC', data: function() { return typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null; } }
 ];
+
+// ── Individual (athlete) medals, per nation ─────────────────────────────────
+// The team index below answers "how did this nation's squad place". These
+// helpers answer "which of its surfers got on the box", from the same four
+// sources. One entry per medal-winning RESULT, not per athlete: three medals
+// means three rows, which is what a medal list is.
+// Copper (4th) is a real ISA medal and is counted here exactly as the team
+// medal bundle on this page already counts it.
+var ISA_MEDAL_TIERS = [null, 'gold', 'silver', 'bronze', 'copper'];
+var ISA_MEDAL_ICON  = { gold: '\uD83E\uDD47', silver: '\uD83E\uDD48', bronze: '\uD83E\uDD49', copper: '\uD83C\uDFC5' };
+var ISA_MEDAL_NAME  = { gold: 'Gold', silver: 'Silver', bronze: 'Bronze', copper: 'Copper' };
+function isaMedalTier(place) { return (place >= 1 && place <= 4) ? ISA_MEDAL_TIERS[place] : null; }
+
+// Division/discipline label for a medal row. 'Men', 'Women' and 'U/18 Girls'
+// already carry gender; WLC 'Junior' and the SUP discipline labels do not, so
+// gender is appended to those. SUP labels already say '(Junior)' themselves.
+function isaDivLabel(a) {
+  var g = a.gender === 'women' ? 'Women' : 'Men';
+  var lbl = a.div_label || a.disc_label || '';
+  if (!lbl) return g;
+  if (/^(men|women)$/i.test(lbl) || /boys|girls/i.test(lbl)) return lbl;
+  return lbl + ' \u00B7 ' + g;
+}
+
+// ISA athlete profiles live under one hash per championship; WSG's is '#isa'.
+function isaAthleteHash(srcKey) { return srcKey === 'wsg' ? 'isa' : srcKey; }
+function isaAthleteLink(name, srcKey) {
+  return '<a href="#' + isaAthleteHash(srcKey) + '/' + encodeURIComponent(name)
+    + '" style="color:inherit;text-decoration:none;border-bottom:1px solid rgba(0,24,52,0.22)">'
+    + escHtml(name) + '</a>';
+}
 
 function nationsIndex() {
   if (_nationsIndex) return _nationsIndex;
@@ -5443,6 +5486,70 @@ function nationsIndex() {
       if (t.best != null) ov.best = (ov.best == null) ? t.best : Math.min(ov.best, t.best);
     });
   });
+  // ── Second pass: individual medals ────────────────────────────────────────
+  // An athlete row's `country` is the flag competed under for the years on that
+  // row, so a surfer who changed nations feeds each nation's list for the right
+  // years — the flag-at-the-time rule the team tables already follow.
+  NATION_DISCIPLINES.forEach(function(src) {
+    var d = src.data();
+    if (!d || !d.athletes || !d.athletes.length) return;
+    var evById = {};
+    (d.events || []).forEach(function(e) { evById[e.id] = e; });
+    d.athletes.forEach(function(a) {
+      var nat = isaNationName(a.country);
+      if (!nat) return;
+      var n = idx[nat];
+      if (!n) {
+        // No team row for this nation. Today that is only UAE, which has no
+        // medals, but a medal must never disappear because the team side is
+        // missing — give the nation a page and say so in the console.
+        var hasMedal = Object.keys(a.results || {}).some(function(eid) {
+          return a.results[eid] >= 1 && a.results[eid] <= 4;
+        });
+        if (!hasMedal) return;
+        console.warn('nationsIndex: individual medal for "' + nat + '", which has no team record - '
+          + 'nation page built from athlete data alone.');
+        n = idx[nat] = {
+          nation: nat,
+          overall: { appearances: 0, best: null, events: 0, medals: { gold: 0, silver: 0, bronze: 0, copper: 0 } },
+          disciplines: {}
+        };
+      }
+      var ind = n.individual || (n.individual = {
+        medals: { gold: 0, silver: 0, bronze: 0, copper: 0 },
+        rows: [], bySrc: {}, byAthlete: {}, best: null, bestRows: [], results: 0
+      });
+      Object.keys(a.results || {}).forEach(function(eid) {
+        var place = a.results[eid];
+        if (!(place > 0)) return;
+        var ev = evById[eid] || { id: eid, year: parseInt((eid.split('-')[1] || '0'), 10), location: '' };
+        ind.results++;
+        if (ind.best == null || place < ind.best) { ind.best = place; ind.bestRows = []; }
+        if (place === ind.best) ind.bestRows.push({ name: a.name, ev: ev, src: src.key });
+        var tier = isaMedalTier(place);
+        if (!tier) return;
+        ind.medals[tier]++;
+        var bs = ind.bySrc[src.key] || (ind.bySrc[src.key] =
+          { key: src.key, label: src.label, short: src.short, gold: 0, silver: 0, bronze: 0, copper: 0, total: 0 });
+        bs[tier]++; bs.total++;
+        var ba = ind.byAthlete[a.name] || (ind.byAthlete[a.name] =
+          { name: a.name, gold: 0, silver: 0, bronze: 0, copper: 0, total: 0, src: src.key, year: null });
+        ba[tier]++; ba.total++;
+        if (ba.year == null || ev.year > ba.year) { ba.year = ev.year; ba.src = src.key; }
+        ind.rows.push({ name: a.name, src: src.key, short: src.short, label: src.label,
+                        ev: ev, place: place, tier: tier, div: isaDivLabel(a) });
+      });
+    });
+  });
+  // Most recent first, podium order inside a year, then name.
+  Object.keys(idx).forEach(function(k) {
+    var ind = idx[k].individual;
+    if (!ind) return;
+    ind.rows.sort(function(a, b) {
+      return (b.ev.year - a.ev.year) || (a.place - b.place) || a.name.localeCompare(b.name);
+    });
+  });
+
   _nationsIndex = idx;
   return idx;
 }
@@ -5527,6 +5634,195 @@ function buildNationOverview(ov, discCount) {
     + '</div>';
 }
 
+// ── Nation medal stats + individual medallist list ──────────────────────────
+// Sits below the team accordions: the team side is the nation's squad result,
+// this is its surfers'. Recorded data only - nothing derived is rendered here,
+// per the events-view rule that derived and recorded never mix.
+function nationRecentTeamMedal(n) {
+  var best = null;
+  NATION_DISCIPLINES.forEach(function(s) {
+    var d = n.disciplines[s.key];
+    if (!d) return;
+    d.pairs.forEach(function(p) {
+      if (!(p.place >= 1 && p.place <= 4)) return;
+      if (!best || p.ev.year > best.ev.year || (p.ev.year === best.ev.year && p.place < best.place)) {
+        best = { ev: p.ev, place: p.place, short: s.short, label: s.label, key: s.key };
+      }
+    });
+  });
+  return best;
+}
+
+// Gold first, then silver, bronze, copper; total breaks a tie, then name.
+function nationTopAthlete(ind) {
+  var list = Object.keys(ind.byAthlete).map(function(k) { return ind.byAthlete[k]; });
+  if (!list.length) return null;
+  list.sort(function(a, b) {
+    return (b.gold - a.gold) || (b.silver - a.silver) || (b.bronze - a.bronze)
+        || (b.copper - a.copper) || (b.total - a.total) || a.name.localeCompare(b.name);
+  });
+  return list[0];
+}
+
+function isaMedalChips(m) {
+  var out = [];
+  ['gold', 'silver', 'bronze', 'copper'].forEach(function(k) {
+    if (m[k]) out.push(ISA_MEDAL_ICON[k] + ' ' + m[k]);
+  });
+  return out.join(' ');
+}
+
+function nationStatCard(label, value, sub, cls) {
+  return '<div class="bento-stat-card' + (cls || '') + '">'
+    + '<div class="stat-card-label">' + label + '</div>'
+    + '<div class="stat-card-value" style="font-size:1.05rem;line-height:1.25">' + value + '</div>'
+    + '<div class="stat-card-sub"' + (sub ? '' : ' style="visibility:hidden"') + '>' + (sub || '—') + '</div>'
+    + '</div>';
+}
+
+function buildNationIndividuals(name, n) {
+  var ind = n.individual;
+  var totalInd = ind ? (ind.medals.gold + ind.medals.silver + ind.medals.bronze + ind.medals.copper) : 0;
+  var recentTeam = nationRecentTeamMedal(n);
+  if (!totalInd && !recentTeam && !(ind && ind.best != null)) return '';
+
+  // ── Stat cards ────────────────────────────────────────────────────────────
+  var rtVal = '—', rtSub = '';
+  if (recentTeam) {
+    var rtTier = isaMedalTier(recentTeam.place);
+    rtVal = ISA_MEDAL_ICON[rtTier] + ' ' + ISA_MEDAL_NAME[rtTier];
+    rtSub = recentTeam.ev.year + ' · ' + escHtml(recentTeam.short);
+  }
+  var riVal = '—', riSub = '';
+  if (totalInd) {
+    var top = ind.rows[0];                       // rows are sorted most recent first
+    riVal = ISA_MEDAL_ICON[top.tier] + ' ' + ISA_MEDAL_NAME[top.tier];
+    riSub = isaAthleteLink(top.name, top.src) + ' · ' + top.ev.year + ' · ' + escHtml(top.short);
+  }
+  var bVal = '—', bSub = '';
+  if (ind && ind.best != null) {
+    bVal = isaPlaceLabel(ind.best);
+    var seen = {}, who = [];
+    ind.bestRows.forEach(function(r) {
+      var k = r.name + '|' + r.ev.year;
+      if (seen[k]) return;
+      seen[k] = 1;
+      who.push({ name: r.name, year: r.ev.year, src: r.src });
+    });
+    who.sort(function(a, b) { return b.year - a.year; });
+    bSub = isaAthleteLink(who[0].name, who[0].src) + ' · ' + who[0].year
+      + (who.length > 1 ? ' <span style="opacity:0.7">+' + (who.length - 1) + ' more</span>' : '');
+  }
+  var dVal = '—', dSub = '';
+  var topAth = ind ? nationTopAthlete(ind) : null;
+  if (topAth) {
+    dVal = isaAthleteLink(topAth.name, topAth.src);
+    dSub = isaMedalChips(topAth);
+  }
+
+  var cards = '<div class="bento-stat-grid" style="margin-bottom:12px">'
+    + nationStatCard('Most Recent Team Medal', rtVal, rtSub, recentTeam && recentTeam.place === 1 ? ' card-gold' : '')
+    + nationStatCard('Most Recent Individual Medal', riVal, riSub, totalInd && ind.rows[0].place === 1 ? ' card-gold' : '')
+    + nationStatCard('Best Individual Finish', bVal, bSub, (ind && ind.best === 1) ? ' card-gold' : '')
+    + nationStatCard('Most Decorated Athlete', dVal, dSub, '')
+    + '</div>';
+
+  if (!totalInd) {
+    return '<div class="section-title">Individual Medals</div>' + cards
+      + '<div style="padding:12px 2px;color:#94a3b8;font-size:0.78rem">'
+      + 'No individual medals recorded for ' + escHtml(n.nation) + '.</div>';
+  }
+
+  // ── Per-championship totals: only when more than one contributed, else it
+  // just restates the row of chips in the accordion header. ─────────────────
+  var srcKeys = NATION_DISCIPLINES.filter(function(s) { return ind.bySrc[s.key]; }).map(function(s) { return s.key; });
+  var totalsHtml = '';
+  if (srcKeys.length > 1) {
+    var tip = function(k) {
+      return '<span title="' + ISA_MEDAL_NAME[k] + '">' + ISA_MEDAL_ICON[k] + '</span>';
+    };
+    var th = function(t, w, align) {
+      return '<th style="width:' + w + ';padding:7px 10px;text-align:' + (align || 'left')
+        + ';font-size:0.58rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;'
+        + 'color:#94a3b8;border-bottom:1px solid #e2e8f0">' + t + '</th>';
+    };
+    var rows = NATION_DISCIPLINES.filter(function(s) { return ind.bySrc[s.key]; }).map(function(s) {
+      var b = ind.bySrc[s.key];
+      var td = function(v, align, bold) {
+        return '<td style="padding:8px 10px;font-size:0.78rem;text-align:' + (align || 'left')
+          + ';color:' + (bold ? '#001834' : '#5a7090') + ';font-weight:' + (bold ? '700' : '500')
+          + ';border-bottom:1px solid #f1f5f9">' + v + '</td>';
+      };
+      return '<tr>' + td(escHtml(s.short), 'left', true)
+        + td(b.gold || '–', 'center') + td(b.silver || '–', 'center')
+        + td(b.bronze || '–', 'center') + td(b.copper || '–', 'center')
+        + td(b.total, 'center', true) + '</tr>';
+    }).join('');
+    totalsHtml = '<div style="max-width:100%;overflow-x:auto;margin-bottom:14px">'
+      + '<table style="width:100%;border-collapse:collapse;table-layout:fixed">'
+      + '<thead><tr style="background:#f8fafc">' + th('Championship', '32%')
+      + th(tip('gold'), '13%', 'center') + th(tip('silver'), '13%', 'center')
+      + th(tip('bronze'), '13%', 'center') + th(tip('copper'), '13%', 'center')
+      + th('Total', '16%', 'center') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  // ── The medal list itself ─────────────────────────────────────────────────
+  var bodyId = 'nmed__' + cssId(name);
+  var chevId = 'nmedchev__' + cssId(name);
+  var chips = '<span class="chip ' + (ind.medals.gold ? 'w' : ind.medals.silver ? 'ru' : 'sf') + '">'
+    + totalInd + ' medal' + (totalInd !== 1 ? 's' : '') + '</span>'
+    + '<span class="chip ev">' + Object.keys(ind.byAthlete).length + ' athlete'
+    + (Object.keys(ind.byAthlete).length !== 1 ? 's' : '') + '</span>';
+
+  var trs = ind.rows.map(function(r) {
+    var bg  = r.place === 1 ? '#fffbea' : r.place === 2 ? '#f0fdf4' : r.place === 3 ? '#fff5f0' : '#fffcf5';
+    var col = r.place === 1 ? '#b54708' : r.place === 2 ? '#1a7549' : r.place === 3 ? '#a0623c' : '#9a7240';
+    var td = function(v, style, cls) {
+      return '<td class="' + (cls || '') + '" style="padding:9px 10px;font-size:0.78rem;'
+        + 'border-bottom:1px solid #f1f5f9;word-break:break-word;' + (style || '') + '">' + v + '</td>';
+    };
+    // The .nmed-sub spans are hidden on desktop, where these have their own
+    // columns, and shown on a phone, where those columns are folded away.
+    return '<tr style="background:' + bg + '">'
+      + td(r.ev.year + '<span class="nmed-sub">' + escHtml(r.short) + '</span>',
+           'font-weight:700;font-size:0.85rem;color:#001834', 'nmed-nowrap')
+      + td(escHtml(r.short), 'font-size:0.7rem;font-weight:700;letter-spacing:0.06em;color:#334155', 'nmed-col-champ')
+      + td(isaAthleteLink(r.name, r.src) + '<span class="nmed-sub">' + escHtml(r.div) + '</span>',
+           'font-weight:600;color:#001834')
+      + td(escHtml(r.div), 'color:#5a7090;font-size:0.72rem', 'nmed-col-div')
+      + td(ISA_MEDAL_ICON[r.tier] + '&nbsp;' + ISA_MEDAL_NAME[r.tier], 'font-weight:700;color:' + col, 'nmed-nowrap')
+      + '</tr>';
+  }).join('');
+
+  var hth = function(t, w, cls) {
+    return '<th class="' + (cls || '') + '" style="width:' + w + ';padding:7px 12px;text-align:left;'
+      + 'font-size:0.58rem;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;'
+      + 'color:#94a3b8;border-bottom:1px solid #e2e8f0">' + t + '</th>';
+  };
+
+  var table = '<div style="max-width:100%;overflow-x:auto">'
+    + '<table class="nmed-table" style="width:100%;border-collapse:collapse;table-layout:fixed">'
+    + '<thead><tr style="background:#f8fafc">'
+    + hth('Year', '11%') + hth('Champ.', '14%', 'nmed-col-champ') + hth('Athlete', '31%')
+    + hth('Division', '26%', 'nmed-col-div') + hth('Medal', '18%')
+    + '</tr></thead><tbody>' + trs + '</tbody></table></div>';
+
+  var accordion = '<div class="er">'
+    + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
+    + '<span class="er-loc">Medallists</span>'
+    + '<div class="er-chips">' + chips
+    + '<svg id="' + chevId + '" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12">'
+    + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '</svg></div></div>'
+    + '<div class="er-body open" id="' + bodyId + '">'
+    + (totalsHtml ? '<div style="padding:14px 18px 0">' + totalsHtml + '</div>' : '')
+    + table
+    + '</div></div>';
+
+  return '<div class="section-title">Individual Medals</div>' + cards
+    + '<div class="event-accordion" style="display:flex;flex-direction:column;gap:12px">' + accordion + '</div>';
+}
+
 function renderNationProfile(name) {
   var panel = document.getElementById('nations-profile');
   if (!panel) return;
@@ -5552,11 +5848,18 @@ function renderNationProfile(name) {
     inner += buildWJEventAccordion(d.label, d.pairs, cssId(name) + '_' + s.key + '_nat', pre);
   });
 
+  // The team section is skipped entirely for a nation that reached this page on
+  // athlete data alone (no team row) - otherwise it renders an empty heading.
+  var teamSection = inner
+    ? '<div class="section-title">Team Results by Championship</div>'
+      + '<div class="event-accordion" style="display:flex;flex-direction:column;gap:12px">' + inner + '</div>'
+    : '';
+
   panel.innerHTML = '<div class="profile-name">' + escHtml(n.nation) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + buildNationOverview(ov, discKeys.length)
-    + '<div class="section-title">Team Results by Championship</div>'
-    + '<div class="event-accordion" style="display:flex;flex-direction:column;gap:12px">' + inner + '</div>';
+    + teamSection
+    + buildNationIndividuals(name, n);
 }
 
 </script>
