@@ -75,7 +75,10 @@
   #view-isa #isa-subview-wj,
   #view-isa #isa-subview-wlc,
   #view-isa #isa-subview-sup,
+  #view-isa #isa-subview-wpsc,
   #view-isa #isa-subview-nations { padding: 20px; flex: 1; min-height: 0; }
+  /* Results tables with a Division column (WPSC) drop Location on phones. */
+  @media (max-width: 620px) { .er-loc-col { display: none; } }
   #view-isa #isa-subview-events { padding: 20px; flex: 1; min-height: 0; display: block; overflow: auto; }
   /* Nation page — individual medal list. Five columns fit a desktop panel but
      not a phone, so below 620px the Championship and Division columns fold
@@ -101,6 +104,32 @@
   .isaev-back:hover { background: #f1f5f9; }
   .isaev-edition-title { font-size: 1.5rem; font-weight: 800; color: #001834; letter-spacing: -0.02em; }
   .isaev-edition-sub { font-size: 0.78rem; color: #5a7090; margin-top: 4px; }
+
+  /* Past winners by division — roll of honour + per-edition podium */
+  .isaev-section-head { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
+                        color: #5a7090; margin: 26px 0 8px; }
+  .isaev-section-note { font-size: 0.74rem; color: #8494a8; margin: -4px 0 10px; }
+  .isaev-section-head.isaev-section-first { margin-top: 4px; }
+  .isaev-roll .events-table th { cursor: default; }
+  .isaev-roll .athlete-link,
+  .isaev-podium-card .athlete-link { font-weight: 400; }
+  .isaev-nat { color: var(--text-dim); font-size: 0.92em; margin-left: 6px; }
+  .isaev-roll .events-table th:first-child { min-width: 0; text-align: center; }
+  .isaev-roll .events-table td { text-align: left; }
+  .isaev-roll .events-table td.isaev-roll-year { text-align: center; font-weight: 700; }
+  .isaev-roll-year a { color: #001834; cursor: pointer; text-decoration: none; border-bottom: 1px solid #cbd5e1; }
+  .isaev-roll-year a:hover { border-bottom-color: var(--navy); }
+  .isaev-roll-empty { color: var(--text-dim); text-align: center !important; }
+  .isaev-roll-tie { color: #94a3b8; font-size: 0.7rem; padding: 0 2px; }
+  .isaev-podium-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+                       gap: 10px; margin-bottom: 4px; }
+  .isaev-podium-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 3px;
+                       padding: 10px 12px 8px; min-width: 0; }
+  .isaev-podium-div { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+                      color: #64748b; border-bottom: 1px solid #eef2f7; padding-bottom: 6px; margin-bottom: 6px; }
+  .isaev-podium-row { display: flex; gap: 7px; align-items: baseline; padding: 3px 0; font-size: 0.82rem; min-width: 0; }
+  .isaev-podium-medal { flex: 0 0 auto; font-size: 0.76rem; }
+  .isaev-podium-name { min-width: 0; overflow-wrap: anywhere; }
 
   /* ── Athletes view ── */
   .athletes-layout { display: grid; grid-template-columns: 290px 1fr; gap: 16px; align-items: start; }
@@ -712,6 +741,10 @@
     .res-name-block a,
     .res-name-block span.ev-label { white-space: normal; overflow: visible; text-overflow: clip; }
     .res-loc { white-space: normal; overflow: visible; text-overflow: clip; }
+
+    /* Past winners: one podium card per row, roll of honour scrolls sideways */
+    .isaev-podium-grid { grid-template-columns: 1fr; }
+    .isaev-section-head { margin-top: 20px; }
   }
 </style>
 </head>
@@ -742,6 +775,7 @@
     <button class="nav-btn" id="isa-sub-wj" onclick="setISASub('wj')">WJSC</button>
     <button class="nav-btn" id="isa-sub-wlc" onclick="setISASub('wlc')">WLC</button>
     <button class="nav-btn" id="isa-sub-sup" onclick="setISASub('sup')">WSUPPC</button>
+    <button class="nav-btn" id="isa-sub-wpsc" onclick="setISASub('wpsc')">WPSC</button>
   </nav>
   <span class="org-divider" id="isa-nations-divider" style="display:none"></span>
   <nav class="nav" id="isa-nations-nav" style="display:none">
@@ -804,6 +838,7 @@
   <button class="msn-btn" id="m-isa-sub-wj" onclick="setISASub('wj')">WJSC</button>
   <button class="msn-btn" id="m-isa-sub-wlc" onclick="setISASub('wlc')">WLC</button>
   <button class="msn-btn" id="m-isa-sub-sup" onclick="setISASub('sup')">WSUPPC</button>
+  <button class="msn-btn" id="m-isa-sub-wpsc" onclick="setISASub('wpsc')">WPSC</button>
 </div>
 
 <!-- Mobile-only ISA Nations nav — separated from the competition tabs above -->
@@ -1131,6 +1166,22 @@
     </div>
   </div>
 
+  <!-- Para Surfing sub-view (hidden by default) -->
+  <div id="isa-subview-wpsc" class="athletes-layout" style="display:none">
+    <div class="athlete-list-panel">
+      <div class="list-filters">
+        <div class="gender-tabs">
+          <button class="gender-tab active" id="wpsc-tab-women" onclick="setWPSCDiv('women')">Women</button>
+          <button class="gender-tab" id="wpsc-tab-men" onclick="setWPSCDiv('men')">Men</button>
+        </div>
+      </div>
+      <div class="athlete-list" id="wpsc-list"></div>
+    </div>
+    <div class="profile-panel" id="wpsc-profile">
+      <div class="profile-empty">Select an athlete to view their ISA World Para Surfing Championship history</div>
+    </div>
+  </div>
+
   <!-- Nations sub-view (hidden by default) -->
   <div id="isa-subview-nations" class="athletes-layout" style="display:none">
     <div class="athlete-list-panel">
@@ -1153,6 +1204,7 @@
         <option value="wj">World Junior Championship</option>
         <option value="wlc">World Longboard Championship</option>
         <option value="sup">World SUP &amp; Paddleboard</option>
+        <option value="wpsc">World Para Surfing</option>
       </select>
       <select id="isaev-years" onchange="renderIsaEvents()">
         <option value="all" selected>All editions</option>
@@ -1182,7 +1234,7 @@
   </div>
 </div>
 
-<script src="data.js?v=20260909154403"></script>
+<script src="data.js?v=20261001093341"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1210,8 +1262,8 @@ function _renderView(name) {
   // 'wj', 'wlc' and 'sup' are sub-views inside 'view-isa', so treat them as isa
   // for org routing — otherwise getElementById('view-sup') is null and no view
   // ever gets the 'active' class, leaving a blank page on deep links.
-  var resolvedName = (name === 'wj' || name === 'wlc' || name === 'sup' || name === 'nations'
-                      || name === 'isaev') ? 'isa' : name;
+  var resolvedName = (name === 'wj' || name === 'wlc' || name === 'sup' || name === 'wpsc'
+                      || name === 'nations' || name === 'isaev') ? 'isa' : name;
   var orgForView = (resolvedName === 'olympics') ? 'olympics' : (resolvedName === 'isa') ? 'isa' : 'wsl';
   document.querySelectorAll('.bottom-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.org === orgForView);
@@ -1256,6 +1308,7 @@ function _renderView(name) {
       if (name === 'wj')        { setISASub('wj'); filterWJ(document.getElementById('global-search')?.value || ''); }
       if (name === 'wlc')       { setISASub('wlc'); filterWLC(document.getElementById('global-search')?.value || ''); }
       if (name === 'sup')       { setISASub('sup'); filterSUP(document.getElementById('global-search')?.value || ''); }
+      if (name === 'wpsc')      { setISASub('wpsc'); filterWPSC(document.getElementById('global-search')?.value || ''); }
       if (name === 'nations')   { setISASub('nations'); filterNations(document.getElementById('global-search')?.value || ''); }
       if (name === 'isaev')     { setISASub('events'); }
     }, 0);
@@ -1315,6 +1368,11 @@ function applyHash() {
       setISASub('sup');
     }
     setTimeout(() => _selectSUPAthlete(name), 80);
+  } else if (view === 'wpsc' && name) {
+    if (document.getElementById('isa-subview-wpsc')) {
+      setISASub('wpsc');
+    }
+    setTimeout(() => _selectWPSCAthlete(name), 80);
   } else if (view === 'isaev') {
     // #isaev/<src>[/<year>] — championship, optionally drilled into one edition
     var parts = (name || '').split('/');
@@ -1330,7 +1388,7 @@ function applyHash() {
     setTimeout(() => _selectNation(name), 80);
   }
   // Keep org tabs in sync with current view
-  var orgForHash = (view === 'olympics') ? 'olympics' : (view === 'isa' || view === 'wj' || view === 'wlc' || view === 'sup' || view === 'nations' || view === 'isaev') ? 'isa' : 'wsl';
+  var orgForHash = (view === 'olympics') ? 'olympics' : (view === 'isa' || view === 'wj' || view === 'wlc' || view === 'sup' || view === 'wpsc' || view === 'nations' || view === 'isaev') ? 'isa' : 'wsl';
   document.querySelectorAll('.org-btn').forEach(function(b) {
     b.classList.toggle('active', b.dataset.org === orgForHash);
   });
@@ -1636,7 +1694,8 @@ function isaAllSources() {
     typeof ISA_WSG_DATA !== 'undefined' ? ISA_WSG_DATA : null,
     typeof ISA_WJ_DATA  !== 'undefined' ? ISA_WJ_DATA  : null,
     typeof ISA_WLC_DATA !== 'undefined' ? ISA_WLC_DATA : null,
-    typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null
+    typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null,
+    typeof ISA_WPSC_DATA !== 'undefined' ? ISA_WPSC_DATA : null
   ].filter(Boolean);
 }
 
@@ -1810,6 +1869,11 @@ function renderProfile(name, panelEl) {
   const _srcTour = (CT_DATA.athletes && CT_DATA.athletes[name]) ? 'ct' : 'cs';
   if (_srcTour === 'ct') { DATA = CT_DATA; WINNERS_DATA = CT_WINNERS_DATA; EVENTS_BY_YEAR = CT_EVENTS_BY_YEAR; }
   else if (typeof CS_DATA !== 'undefined' && CS_DATA.athletes && CS_DATA.athletes[name]) { DATA = CS_DATA; WINNERS_DATA = CS_WINNERS_DATA; EVENTS_BY_YEAR = CS_EVENTS_BY_YEAR; }
+  else if (typeof LT_DATA !== 'undefined' && LT_DATA && LT_DATA.athletes && LT_DATA.athletes[name]) {
+    DATA = LT_DATA;
+    if (typeof LT_WINNERS_DATA   !== 'undefined') WINNERS_DATA   = LT_WINNERS_DATA;
+    if (typeof LT_EVENTS_BY_YEAR !== 'undefined') EVENTS_BY_YEAR = LT_EVENTS_BY_YEAR;
+  }
   try {
   const a = DATA.athletes[name];
   if (!a) return;
@@ -1936,7 +2000,7 @@ function renderProfile(name, panelEl) {
           <label>Date of Birth</label>
           <input class="bio-input" placeholder="e.g. 1988-02-15"
             value="${escHtml(dobVal)}"
-            onchange="saveBio('${safe}','dob',this.value);_profileOpenedFromISA=document.getElementById('${`ovw-isa__${cssId(name)}`}')?.classList.contains('open');renderProfile('${safe}')">
+            onchange="saveBio('${safe}','dob',this.value);_profileOpenedFromISA=document.getElementById('${`ovw-isa__${cssId(name)}`}')?.classList.contains('open');renderProfile('${safe}',document.getElementById('${panel.id || 'profile-panel'}'))">
         </div>
         <div class="bento-info-field">
           <label>Age</label>
@@ -1985,7 +2049,7 @@ function renderProfile(name, panelEl) {
         wcCount      ? `<div class="meta-tag" style="background:#fff;color:#f0b400;border-color:#f0b400">🏆 ${wcCount > 1 ? wcCount + '× ' : ''}World Champion</div>` : '',
         isRoty       ? `<div class="meta-tag" style="background:var(--navy);color:#fff;border-color:var(--navy)">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
       ]
-  ).join('') + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name);
+  ).join('') + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name) + buildISAWpscBadges(name);
 
   // Rookie class
   const rookieClassHtml = rookieSeason && rookieClass.length
@@ -2254,9 +2318,25 @@ function buildEventsAccordion(athleteName, gender, events, idPrefix) {
   }).join('');
 }
 
+// True if the athlete has a record on any WSL tour (CT, CS or LT). The ISA and
+// Olympics views use this to decide whether to render the full profile — the
+// active-tour DATA pointer only covers one tour, so LT/CS-only surfers fell
+// through to the ISA-only renderer.
+function isWslAthlete(name) {
+  return !!((typeof CT_DATA !== 'undefined' && CT_DATA && CT_DATA.athletes && CT_DATA.athletes[name])
+    || (typeof CS_DATA !== 'undefined' && CS_DATA && CS_DATA.athletes && CS_DATA.athletes[name])
+    || (typeof LT_DATA !== 'undefined' && LT_DATA && LT_DATA.athletes && LT_DATA.athletes[name]));
+}
+
 function toggleEvent(bodyId, chevId) {
-  const body = document.getElementById(bodyId);
-  const chev = document.getElementById(chevId);
+  // The same athlete can be rendered in several panels at once (WSL, ISA,
+  // WJSC, WLC...), each with identical accordion ids. Look the ids up inside
+  // the accordion that was clicked so a hidden panel's copy isn't toggled.
+  const head  = (window.event && window.event.currentTarget && window.event.currentTarget.parentElement) ? window.event.currentTarget : null;
+  const scope = head ? head.parentElement : null;
+  const find  = (id) => (scope && scope.querySelector('[id="' + id.replace(/"/g, '\\"') + '"]')) || document.getElementById(id);
+  const body = find(bodyId);
+  const chev = find(chevId);
   if (body) body.classList.toggle('open');
   if (chev) chev.classList.toggle('open');  // works for both .chevron and .er-chevron
 }
@@ -3054,6 +3134,12 @@ function gsAllAthletes() {
       if (seen[a.name].sources.indexOf('SUP') === -1) seen[a.name].sources.push('SUP');
     });
   }
+  if (typeof ISA_WPSC_DATA !== 'undefined' && ISA_WPSC_DATA && ISA_WPSC_DATA.athletes) {
+    ISA_WPSC_DATA.athletes.forEach(function(a) {
+      if (!seen[a.name]) { seen[a.name] = { name: a.name, sources: [] }; results.push(seen[a.name]); }
+      if (seen[a.name].sources.indexOf('WPSC') === -1) seen[a.name].sources.push('WPSC');
+    });
+  }
   return results;
 }
 
@@ -3068,6 +3154,7 @@ function globalSearch(q) {
     if (isaSubView === 'wj') filterWJ(q);
     else if (isaSubView === 'wlc') filterWLC(q);
     else if (isaSubView === 'sup') filterSUP(q);
+    else if (isaSubView === 'wpsc') filterWPSC(q);
     else if (isaSubView === 'nations') filterNations(q);
     else filterISA(q);
   }
@@ -3136,6 +3223,12 @@ function gsSelect(name, primarySource) {
     setISASub('sup');
     requestAnimationFrame(function() {
       setTimeout(function() { location.hash = '#sup/' + encodeURIComponent(name); }, 120);
+    });
+  } else if (primarySource === 'WPSC') {
+    if (currentOrg !== 'isa') { setOrg('isa'); }
+    setISASub('wpsc');
+    requestAnimationFrame(function() {
+      setTimeout(function() { location.hash = '#wpsc/' + encodeURIComponent(name); }, 120);
     });
   }
 }
@@ -3550,6 +3643,7 @@ function setOrg(org) {
     if (isaSubView === 'wj') filterWJ(document.getElementById('global-search')?.value || '');
     else if (isaSubView === 'wlc') filterWLC(document.getElementById('global-search')?.value || '');
     else if (isaSubView === 'sup') filterSUP(document.getElementById('global-search')?.value || '');
+    else if (isaSubView === 'wpsc') filterWPSC(document.getElementById('global-search')?.value || '');
     else if (isaSubView === 'nations') filterNations(document.getElementById('global-search')?.value || '');
   } else if (org === 'olympics') {
     showView('olympics');
@@ -3942,6 +4036,10 @@ function buildISASection(name) {
   var supCard = buildISASUPSection(name, true, true);
   if (supCard) innerHtml += supCard;
 
+  // Para Surfing card
+  var wpscCard = buildISAWpscSection(name, true, true);
+  if (wpscCard) innerHtml += wpscCard;
+
   if (!innerHtml) return '';
 
   var bodyId = 'ovw-isa__' + cssId(name);
@@ -3969,6 +4067,7 @@ function buildISASection(name) {
 // ISA_WJ_DATA moved to data.js
 // ISA_WLC_DATA moved to data.js
 // ISA_SUP_DATA moved to data.js
+// ISA_WPSC_DATA moved to data.js
 var olyGender = 'women';
 var olySelected = null;
 
@@ -4046,7 +4145,7 @@ function _selectOlyAthlete(name) {
   });
   var sel = document.querySelector('#oly-list .athlete-item.selected');
   if (sel) sel.scrollIntoView({ block: 'nearest' });
-  if (DATA && DATA.athletes && DATA.athletes[name]) {
+  if (isWslAthlete(name)) {
     renderProfile(name, document.getElementById('oly-profile'));
   } else {
     renderOlyProfile(name);
@@ -4079,6 +4178,7 @@ function renderOlyProfile(name) {
     + buildISAWjBadges(name)
     + buildISAWlcBadges(name)
     + buildISASUPBadges(name)
+    + buildISAWpscBadges(name)
     + '</div>'
     + '<div class="section-title">Olympic Results</div>'
     + '<table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden">'
@@ -4090,7 +4190,7 @@ function renderOlyProfile(name) {
     + '<tbody>' + resultRows + '</tbody></table>';
 
   // ── For non-CT athletes: append ISA section if available ────────────────────
-  if (!(DATA && DATA.athletes && DATA.athletes[name])) {
+  if (!isWslAthlete(name)) {
     var isaSection = buildISASection(name);
     if (isaSection) panel.innerHTML += isaSection;
   }
@@ -4114,6 +4214,8 @@ var wlcDiv = 'women';               // 'women', 'men' or 'junior'
 var wlcSelected = null;
 var supDiv = 'women';               // 'women', 'men' or 'junior'
 var supSelected = null;
+var wpscDiv = 'women';              // 'women' or 'men' — the athlete's gender, not the division's
+var wpscSelected = null;
 
 function isaPlaceLabel(p) {
   if (!p) return '—';
@@ -4189,7 +4291,9 @@ var ISA_EV_SOURCES = [
   { key: 'wlc', short: 'WLC',    label: 'ISA World Longboard Championship',
     data: function() { return typeof ISA_WLC_DATA !== 'undefined' ? ISA_WLC_DATA : null; } },
   { key: 'sup', short: 'WSUPPC', label: 'ISA World SUP & Paddleboard Championship',
-    data: function() { return typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null; } }
+    data: function() { return typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null; } },
+  { key: 'wpsc', short: 'WPSC', label: 'ISA World Para Surfing Championship',
+    data: function() { return typeof ISA_WPSC_DATA !== 'undefined' ? ISA_WPSC_DATA : null; } }
 ];
 
 // A few nations are spelled two ways across the roster and Teams tabs. Folding
@@ -4365,6 +4469,7 @@ function renderIsaEvents() {
       + '<div class="ev-widget-val' + (isName ? ' name' : '') + '">' + val + '</div>'
       + '<div class="ev-widget-sub">' + (sub || '&nbsp;') + '</div></div>';
   }
+  var roll = isaEvRollHtml(idx);
   var widgets = '<div class="ev-widget-cards">'
     + card('Editions', idx.eventsWithData.length,
            idx.eventsWithData.length ? idx.eventsWithData[idx.eventsWithData.length - 1].year + '–' + idx.eventsWithData[0].year : '')
@@ -4418,12 +4523,197 @@ function renderIsaEvents() {
   }).join('');
 
   wrap.innerHTML = widgets
+    + roll
+    + '<div class="isaev-section-head">Nation placings by edition</div>'
     + (nDerived ? '<div class="isaev-note">' + nDerived + ' of these editions have no official team standings recorded. '
         + 'Those columns are marked <span class="isaev-derived-dot">•</span> and their placings are '
         + '<span class="isaev-derived" style="padding:0 4px">derived</span> from individual results — best finish first, then squad size.</div>' : '')
     + '<div class="events-table-wrap"><table class="events-table">'
     + '<thead><tr><th class="' + thCls('nation') + '" onclick="isaEvSetSort(\'nation\')">Nation' + arrow('nation') + '</th>'
     + statHead + yearHead + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+// ── Past winners by division ─────────────────────────────────────────────────
+// Two lists built from the same source: the roll of honour under the nations
+// matrix (every edition's champion in each division) and the full podium for a
+// single edition on the drill-in. Both read finishing places straight off the
+// athlete rows — 1/2/3/4 = gold/silver/bronze/copper, the ISA's four medals —
+// so nothing here is derived, unlike the nation placings above.
+
+var ISA_EV_ATHLETE_HASH = { wsg: 'isa', wj: 'wj', wlc: 'wlc', sup: 'sup', wpsc: 'wpsc' };
+
+// Which division an athlete row belongs to, per championship. `sort` orders the
+// columns; `group` (where present) gives the roll of honour a two-row header.
+var ISA_EV_DIV_DEFS = {
+  wsg: function(a) {
+    if (a.gender !== 'men' && a.gender !== 'women') return null;
+    var w = a.gender === 'women';
+    return { key: a.gender, label: w ? 'Women' : 'Men', sort: [w ? 0 : 1, 0] };
+  },
+  wj: function(a) {
+    var label = a.div_label || (a.gender === 'women' ? 'Girls' : 'Boys');
+    var u16   = /16/.test(label);
+    var w     = a.gender === 'women';
+    return { key: (a.division || 'x') + '-' + (a.gender || 'x'), label: label,
+             group: u16 ? 'Under 16' : 'Under 18', short: w ? 'Girls' : 'Boys',
+             sort: [u16 ? 1 : 0, w ? 0 : 1] };
+  },
+  wlc: function(a) {
+    var label = a.div_label || 'Open';
+    return { key: (a.division || 'x') + '-' + (a.gender || 'x'), label: label,
+             sort: [label === 'Women' ? 0 : label === 'Men' ? 1 : 2, 0] };
+  },
+  sup: function(a) {
+    var disc = a.disc_label || 'SUP';
+    var w    = a.gender === 'women';
+    return { key: disc + '|' + (a.gender || 'x'), label: disc + ' — ' + (w ? 'Women' : 'Men'),
+             group: disc, short: w ? 'Women' : 'Men',
+             sort: [typeof a.disc_order === 'number' ? a.disc_order : 99, w ? 0 : 1] };
+  },
+  // WPSC: one column per division TAB — an Open division mixed men and women,
+  // so the division, not the athlete's gender, is the column. Grouped by era.
+  wpsc: function(a) {
+    var d = a.disc_label || 'Open';
+    return { key: d, label: d, group: a.era || 'Other', short: d,
+             sort: [typeof a.disc_order === 'number' ? a.disc_order : 99, 0] };
+  }
+};
+
+var _isaEvWinners = {};
+
+// { divisions: [{key,label,group,short}], byEvent: { eid: { divKey: { 1: [athlete], … } } } }
+// Places are kept as recorded: ties (two equal thirds) list both names, and a
+// place nobody holds is simply absent rather than filled in.
+function isaEvWinners(srcKey) {
+  if (_isaEvWinners[srcKey]) return _isaEvWinners[srcKey];
+  var src = null;
+  for (var i = 0; i < ISA_EV_SOURCES.length; i++)
+    if (ISA_EV_SOURCES[i].key === srcKey) src = ISA_EV_SOURCES[i];
+  var d = src && src.data();
+  var divOf = ISA_EV_DIV_DEFS[srcKey];
+  if (!d || !d.athletes || !divOf) return null;
+
+  var divs = {}, byEvent = {};
+  d.athletes.forEach(function(a) {
+    var dv = divOf(a);
+    if (!dv) return;
+    if (!divs[dv.key]) divs[dv.key] = dv;
+    Object.keys(a.results || {}).forEach(function(eid) {
+      var p = a.results[eid];
+      if (!(p >= 1 && p <= 4)) return;
+      var e    = byEvent[eid] || (byEvent[eid] = {});
+      var slot = e[dv.key]    || (e[dv.key]    = {});
+      (slot[p] || (slot[p] = [])).push({ name: a.name, country: isaNationName(a.country) });
+    });
+  });
+  Object.keys(byEvent).forEach(function(eid) {
+    Object.keys(byEvent[eid]).forEach(function(k) {
+      Object.keys(byEvent[eid][k]).forEach(function(p) {
+        byEvent[eid][k][p].sort(function(x, y) { return x.name.localeCompare(y.name); });
+      });
+    });
+  });
+
+  _isaEvWinners[srcKey] = {
+    divisions: Object.keys(divs).map(function(k) { return divs[k]; }).sort(function(a, b) {
+      return (a.sort[0] - b.sort[0]) || (a.sort[1] - b.sort[1]) || a.label.localeCompare(b.label);
+    }),
+    byEvent: byEvent
+  };
+  return _isaEvWinners[srcKey];
+}
+
+function isaEvWinnerLink(srcKey, w) {
+  return '<a class="athlete-link" href="#' + (ISA_EV_ATHLETE_HASH[srcKey] || 'isa') + '/'
+    + encodeURIComponent(w.name) + '">' + escHtml(w.name) + '</a>'
+    + (w.country ? '<span class="isaev-nat">' + nationFlag(w.country) + escHtml(w.country) + '</span>' : '');
+}
+
+// Roll of honour: editions down, divisions across.
+function isaEvRollHtml(idx) {
+  var srcKey = idx.src.key;
+  var win    = isaEvWinners(srcKey);
+  if (!win || !win.divisions.length) return '';
+  var divs   = win.divisions;
+  var events = idx.events.filter(function(ev) {
+    var e = win.byEvent[ev.id];
+    return e && divs.some(function(dv) { return e[dv.key] && e[dv.key][1]; });
+  });
+  if (!events.length) return '';
+
+  // Disciplines (SUP) and age brackets (WJSC) get a spanning top header row.
+  var grouped = divs.every(function(dv) { return !!dv.group; });
+  var head;
+  if (grouped) {
+    var groups = [];
+    divs.forEach(function(dv) {
+      var last = groups[groups.length - 1];
+      if (last && last.name === dv.group) last.span++;
+      else groups.push({ name: dv.group, span: 1 });
+    });
+    head = '<tr><th rowspan="2">Year</th>'
+      + groups.map(function(g) { return '<th colspan="' + g.span + '">' + escHtml(g.name) + '</th>'; }).join('')
+      + '</tr><tr>'
+      + divs.map(function(dv) { return '<th>' + escHtml(dv.short || dv.label) + '</th>'; }).join('')
+      + '</tr>';
+  } else {
+    head = '<tr><th>Year</th>'
+      + divs.map(function(dv) { return '<th>' + escHtml(dv.label) + '</th>'; }).join('') + '</tr>';
+  }
+
+  var rows = events.map(function(ev) {
+    var e = win.byEvent[ev.id] || {};
+    var cells = divs.map(function(dv) {
+      var ws = e[dv.key] && e[dv.key][1];
+      if (!ws || !ws.length) return '<td class="isaev-roll-empty">–</td>';
+      return '<td>' + ws.map(function(w) { return isaEvWinnerLink(srcKey, w); })
+        .join('<span class="isaev-roll-tie">&amp;</span>') + '</td>';
+    }).join('');
+    return '<tr><td class="isaev-roll-year"><a title="' + escHtml(ev.name || '')
+      + (ev.location ? ' — ' + escHtml(ev.location) : '') + '. Click to open this edition."'
+      + ' onclick="isaEvOpenEdition(\'' + ev.id + '\')">' + ev.year + '</a></td>' + cells + '</tr>';
+  }).join('');
+
+  return '<div class="isaev-section-head isaev-section-first" id="isaev-roll">Past winners by division</div>'
+    + '<div class="isaev-section-note">Gold medallist in each division, newest edition first. '
+    + 'Names link to the athlete; years open that edition.</div>'
+    + '<div class="events-table-wrap isaev-roll"><table class="events-table">'
+    + '<thead>' + head + '</thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+var ISA_EV_MEDALS = [
+  { place: 1, icon: '🥇', label: 'Gold',   cls: 'gold' },
+  { place: 2, icon: '🥈', label: 'Silver', cls: 'silver' },
+  { place: 3, icon: '🥉', label: 'Bronze', cls: 'bronze' },
+  { place: 4, icon: '🏅', label: 'Copper', cls: 'copper' }
+];
+
+// One edition: the medallists in every division that ran that year.
+function isaEvPodiumHtml(idx, eid) {
+  var srcKey = idx.src.key;
+  var win    = isaEvWinners(srcKey);
+  var e      = win && win.byEvent[eid];
+  if (!e) return '';
+
+  var cards = win.divisions.filter(function(dv) { return e[dv.key] && e[dv.key][1]; })
+    .map(function(dv) {
+      var slot = e[dv.key];
+      var lines = ISA_EV_MEDALS.map(function(m) {
+        var ws = slot[m.place];
+        if (!ws || !ws.length) return '';
+        return '<div class="isaev-podium-row m-' + m.cls + '">'
+          + '<span class="isaev-podium-medal" title="' + m.label + '">' + m.icon + '</span>'
+          + '<span class="isaev-podium-name">'
+          + ws.map(function(w) { return isaEvWinnerLink(srcKey, w); }).join(', ')
+          + '</span></div>';
+      }).join('');
+      return '<div class="isaev-podium-card">'
+        + '<div class="isaev-podium-div">' + escHtml(dv.label) + '</div>' + lines + '</div>';
+    }).join('');
+  if (!cards) return '';
+
+  return '<div class="isaev-section-head">Winners by division</div>'
+    + '<div class="isaev-podium-grid">' + cards + '</div>';
 }
 
 // ── One edition: that year's nation standings ────────────────────────────────
@@ -4468,6 +4758,8 @@ function renderIsaEvEdition(idx, eid) {
     + '<div class="isaev-edition-title">' + escHtml(ev.name || (idx.src.label + ' ' + ev.year)) + '</div>'
     + '<div class="isaev-edition-sub">' + ev.year + (ev.location ? ' · ' + escHtml(ev.location) : '')
     + (link ? ' · ' + link : '') + '</div></div>'
+    + isaEvPodiumHtml(idx, eid)
+    + '<div class="isaev-section-head">Nation standings</div>'
     + (derived ? '<div class="isaev-note">No official team standings were recorded for this edition. '
         + 'The order below is derived from individual results — best finish first, then squad size.</div>' : '')
     + '<div class="events-table-wrap"><table class="events-table">'
@@ -4486,6 +4778,10 @@ function setISASub(sub) {
   if (lbBtn) lbBtn.classList.toggle('active', sub === 'wlc');
   var supBtn = document.getElementById('isa-sub-sup');
   if (supBtn) supBtn.classList.toggle('active', sub === 'sup');
+  var wpscBtn = document.getElementById('isa-sub-wpsc');
+  if (wpscBtn) wpscBtn.classList.toggle('active', sub === 'wpsc');
+  var mWpsc = document.getElementById('m-isa-sub-wpsc');
+  if (mWpsc) mWpsc.classList.toggle('active', sub === 'wpsc');
   var natBtn = document.getElementById('isa-sub-nations');
   if (natBtn) natBtn.classList.toggle('active', sub === 'nations');
   var evBtn = document.getElementById('isa-sub-events');
@@ -4508,6 +4804,8 @@ function setISASub(sub) {
   if (lbView) lbView.style.display = sub === 'wlc' ? '' : 'none';
   var supView = document.getElementById('isa-subview-sup');
   if (supView) supView.style.display = sub === 'sup' ? '' : 'none';
+  var wpscView = document.getElementById('isa-subview-wpsc');
+  if (wpscView) wpscView.style.display = sub === 'wpsc' ? '' : 'none';
   var natView = document.getElementById('isa-subview-nations');
   if (natView) natView.style.display = sub === 'nations' ? '' : 'none';
   var evView = document.getElementById('isa-subview-events');
@@ -4532,6 +4830,10 @@ function setISASub(sub) {
   if (sub === 'sup') {
     filterSUP(document.getElementById('global-search')?.value || '');
     if (supSelected) renderSUPProfile(supSelected);
+  }
+  if (sub === 'wpsc') {
+    filterWPSC(document.getElementById('global-search')?.value || '');
+    if (wpscSelected) renderWPSCProfile(wpscSelected);
   }
 }
 
@@ -4600,7 +4902,7 @@ function _selectWJAthlete(name) {
   });
   var sel = document.querySelector('#wj-list .athlete-item.selected');
   if (sel) sel.scrollIntoView({ block: 'nearest' });
-  if (DATA && DATA.athletes && DATA.athletes[name]) {
+  if (isWslAthlete(name)) {
     // CT surfer — render full profile in WJSC panel
     renderProfile(name, document.getElementById('wj-profile'));
   } else {
@@ -4659,19 +4961,8 @@ function renderWJProfile(name) {
     + buildISAWsgBadges(name)
     + buildISAWlcBadges(name)
     + buildISASUPBadges(name)
+    + buildISAWpscBadges(name)
     + buildOlympicBadges(name);
-
-  // Build one accordion per division
-  var events = ISA_WJ_DATA.events;
-  var accordionHtml = '';
-  entries.forEach(function(entry) {
-    var myEvs = events
-      .filter(function(ev) { return entry.results[ev.id] !== undefined; })
-      .sort(function(a, b) { return b.year - a.year; })
-      .map(function(ev) { return { ev: ev, place: entry.results[ev.id], nat: entry.country }; });
-    if (!myEvs.length) return;
-    accordionHtml += buildWJEventAccordion(entry.div_label, myEvs, cssId(name) + '_' + entry.division);
-  });
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
@@ -4715,13 +5006,22 @@ function buildWJEventAccordion(divLabel, myEvents, idSuffix, preBodyHtml) {
   // A Nation column appears only when the caller supplies a per-result nation
   // (r.nat), so the nations view and any other caller keep the old three columns.
   var hasNat = myEvents.some(function(r) { return !!r.nat; });
+  // Likewise a Division column, only when the caller supplies r.div — WPSC
+  // folds all of an athlete's divisions into one table and says which is which.
+  var hasDiv = myEvents.some(function(r) { return !!r.div; });
+  // Column widths (Year / Location / Division / Nation / Result), fixed so
+  // every table of the same shape lines up.
+  var W = hasDiv
+    ? (hasNat ? ['12%', '28%', '24%', '18%', '18%'] : ['14%', '38%', '28%', '0', '20%'])
+    : (hasNat ? ['14%', '42%', '0', '22%', '22%'] : ['18%', '57%', '0', '0', '25%']);
   var yearRows = myEvents.map(function(r) {
     var place = r.place;
     var bg  = place === 1 ? '#fffbea' : place === 2 ? '#f0fdf4' : place === 3 ? '#fff5f0' : place === 4 ? '#fffcf5' : '#fff';
     var col = place === 1 ? '#b54708' : place === 2 ? '#1a7549' : place <= 4 ? '#1f5fa8' : place <= 8 ? '#6b3fd8' : '#334155';
     return '<tr style="background:' + bg + '">'
       + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:#001834">' + isaYearCell(r.ev) + '</td>'
-      + '<td style="padding:9px 14px;font-size:0.78rem;color:#5a7090;border-bottom:1px solid #f1f5f9">' + r.ev.location + '</td>'
+      + '<td' + (hasDiv ? ' class="er-loc-col"' : '') + ' style="padding:9px 14px;font-size:0.78rem;color:#5a7090;border-bottom:1px solid #f1f5f9;overflow:hidden;text-overflow:ellipsis">' + r.ev.location + '</td>'
+      + (hasDiv ? '<td style="padding:9px 14px;font-size:0.78rem;font-weight:600;color:#334155;border-bottom:1px solid #f1f5f9;overflow-wrap:anywhere" title="' + escHtml(r.div || '') + '">' + escHtml(r.div || '') + '</td>' : '')
       + (hasNat ? '<td style="padding:9px 14px;font-size:0.72rem;font-weight:700;letter-spacing:0.06em;color:#334155;border-bottom:1px solid #f1f5f9;overflow:hidden;text-overflow:ellipsis">' + isaNationCell(r.nat) + '</td>' : '')
       + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:' + col + '">' + isaPlaceLabel(place) + '</td>'
       + '</tr>';
@@ -4741,10 +5041,11 @@ function buildWJEventAccordion(divLabel, myEvents, idSuffix, preBodyHtml) {
     // x-positions purely because their venue names differ in length.
     + '<table style="width:100%;border-collapse:collapse;table-layout:fixed">'
     + '<thead><tr style="background:#f8fafc">'
-    + '<th style="width:' + (hasNat ? '14%' : '18%') + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Year</th>'
-    + '<th style="width:' + (hasNat ? '42%' : '57%') + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Location</th>'
-    + (hasNat ? '<th style="width:22%;padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Nation</th>' : '')
-    + '<th style="width:' + (hasNat ? '22%' : '25%') + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Result</th>'
+    + '<th style="width:' + W[0] + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Year</th>'
+    + '<th' + (hasDiv ? ' class="er-loc-col"' : '') + ' style="width:' + W[1] + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Location</th>'
+    + (hasDiv ? '<th style="width:' + W[2] + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Division</th>' : '')
+    + (hasNat ? '<th style="width:' + W[3] + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Nation</th>' : '')
+    + '<th style="width:' + W[4] + ';padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0">Result</th>'
     + '</tr></thead><tbody>' + yearRows + '</tbody></table>'
     + '</div></div>';
 }
@@ -4775,60 +5076,37 @@ function buildISAWjSection(name, noTitle, noWrapper) {
   if (!ISA_WJ_DATA || !ISA_WJ_DATA.athletes || !ISA_WJ_DATA.athletes.length) return '';
   var entries = ISA_WJ_DATA.athletes.filter(function(a) { return a.name === name; });
   if (!entries.length) return '';
-  var events = ISA_WJ_DATA.events;
+  var evById = {};
+  ISA_WJ_DATA.events.forEach(function(ev) { evById[ev.id] = ev; });
 
-  // Build summary chips for the overview accordion header
-  var allResults = [];
-  entries.forEach(function(e) { allResults = allResults.concat(Object.values(e.results)); });
-  var totalApps = entries.reduce(function(s, e) { return s + e.appearances; }, 0);
-  var bestOverall = allResults.length ? Math.min.apply(null, allResults) : null;
-  var bestCls = bestOverall === 1 ? 'w' : bestOverall === 2 ? 'ru' : bestOverall <= 4 ? 'sf' : bestOverall <= 8 ? 'qf' : 'ev';
-  var chips = (bestOverall ? '<span class="chip ' + bestCls + '">Best ' + isaPlaceLabel(bestOverall) + '</span>' : '')
-    + '<span class="chip ev">' + totalApps + ' appearance' + (totalApps !== 1 ? 's' : '') + '</span>';
-
-  var wjBodyId = 'ovw-wj__' + cssId(name);
-  var wjChevId = 'chev-ovw-wj__' + cssId(name);
-
-  // One accordion per division, plus a stat grid covering the athlete's whole
-  // World Junior record (U/16 and U/18 combined — only 22% span both).
-  var divAccordions = '';
-  var allPairs = [];
+  // ONE accordion for the athlete's whole World Junior record (Aaron,
+  // 2026-10-01, matching WPSC): the stat grid covers every appearance across
+  // U/16 and U/18, and the results table's Division column says which age
+  // division each result came from. A surfer can hold both in the same year,
+  // so each result is its own row — buildIsaStatGrid takes a list of pairs,
+  // not a year map, so those are not collapsed.
+  var rows = [];
+  var medals = { gold: 0, silver: 0, bronze: 0, copper: 0 };
+  var appearances = 0;
   entries.forEach(function(entry) {
-    var myEvs = events
-      .filter(function(ev) { return entry.results[ev.id] !== undefined; })
-      .sort(function(a, b) { return b.year - a.year; })
-      .map(function(ev) { return { ev: ev, place: entry.results[ev.id], nat: entry.country }; });
-    if (myEvs.length) {
-      allPairs = allPairs.concat(myEvs);
-      divAccordions += buildWJEventAccordion(entry.div_label, myEvs, cssId(name) + '_' + entry.division);
-    }
+    ['gold', 'silver', 'bronze', 'copper'].forEach(function(k) { medals[k] += (entry.medals[k] || 0); });
+    appearances += entry.appearances || 0;
+    Object.keys(entry.results).forEach(function(eid) {
+      var ev = evById[eid];
+      if (!ev) return;
+      rows.push({ ev: ev, place: entry.results[eid], nat: entry.country, div: entry.div_label || '' });
+    });
+  });
+  if (!rows.length) return '';
+  // Newest first; within a year, U/18 before U/16.
+  rows.sort(function(a, b) {
+    return (b.ev.year - a.ev.year) || ((/16/.test(a.div) ? 1 : 0) - (/16/.test(b.div) ? 1 : 0));
   });
 
-  var wjMedals = entries.reduce(function(acc, e) {
-    acc.gold   += (e.medals.gold   || 0);
-    acc.silver += (e.medals.silver || 0);
-    acc.bronze += (e.medals.bronze || 0);
-    acc.copper += (e.medals.copper || 0);
-    return acc;
-  }, { gold: 0, silver: 0, bronze: 0, copper: 0 });
-  var wjGrid = buildIsaStatGrid(allPairs, wjMedals, totalApps);
-
-  // Wrap in an ISA World Junior section heading
+  var grid = buildIsaStatGrid(rows, medals, appearances);
+  var acc = buildWJEventAccordion('ISA World Junior Championship', rows, cssId(name) + '_wj', grid);
   return (noTitle ? '' : '<div class="section-title">ISA World Junior Championship</div>')
-    + (noWrapper ? '' : '<div class="event-accordion" style="margin-bottom:8px">')
-    + '<div class="er">'
-    + '<div class="er-head" onclick="toggleEvent(\'' + wjBodyId + '\',\'' + wjChevId + '\')">'
-    + '<span class="er-loc">ISA World Junior Championship</span>'
-    + '<div class="er-chips">' + chips
-    + '<svg id="' + wjChevId + '" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12">'
-    + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
-    + '</svg></div></div>'
-    + '<div class="er-body open" id="' + wjBodyId + '">'
-    + '<div style="display:flex;flex-direction:column;gap:12px;padding:14px 18px 18px">'
-    + wjGrid
-    + divAccordions
-    + '</div></div></div>'
-    + (noWrapper ? '' : '</div>');
+    + (noWrapper ? acc : '<div class="event-accordion" style="margin-bottom:8px">' + acc + '</div>');
 }
 
 // ── World Longboard division tab ────────────────────────────────────────────────
@@ -4905,7 +5183,7 @@ function _selectWLCAthlete(name) {
   });
   var sel = document.querySelector('#wlc-list .athlete-item.selected');
   if (sel) sel.scrollIntoView({ block: 'nearest' });
-  if (DATA && DATA.athletes && DATA.athletes[name]) {
+  if (isWslAthlete(name)) {
     // CT surfer — render full profile in the Longboard panel
     renderProfile(name, document.getElementById('wlc-profile'));
   } else {
@@ -4963,6 +5241,7 @@ function renderWLCProfile(name) {
     + buildISAWsgBadges(name)
     + buildISAWjBadges(name)
     + buildISASUPBadges(name)
+    + buildISAWpscBadges(name)
     + buildOlympicBadges(name);
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
@@ -5133,7 +5412,7 @@ function _selectSUPAthlete(name) {
   });
   var sel = document.querySelector('#sup-list .athlete-item.selected');
   if (sel) sel.scrollIntoView({ block: 'nearest' });
-  if (DATA && DATA.athletes && DATA.athletes[name]) {
+  if (isWslAthlete(name)) {
     renderProfile(name, document.getElementById('sup-profile'));
   } else {
     renderSUPProfile(name);
@@ -5183,6 +5462,7 @@ function renderSUPProfile(name) {
 
   var tags = nationTags
     + buildISASUPBadges(name)
+    + buildISAWpscBadges(name)
     + buildISAWsgBadges(name)
     + buildISAWjBadges(name)
     + buildISAWlcBadges(name)
@@ -5266,6 +5546,204 @@ function buildISASUPSection(name, noTitle, noWrapper) {
     + (noWrapper ? '' : '</div>');
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// ISA World Para Surfing Championship — two list tabs (Women/Men) by the
+// athlete's own gender; the profile shows one accordion per division, in the
+// sheet's order (current divisions, then Sit Open, the 2016-18 AS divisions,
+// and the 2015 set). Divisions were never remapped onto each other, so each
+// keeps its own grid. An Open division mixed men and women: a woman's Open AS2
+// result sits in her profile under "AS2 Open", and she is listed under Women.
+// ════════════════════════════════════════════════════════════════════════════
+
+function _wpscEntries(name) {
+  if (typeof ISA_WPSC_DATA === 'undefined' || !ISA_WPSC_DATA || !ISA_WPSC_DATA.athletes) return [];
+  return ISA_WPSC_DATA.athletes.filter(function(a) { return a.name === name; });
+}
+// An athlete whose gender is not yet settled is listed under both tabs rather
+// than vanishing from the app.
+function _wpscInTab(a, tab) { return !a.gender || a.gender === tab; }
+
+function setWPSCDiv(d) {
+  wpscDiv = d;
+  ['women', 'men'].forEach(function(k) {
+    var el = document.getElementById('wpsc-tab-' + k);
+    if (el) el.classList.toggle('active', d === k);
+  });
+  filterWPSC(document.getElementById('global-search')?.value || '');
+  document.getElementById('wpsc-profile').innerHTML = '<div class="profile-empty">Select an athlete to view their ISA World Para Surfing Championship history</div>';
+  wpscSelected = null;
+}
+
+function filterWPSC(query) {
+  var list = document.getElementById('wpsc-list');
+  if (!list) return;
+  if (typeof ISA_WPSC_DATA === 'undefined' || !ISA_WPSC_DATA || !ISA_WPSC_DATA.athletes || !ISA_WPSC_DATA.athletes.length) {
+    list.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:0.8rem">No data available.</div>';
+    return;
+  }
+  var q = (query || '').toLowerCase();
+  list.innerHTML = '';
+  // One row per athlete; the nation shown is from their most recent result.
+  var seen = {};
+  ISA_WPSC_DATA.athletes
+    .filter(function(a) { return _wpscInTab(a, wpscDiv); })
+    .forEach(function(a) {
+      var latest = Math.max.apply(null, Object.keys(a.results).map(function(k) { return parseInt(k.split('-')[1], 10) || 0; }).concat([0]));
+      var ex = seen[a.name];
+      if (!ex || latest > ex._latest) seen[a.name] = { name: a.name, country: a.country, _latest: latest };
+    });
+  Object.values(seen)
+    .filter(function(a) { return !q || a.name.toLowerCase().includes(q) || (a.country || '').toLowerCase().includes(q); })
+    .sort(function(a, b) { return a.name.localeCompare(b.name); })
+    .forEach(function(a) {
+      var div = document.createElement('div');
+      div.className = 'athlete-item' + (a.name === wpscSelected ? ' selected' : '');
+      div.innerHTML = '<span class="athlete-item-name">' + escHtml(a.name) + '</span><span class="athlete-item-nation">' + escHtml(a.country || '') + '</span>';
+      div.onclick = function() {
+        var newHash = '#wpsc/' + encodeURIComponent(a.name);
+        if (location.hash === newHash) _selectWPSCAthlete(a.name);
+        else location.hash = newHash;
+      };
+      list.appendChild(div);
+    });
+}
+
+function _selectWPSCAthlete(name) {
+  var entries = _wpscEntries(name);
+  if (!entries.length) return;
+  if (!entries.some(function(a) { return _wpscInTab(a, wpscDiv); })) {
+    wpscDiv = entries[0].gender || 'women';
+    ['women', 'men'].forEach(function(k) {
+      var el = document.getElementById('wpsc-tab-' + k);
+      if (el) el.classList.toggle('active', wpscDiv === k);
+    });
+    filterWPSC(document.getElementById('global-search')?.value || '');
+  }
+  if (![].some.call(document.querySelectorAll('#wpsc-list .athlete-item-name'), function(el) { return el.textContent === name; })) {
+    filterWPSC(document.getElementById('global-search')?.value || '');
+  }
+  wpscSelected = name;
+  document.querySelectorAll('#wpsc-list .athlete-item').forEach(function(el) {
+    var n = el.querySelector('.athlete-item-name');
+    el.classList.toggle('selected', n && n.textContent === name);
+  });
+  var sel = document.querySelector('#wpsc-list .athlete-item.selected');
+  if (sel) sel.scrollIntoView({ block: 'nearest' });
+  if (isWslAthlete(name)) {
+    renderProfile(name, document.getElementById('wpsc-profile'));
+  } else {
+    renderWPSCProfile(name);
+  }
+}
+
+function renderWPSCProfile(name) {
+  var entries = _wpscEntries(name);
+  if (!entries.length) return;
+  var panel = document.getElementById('wpsc-profile');
+  if (!panel) return;
+  var nationTags = isaNationTags(entries, ISA_WPSC_DATA.events, false, isaAllNationSpans(name));
+
+  var bid    = function(k) { return 'bio__' + name + '__' + k; };
+  var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
+  var safeName = name.replace(/'/g, "\\'");
+  var dobVal   = bioGet('dob');
+  var age      = calcAge(dobVal);
+  var notesVal = bioGet('notes') || '';
+
+  var bioFields = '<div class="bento-info-card" style="height:auto;margin-bottom:14px">'
+    + '<div class="section-title" style="margin-top:0">Bio</div>'
+    + '<div class="bento-info-grid">'
+    + '<div class="bento-info-field"><label>Date of Birth</label>'
+    + '<input class="bio-input" placeholder="e.g. 1988-02-15" value="' + escHtml(dobVal) + '"'
+    + ' onchange="saveBio(\'' + safeName + '\',\'dob\',this.value);renderWPSCProfile(\'' + safeName + '\')"></div>'
+    + '<div class="bento-info-field"><label>Age</label>'
+    + '<div class="bio-input" style="background:transparent;border-color:transparent;padding-top:7px;color:var(--navy);font-weight:900;font-style:italic;font-size:1.1rem">'
+    + (age !== null ? age : '<span style="color:var(--text-dim);font-size:0.9rem;font-style:normal;font-weight:400">—</span>') + '</div></div>'
+    + '<div class="bento-info-field"><label>Born</label>'
+    + '<input class="bio-input" placeholder="e.g. Oceanside, USA" value="' + escHtml(bioGet('born')) + '"'
+    + ' onchange="saveBio(\'' + safeName + '\',\'born\',this.value)"></div>'
+    + '<div class="bento-info-field"><label>Resides</label>'
+    + '<input class="bio-input" placeholder="e.g. Gold Coast, AUS" value="' + escHtml(bioGet('location')) + '"'
+    + ' onchange="saveBio(\'' + safeName + '\',\'location\',this.value)"></div>'
+    + '</div>'
+    + '<div class="bento-notes-wrap">'
+    + '<label style="display:block;font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:#94a3b8;margin-bottom:6px">Notes</label>'
+    + '<textarea class="notes-area" id="notes-wpsc-' + cssId(name) + '"'
+    + ' oninput="saveNotes(\'' + safeName + '\', this.value); autoResizeNotes(this)">' + escHtml(notesVal) + '</textarea>'
+    + '</div></div>';
+
+  // Para-only athletes render here rather than through renderProfile(), so
+  // badges are built explicitly: WPSC first, then every other source.
+  var tags = nationTags
+    + buildISAWpscBadges(name)
+    + buildISAWsgBadges(name)
+    + buildISAWjBadges(name)
+    + buildISAWlcBadges(name)
+    + buildISASUPBadges(name)
+    + buildOlympicBadges(name);
+
+  panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
+    + '<div class="profile-meta">' + tags + '</div>'
+    + bioFields
+    + buildISASection(name);
+
+  panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
+}
+
+// Medal badges aggregated across all of an athlete's WPSC divisions.
+function buildISAWpscBadges(name) {
+  var entries = _wpscEntries(name);
+  if (!entries.length) return '';
+  var medals = entries.reduce(function(acc, e) {
+    acc.gold   += (e.medals.gold   || 0);
+    acc.silver += (e.medals.silver || 0);
+    acc.bronze += (e.medals.bronze || 0);
+    acc.copper += (e.medals.copper || 0);
+    return acc;
+  }, { gold: 0, silver: 0, bronze: 0, copper: 0 });
+  var parts = [];
+  if (medals.gold)   parts.push('<div class="meta-tag" style="background:#fff8dc;color:#b8860b;border-color:#f0d060">🥇 WPSC Gold'   + (medals.gold   > 1 ? ' ×' + medals.gold   : '') + '</div>');
+  if (medals.silver) parts.push('<div class="meta-tag" style="background:#f4f6f8;color:#607080;border-color:#c8d0da">🥈 WPSC Silver' + (medals.silver > 1 ? ' ×' + medals.silver : '') + '</div>');
+  if (medals.bronze) parts.push('<div class="meta-tag" style="background:#fdf0e8;color:#a0623c;border-color:#e8c0a0">🥉 WPSC Bronze' + (medals.bronze > 1 ? ' ×' + medals.bronze : '') + '</div>');
+  if (medals.copper) parts.push('<div class="meta-tag" style="background:#fef9f0;color:#9a7240;border-color:#d4b896">🏅 WPSC Copper' + (medals.copper > 1 ? ' ×' + medals.copper : '') + '</div>');
+  return parts.join('');
+}
+
+// WPSC section for the shared "ISA Overview" accordion: ONE accordion for the
+// whole championship (Aaron, 2026-09-30 — with 35 divisions, one per division
+// was too many). The stat grid covers every appearance across all divisions,
+// and the results table carries a Division column saying which field each
+// result came from. An athlete can hold two results in one year (an Open and a
+// Women division in 2017-18), so each is its own row; buildIsaStatGrid takes a
+// list of pairs, not a year map, precisely so those are not collapsed.
+function buildISAWpscSection(name, noTitle, noWrapper) {
+  var entries = _wpscEntries(name);
+  if (!entries.length) return '';
+  var evById = {};
+  ISA_WPSC_DATA.events.forEach(function(ev) { evById[ev.id] = ev; });
+
+  var rows = [];
+  var medals = { gold: 0, silver: 0, bronze: 0, copper: 0 };
+  var appearances = 0;
+  entries.forEach(function(entry) {
+    ['gold', 'silver', 'bronze', 'copper'].forEach(function(k) { medals[k] += (entry.medals[k] || 0); });
+    appearances += entry.appearances || 0;
+    Object.keys(entry.results).forEach(function(eid) {
+      var ev = evById[eid];
+      if (!ev) return;
+      rows.push({ ev: ev, place: entry.results[eid], nat: entry.country,
+                  div: entry.disc_label, _order: entry.disc_order || 0 });
+    });
+  });
+  if (!rows.length) return '';
+  rows.sort(function(a, b) { return (b.ev.year - a.ev.year) || (a._order - b._order); });
+
+  var grid = buildIsaStatGrid(rows, medals, appearances);
+  var acc = buildWJEventAccordion('ISA World Para Surfing Championship', rows, cssId(name) + '_wpsc', grid);
+  return (noTitle ? '' : '<div class="section-title">ISA World Para Surfing Championship</div>')
+    + (noWrapper ? acc : '<div class="event-accordion" style="margin-bottom:8px">' + acc + '</div>');
+}
+
 function setISAGender(g) {
   isaGender = g;
   document.getElementById('isa-tab-men').classList.toggle('active', g === 'men');
@@ -5295,7 +5773,7 @@ function _selectISAAthlete(name) {
   });
   var sel = document.querySelector('#isa-list .athlete-item.selected');
   if (sel) sel.scrollIntoView({ block: 'nearest' });
-  if (DATA && DATA.athletes && DATA.athletes[name]) {
+  if (isWslAthlete(name)) {
     // CT surfer: render full profile in the ISA panel — stay on this tab
     _profileOpenedFromISA = true;
     renderProfile(name, document.getElementById('isa-profile'));
@@ -5393,6 +5871,7 @@ function renderISAProfile(name) {
     + buildISAWjBadges(name)
     + buildISAWlcBadges(name)
     + buildISASUPBadges(name)
+    + buildISAWpscBadges(name)
     + buildOlympicBadges(name);
 
   // ── Assemble panel ─────────────────────────────────────────────────────────
@@ -5402,7 +5881,7 @@ function renderISAProfile(name) {
     + buildISASection(name);
 
   // ── For non-CT athletes: append Olympic Games section if available ──────────
-  if (!(DATA && DATA.athletes && DATA.athletes[name])) {
+  if (!isWslAthlete(name)) {
     var olySection = buildOlympicsSection(name);
     if (olySection) panel.innerHTML += olySection;
   }
@@ -5425,7 +5904,8 @@ var NATION_DISCIPLINES = [
   { key: 'wsg', label: 'ISA World Surfing Games',              short: 'WSG',    data: function() { return typeof ISA_WSG_DATA !== 'undefined' ? ISA_WSG_DATA : null; } },
   { key: 'wj',  label: 'ISA World Junior Surfing Championship', short: 'WJSC',   data: function() { return typeof ISA_WJ_DATA  !== 'undefined' ? ISA_WJ_DATA  : null; } },
   { key: 'wlc', label: 'ISA World Longboard Championship',      short: 'WLC',    data: function() { return typeof ISA_WLC_DATA !== 'undefined' ? ISA_WLC_DATA : null; } },
-  { key: 'sup', label: 'ISA World SUP & Paddleboard Championship', short: 'WSUPPC', data: function() { return typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null; } }
+  { key: 'sup', label: 'ISA World SUP & Paddleboard Championship', short: 'WSUPPC', data: function() { return typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null; } },
+  { key: 'wpsc', label: 'ISA World Para Surfing Championship', short: 'WPSC', data: function() { return typeof ISA_WPSC_DATA !== 'undefined' ? ISA_WPSC_DATA : null; } }
 ];
 
 // ── Individual (athlete) medals, per nation ─────────────────────────────────
@@ -5447,7 +5927,9 @@ function isaDivLabel(a) {
   var g = a.gender === 'women' ? 'Women' : 'Men';
   var lbl = a.div_label || a.disc_label || '';
   if (!lbl) return g;
-  if (/^(men|women)$/i.test(lbl) || /boys|girls/i.test(lbl)) return lbl;
+  // WPSC division labels already end in Men/Women ("Prone 1 Men"); an Open
+  // division ("AS2 Open") still gets the athlete's own gender appended.
+  if (/^(men|women)$/i.test(lbl) || /\b(men|women)$/i.test(lbl) || /boys|girls/i.test(lbl)) return lbl;
   return lbl + ' \u00B7 ' + g;
 }
 
@@ -5976,7 +6458,7 @@ if ('serviceWorker' in navigator) {
     // Highlight active item in bottom tab bar (tabs are org-level)
     const currentView = (location.hash.slice(1).split('/')[0]) || 'athletes';
     const orgForTab = (currentView === 'olympics') ? 'olympics'
-      : (currentView === 'isa' || currentView === 'wj' || currentView === 'wlc' || currentView === 'sup' || currentView === 'nations') ? 'isa'
+      : (currentView === 'isa' || currentView === 'wj' || currentView === 'wlc' || currentView === 'sup' || currentView === 'wpsc' || currentView === 'nations') ? 'isa'
       : 'wsl';
     document.querySelectorAll('.bottom-tab').forEach(b => {
       b.classList.toggle('active', b.dataset.org === orgForTab);
@@ -5990,7 +6472,7 @@ if ('serviceWorker' in navigator) {
     // for a selected athlete is "#<view>/<name>", so a name segment after the
     // slash is what distinguishes a profile from a bare list view.
     const onMobile  = window.innerWidth <= 768;
-    const onProfile = /^#(athletes|olympics|isa|wj|wlc|sup)\/.+/.test(location.hash);
+    const onProfile = /^#(athletes|olympics|isa|wj|wlc|sup|wpsc)\/.+/.test(location.hash);
     document.querySelectorAll('.athletes-layout').forEach(function (el) {
       el.classList.toggle('mobile-profile', onMobile && onProfile);
     });
