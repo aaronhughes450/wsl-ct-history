@@ -1234,7 +1234,8 @@
   </div>
 </div>
 
-<script src="data.js?v=20261002101943"></script>
+<script src="isa-dob.js" onerror="this.remove()"></script>
+<script src="data.js?v=20261002163216"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1822,6 +1823,42 @@ function getAthleteDob(name) {
       || dobToISO(_looseDob(name));
 }
 
+// Official DOB for the profile panels, used when no date has been typed in:
+// WSL first (ATHLETE_DOB, published), then the ISA scoring-database export
+// (ISA_DOB — app/isa-dob.js, a LOCAL-ONLY file that is never published).
+// On the public copy ISA_DOB doesn't exist, so profiles fall back to
+// ISA_AGE in data.js: age only, as at the last generate.py run.
+let _isaLoose = null;
+function _isaLooseMap(src) {
+  const m = {};
+  for (const k in src) {
+    const key = _dobKey(k);
+    if (key in m && m[key] !== src[k]) m[key] = null;   // ambiguous: trust neither
+    else if (!(key in m)) m[key] = src[k];
+  }
+  return m;
+}
+function officialDob(name) {
+  const wsl = (typeof ATHLETE_DOB !== 'undefined' && ATHLETE_DOB) ? ATHLETE_DOB[name] : null;
+  const isa = (typeof ISA_DOB !== 'undefined' && ISA_DOB) ? ISA_DOB : null;
+  let v = dobToISO(wsl) || dobToISO(_looseDob(name));
+  if (!v && isa) {
+    if (_isaLoose === null) _isaLoose = _isaLooseMap(isa);
+    v = dobToISO(isa[name]) || dobToISO(_isaLoose[_dobKey(name)]);
+  }
+  return v || '';
+}
+let _isaAgeLoose = null;
+function profileAge(dobVal, name) {
+  const a = calcAge(dobVal);
+  if (a !== null) return a;
+  const src = (typeof ISA_AGE !== 'undefined' && ISA_AGE && ISA_AGE.ages) || null;
+  if (!src) return null;
+  if (_isaAgeLoose === null) _isaAgeLoose = _isaLooseMap(src);
+  const v = (name in src) ? src[name] : _isaAgeLoose[_dobKey(name)];
+  return (typeof v === 'number') ? v : null;
+}
+
 // Finish date of one event-year, from event-dates.json via generate.py.
 function getEventDate(venue, gender, year) {
   const src = (typeof EVENT_DATES !== 'undefined' && EVENT_DATES) ? EVENT_DATES : null;
@@ -1969,8 +2006,8 @@ function renderProfile(name, panelEl) {
   const isRoty      = rookieData.roty === name;
 
   // Age from stored DOB (global calcAge)
-  const dobVal = bioGet('dob');
-  const age    = calcAge(dobVal);
+  const dobVal = bioGet('dob') || officialDob(name);
+  const age    = profileAge(dobVal, name);
 
   // ISA lookup needed here for wildcard nation seeding (also reused below for ISA overview)
   const isaAthleteData = (ISA_WSG_DATA && ISA_WSG_DATA.athletes)
@@ -4927,8 +4964,8 @@ function renderWJProfile(name) {
   var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
   var safeName = name.replace(/'/g, "\\'");
 
-  var dobVal = bioGet('dob');
-  var age    = calcAge(dobVal);
+  var dobVal = bioGet('dob') || officialDob(name);
+  var age    = profileAge(dobVal, name);
   var notesVal = bioGet('notes') || '';
 
   var bioFields = '<div class="bento-info-card" style="height:auto;margin-bottom:14px">'
@@ -5207,8 +5244,8 @@ function renderWLCProfile(name) {
   var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
   var safeName = name.replace(/'/g, "\\'");
 
-  var dobVal   = bioGet('dob');
-  var age      = calcAge(dobVal);
+  var dobVal   = bioGet('dob') || officialDob(name);
+  var age      = profileAge(dobVal, name);
   var notesVal = bioGet('notes') || '';
 
   var bioFields = '<div class="bento-info-card" style="height:auto;margin-bottom:14px">'
@@ -5434,8 +5471,8 @@ function renderSUPProfile(name) {
   var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
   var safeName = name.replace(/'/g, "\\'");
 
-  var dobVal   = bioGet('dob');
-  var age      = calcAge(dobVal);
+  var dobVal   = bioGet('dob') || officialDob(name);
+  var age      = profileAge(dobVal, name);
   var notesVal = bioGet('notes') || '';
 
   var bioFields = '<div class="bento-info-card" style="height:auto;margin-bottom:14px">'
@@ -5646,8 +5683,8 @@ function renderWPSCProfile(name) {
   var bid    = function(k) { return 'bio__' + name + '__' + k; };
   var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
   var safeName = name.replace(/'/g, "\\'");
-  var dobVal   = bioGet('dob');
-  var age      = calcAge(dobVal);
+  var dobVal   = bioGet('dob') || officialDob(name);
+  var age      = profileAge(dobVal, name);
   var notesVal = bioGet('notes') || '';
 
   var bioFields = '<div class="bento-info-card" style="height:auto;margin-bottom:14px">'
@@ -5822,8 +5859,8 @@ function renderISAProfile(name) {
   var bid = function(k) { return 'bio__' + name + '__' + k; };
   var bioGet = function(k) { var v = localStorage.getItem(bid(k)); return v !== null ? v : (APP_DATA[bid(k)] || ''); };
 
-  var dobVal = bioGet('dob');
-  var age    = calcAge(dobVal);
+  var dobVal = bioGet('dob') || officialDob(name);
+  var age    = profileAge(dobVal, name);
   var safeName = name.replace(/'/g, "\\'");
 
   var hasMedals  = a.medals.gold + a.medals.silver + a.medals.bronze + a.medals.copper > 0;
