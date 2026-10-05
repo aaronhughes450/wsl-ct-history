@@ -440,6 +440,23 @@
   .winners-table tr.rank-1 td.num { color: #b45309; font-size: 0.85rem; }
   .winners-table tr.rank-2 td, .winners-table tr.rank-3 td { background: #f9fafb; }
   .winners-scroll { max-height: 520px; overflow-y: auto; }
+  /* Consecutive event wins (CT) */
+  .streak-run { display: block; color: var(--text-dim); font-size: 0.7rem; margin-top: 2px; line-height: 1.35; }
+  .streak-badge { display: inline-block; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
+  .streak-badge.single { background: #e8eef7; color: #001834; }
+  .streak-badge.cross  { background: #fef3c7; color: #92400e; }
+  .streak-badge.active { background: #dcfce7; color: #166534; margin-left: 4px; }
+  .streak-seasons { font-weight: 700; color: var(--navy); white-space: nowrap; font-size: 0.78rem; margin-bottom: 3px; }
+  .streak-legend { display: flex; gap: 6px; align-items: center; }
+  /* Clickable board headers → full list in a new tab */
+  .winners-board-header.winlist-link { cursor: pointer; transition: background 0.15s; }
+  .winners-board-header.winlist-link:hover, .winners-board-header.winlist-link:focus-visible { background: #0a2d57; outline: none; }
+  .winlist-arrow { display: inline-block; margin-right: 6px; font-style: normal; opacity: 0.55; }
+  .winners-board-header.winlist-link:hover .winlist-arrow { opacity: 1; }
+  .winlist-wrap { max-width: 900px; margin: 0 auto; }
+  .winlist-back { display: inline-block; margin-bottom: 12px; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-decoration: none; letter-spacing: 0.04em; }
+  .winlist-back:hover { color: var(--navy); }
+  .winners-table tr.venue-first td { border-top: 2px solid var(--border); }
   .venue-records-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; box-shadow: 0 1px 6px rgba(0,24,52,0.07); }
   .venue-records-header { background: #001834; padding: 12px 16px; }
   .venue-records-title { color: #fff; font-weight: 900; font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; font-style: italic; }
@@ -851,8 +868,8 @@
 <div class="view" id="view-winners">
   <div class="winners-layout">
     <div class="winners-board">
-      <div class="winners-board-header">
-        <span class="winners-board-title">Women — World Champions</span>
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('champs-women')" onkeydown="if(event.key==='Enter')openWinList('champs-women')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Women — World Champions</span>
         <span class="winners-board-sub">WWT all-time</span>
       </div>
       <div class="winners-scroll">
@@ -862,8 +879,8 @@
       </div>
     </div>
     <div class="winners-board">
-      <div class="winners-board-header">
-        <span class="winners-board-title">Men — World Champions</span>
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('champs-men')" onkeydown="if(event.key==='Enter')openWinList('champs-men')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Men — World Champions</span>
         <span class="winners-board-sub">MWT all-time</span>
       </div>
       <div class="winners-scroll">
@@ -875,9 +892,9 @@
   </div>
   <div class="winners-layout" style="margin-top:16px">
     <div class="winners-board">
-      <div class="winners-board-header">
-        <span class="winners-board-title">Women</span>
-        <span class="winners-board-sub">CT event wins all-time</span>
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('wins-women')" onkeydown="if(event.key==='Enter')openWinList('wins-women')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Women</span>
+        <span class="winners-board-sub">CT event wins all-time · 2+</span>
       </div>
       <div class="winners-scroll">
         <table class="winners-table"><thead>
@@ -886,9 +903,9 @@
       </div>
     </div>
     <div class="winners-board">
-      <div class="winners-board-header">
-        <span class="winners-board-title">Men</span>
-        <span class="winners-board-sub">CT event wins all-time</span>
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('wins-men')" onkeydown="if(event.key==='Enter')openWinList('wins-men')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Men</span>
+        <span class="winners-board-sub">CT event wins all-time · 2+</span>
       </div>
       <div class="winners-scroll">
         <table class="winners-table"><thead>
@@ -899,8 +916,8 @@
   </div>
   <div class="winners-layout" style="margin-top:16px">
     <div class="winners-board">
-      <div class="winners-board-header">
-        <span class="winners-board-title">Women — Venue Records</span>
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('venue-women')" onkeydown="if(event.key==='Enter')openWinList('venue-women')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Women — Venue Records</span>
         <span class="winners-board-sub">most CT wins at venue</span>
       </div>
       <div class="winners-scroll">
@@ -910,14 +927,38 @@
       </div>
     </div>
     <div class="winners-board">
-      <div class="winners-board-header">
-        <span class="winners-board-title">Men — Venue Records</span>
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('venue-men')" onkeydown="if(event.key==='Enter')openWinList('venue-men')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Men — Venue Records</span>
         <span class="winners-board-sub">most CT wins at venue</span>
       </div>
       <div class="winners-scroll">
         <table class="winners-table"><thead>
           <tr><th>Venue</th><th>Record Holder</th><th class="wins-col">Wins</th></tr>
         </thead><tbody id="venue-men-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+  <div class="winners-layout" id="streaks-layout" style="margin-top:16px">
+    <div class="winners-board">
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('streak-women')" onkeydown="if(event.key==='Enter')openWinList('streak-women')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Women — Consecutive Wins</span>
+        <span class="winners-board-sub streak-legend"><span class="streak-badge single">Single season</span><span class="streak-badge cross">Cross-season</span></span>
+      </div>
+      <div class="winners-scroll">
+        <table class="winners-table"><thead>
+          <tr><th class="num">#</th><th>Athlete</th><th>Season</th><th class="wins-col">Wins</th></tr>
+        </thead><tbody id="streak-women-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="winners-board">
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('streak-men')" onkeydown="if(event.key==='Enter')openWinList('streak-men')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Men — Consecutive Wins</span>
+        <span class="winners-board-sub streak-legend"><span class="streak-badge single">Single season</span><span class="streak-badge cross">Cross-season</span></span>
+      </div>
+      <div class="winners-scroll">
+        <table class="winners-table"><thead>
+          <tr><th class="num">#</th><th>Athlete</th><th>Season</th><th class="wins-col">Wins</th></tr>
+        </thead><tbody id="streak-men-tbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -928,6 +969,20 @@
       <span class="results-count" id="results-count"></span>
     </div>
     <div class="accordion-wrap" id="results-accordion"></div>
+  </div>
+</div>
+
+<!-- Winners full-list view (opened in a new tab from a Winners board header) -->
+<div class="view" id="view-winlist">
+  <div class="winlist-wrap">
+    <a class="winlist-back" href="#winners">← All winners lists</a>
+    <div class="winners-board">
+      <div class="winners-board-header">
+        <span class="winners-board-title" id="winlist-title"></span>
+        <span class="winners-board-sub" id="winlist-sub"></span>
+      </div>
+      <table class="winners-table"><thead id="winlist-thead"></thead><tbody id="winlist-tbody"></tbody></table>
+    </div>
   </div>
 </div>
 
@@ -1003,7 +1058,10 @@
 <option value="Portugal">Portugal</option>
 <option value="Pipe">Pipe</option>
 <option value="J-Bay">J-Bay</option>
+<option value="Sunset">Sunset</option>
 <option value="WSL Finals">WSL Finals</option>
+<option value="Newcastle">Newcastle</option>
+<option value="G-Land">G-Land</option>
     </select>
     <div class="gender-tabs">
       <button class="gender-tab active" id="eg-women" onclick="setEventGender('women')">Women</button>
@@ -1235,7 +1293,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261002163216"></script>
+<script src="data.js?v=20261006042912"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1271,6 +1329,7 @@ function _renderView(name) {
   });
   const el = document.getElementById('view-' + resolvedName);
   if (el) el.classList.add('active');
+  if (name !== 'winlist' && typeof _winlistPrevTitle === 'string') { document.title = _winlistPrevTitle; _winlistPrevTitle = null; }
   // On mobile, default the events year filter to 10 years (not "all") for
   // performance — the user can change it, but the initial render must be fast.
   if (name === 'events' && window.innerWidth <= 768) {
@@ -1381,6 +1440,8 @@ function applyHash() {
     if (ISA_EV_SOURCES.some(function(s) { return s.key === wantSrc; })) isaEvSrc = wantSrc;
     isaEvEdition = parts[1] ? (isaEvSrc + '-' + parts[1]) : null;
     if (document.getElementById('isa-subview-events')) setISASub('events');
+  } else if (view === 'winlist') {
+    renderWinList(name || '');
   } else if (view === 'nations' && name) {
     // Ensure ISA view is active and Nations sub-view is showing
     if (document.getElementById('isa-subview-nations')) {
@@ -2434,100 +2495,222 @@ function _fbSet(key, val) {
 // WINNERS_DATA moved to data.js
 // EVENTS_BY_YEAR moved to data.js
 // APP_DATA moved to data.js
-function renderWinners() {
-  function buildLeaderboard(tbodyId, athletes) {
-    const tbody = document.getElementById(tbodyId);
-    tbody.innerHTML = athletes.map((a, i) => {
-      const rank = i + 1;
-      const rankCls = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
-      const canLink = !!(DATA.athletes && DATA.athletes[a.name]);
-      const nameHtml = canLink
-        ? `<a class="athlete-link" href="#athletes/${encodeURIComponent(a.name)}">${a.name}</a>`
-        : a.name;
-      return `<tr class="${rankCls}">
+// ── Winners lists ──
+// Every board on the Winners page is rendered by one of the *RowsHTML helpers
+// below, so the page and the #winlist/<tour>/<id> full-list tab share code.
+// Event-win, venue and streak lists only include multiple wins (2+).
+const WINLISTS = {
+  'champs-women': { title: 'Women — World Champions',   sub: 'WWT all-time',             kind: 'champs', g: 'women' },
+  'champs-men':   { title: 'Men — World Champions',     sub: 'MWT all-time',             kind: 'champs', g: 'men'   },
+  'wins-women':   { title: 'Women — Event Wins',        sub: 'event wins all-time (2+)', kind: 'wins', g: 'women' },
+  'wins-men':     { title: 'Men — Event Wins',          sub: 'event wins all-time (2+)', kind: 'wins', g: 'men'   },
+  'venue-women':  { title: 'Women — Venue Records',     sub: 'every surfer with 2+ wins at each venue', kind: 'venue', g: 'women' },
+  'venue-men':    { title: 'Men — Venue Records',       sub: 'every surfer with 2+ wins at each venue', kind: 'venue', g: 'men'   },
+  'streak-women': { title: 'Women — Consecutive Wins',  sub: 'back-to-back CT event wins', kind: 'streak', g: 'women' },
+  'streak-men':   { title: 'Men — Consecutive Wins',    sub: 'back-to-back CT event wins', kind: 'streak', g: 'men'   },
+};
+const WINLIST_HEADS = {
+  champs: '<tr><th class="num">#</th><th>Year</th><th>Champion</th><th>Nation</th></tr>',
+  wins:   '<tr><th class="num">#</th><th>Athlete</th><th class="wins-col">Wins</th></tr>',
+  venue:  '<tr><th>Venue</th><th>Athlete</th><th class="wins-col">Wins</th></tr>',
+  streak: '<tr><th class="num">#</th><th>Athlete</th><th>Season</th><th class="wins-col">Wins</th></tr>',
+};
+
+function _winAthLink(name) {
+  const canLink = !!(DATA.athletes && DATA.athletes[name]);
+  return canLink
+    ? `<a class="athlete-link" href="#athletes/${encodeURIComponent(name)}">${escHtml(name)}</a>`
+    : escHtml(name);
+}
+function _winEmpty(cols, msg) {
+  return `<tr><td colspan="${cols}" class="no-data" style="padding:20px;color:var(--text-dim)">${msg}</td></tr>`;
+}
+
+function openWinList(id) {
+  const tour = (typeof currentWSLTour !== 'undefined' && currentWSLTour) || 'ct';
+  window.open(location.pathname + location.search + '#winlist/' + tour + '/' + id, '_blank');
+}
+
+// All-time event wins — multiple winners only
+function winsRowsHTML(athletes) {
+  const multi = (athletes || []).filter(a => (a.wins || 0) > 1);
+  if (!multi.length) return _winEmpty(3, 'No multiple event winners yet');
+  return multi.map((a, i) => {
+    const rank = i + 1;
+    const rankCls = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+    return `<tr class="${rankCls}">
         <td class="num">${rank}</td>
-        <td>${nameHtml}</td>
+        <td>${_winAthLink(a.name)}</td>
         <td class="wins-num">${a.wins}</td>
       </tr>`;
-    }).join('');
-  }
+  }).join('');
+}
 
+// Venue wins, computed from raw event_results
+const VENUE_PATTERNS = [
+  { venue: 'Pipeline',          patterns: [/pipe/i] },
+  { venue: 'Bells Beach',       patterns: [/bells/i] },
+  { venue: 'Gold Coast',        patterns: [/gold coast/i, /snapper/i, /kirra/i] },
+  { venue: 'Margaret River',    patterns: [/margaret river/i] },
+  { venue: 'Tahiti',            patterns: [/tahiti/i, /teahupo/i] },
+  { venue: 'Fiji',              patterns: [/fiji/i, /cloudbreak/i] },
+  { venue: 'Trestles',          patterns: [/trestles/i] },
+  { venue: 'Portugal',          patterns: [/portugal/i, /peniche/i] },
+  { venue: 'J-Bay',             patterns: [/j-bay/i, /jeffrey/i] },
+  { venue: 'Rio',               patterns: [/\brio\b/i] },
+  { venue: 'El Salvador',       patterns: [/el salvador/i, /punta roca/i] },
+  { venue: 'New Zealand',       patterns: [/new zealand/i, /\bnz\b/i, /raglan/i] },
+  { venue: 'Abu Dhabi',         patterns: [/abu dhabi/i] },
+  { venue: 'Haleiwa',           patterns: [/haleiwa/i] },
+  { venue: 'Sunset Beach',      patterns: [/sunset beach/i] },
+  { venue: 'Hossegor',          patterns: [/hossegor/i] },
+  { venue: 'Huntington Beach',  patterns: [/huntington/i] },
+  { venue: 'France',            patterns: [/\bfrance\b/i] },
+  { venue: 'WSL Finals',        patterns: [/wsl finals/i] },
+];
+// → [{ venue, max, athletes:[[name,wins],…] sorted wins desc, name asc }] for
+//   venues where someone has 2+ wins; venues sorted by record, then name.
+function venueStats(gender) {
+  const m = {};
+  VENUE_PATTERNS.forEach(vp => { m[vp.venue] = {}; });
+  for (const ev of ((DATA.event_results || {})[gender] || [])) {
+    if (!ev.winner) continue;
+    const vp = VENUE_PATTERNS.find(vp => vp.patterns.some(p => p.test(ev.name)));
+    if (!vp) continue;
+    m[vp.venue][ev.winner] = (m[vp.venue][ev.winner] || 0) + 1;
+  }
+  const out = [];
+  VENUE_PATTERNS.forEach(vp => {
+    const athletes = Object.entries(m[vp.venue])
+      .filter(([, w]) => w > 1)
+      .sort(([an, aw], [bn, bw]) => bw - aw || an.localeCompare(bn));
+    if (!athletes.length) return;
+    out.push({ venue: vp.venue, max: athletes[0][1], athletes });
+  });
+  out.sort((a, b) => b.max - a.max);
+  return out;
+}
+const _venueCell = v => `<td style="font-weight:600;color:var(--navy);white-space:nowrap">${v}</td>`;
+// Page board: record holder(s) per venue — every tied surfer is listed
+function venueRecordRowsHTML(gender) {
+  const rows = venueStats(gender);
+  if (!rows.length) return _winEmpty(3, 'No venue has a multiple winner yet');
+  return rows.map(r => {
+    const holders = r.athletes.filter(([, w]) => w === r.max).map(([n]) => _winAthLink(n));
+    const tied = holders.length > 1 ? ' <span style="font-size:0.7rem;color:var(--text-dim)">(tied)</span>' : '';
+    return `<tr>
+      ${_venueCell(r.venue)}
+      <td>${holders.join(', ')}${tied}</td>
+      <td class="wins-num">${r.max}</td>
+    </tr>`;
+  }).join('');
+}
+// Full-list tab: every surfer with 2+ wins at each venue, record holders highlighted
+function venueFullRowsHTML(gender) {
+  const rows = venueStats(gender);
+  if (!rows.length) return _winEmpty(3, 'No venue has a multiple winner yet');
+  return rows.map(r => r.athletes.map(([n, w], i) => `<tr class="${i === 0 ? 'venue-first' : ''} ${w === r.max ? 'rank-1' : ''}">
+      ${i === 0 ? _venueCell(r.venue) : '<td></td>'}
+      <td>${_winAthLink(n)}</td>
+      <td class="wins-num">${w}</td>
+    </tr>`).join('')).join('');
+}
+
+function champsRowsHTML(champs) {
+  if (!champs || !champs.length) return _winEmpty(4, 'No completed seasons yet');
+  return champs.map((c, i) => `<tr>
+        <td class="num">${i + 1}</td>
+        <td style="font-weight:700;color:var(--navy)">${c.year}</td>
+        <td>${_winAthLink(c.name)}</td>
+        <td style="color:var(--text-dim);font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">${nationFlag(c.nation)}${escHtml(c.nation)}</td>
+      </tr>`).join('');
+}
+
+function streakRowsHTML(gender) {
+  const rows = buildStreaks(gender);
+  if (!rows.length) return _winEmpty(4, 'No back-to-back winners yet');
+  let rank = 0, prev = null;
+  return rows.map((r, i) => {
+    if (r.wins !== prev) { rank = i + 1; prev = r.wins; }
+    const rankCls = rank === 1 ? 'rank-1' : '';
+    const run = `${escHtml(r.first)} → ${escHtml(r.last)}`;
+    const badge = r.cross
+      ? '<span class="streak-badge cross">Cross-season</span>'
+      : '<span class="streak-badge single">Single season</span>';
+    const active = r.active ? '<span class="streak-badge active">Active</span>' : '';
+    return `<tr class="${rankCls}" title="${escHtml(r.events.join('\n'))}">
+        <td class="num">${rank}</td>
+        <td>${_winAthLink(r.name)}<span class="streak-run">${run}</span></td>
+        <td><div class="streak-seasons">${escHtml(r.seasons)}</div>${badge}${active}</td>
+        <td class="wins-num">${r.wins}</td>
+      </tr>`;
+  }).join('');
+}
+
+function renderWinners() {
   renderChampions();
-  buildLeaderboard('winners-women-tbody', WINNERS_DATA.women);
-  buildLeaderboard('winners-men-tbody',   WINNERS_DATA.men);
-
-  // Compute venue records dynamically from raw event_results so all tied athletes are shown
-  const venuePatterns = [
-    { venue: 'Pipeline',          patterns: [/pipe/i] },
-    { venue: 'Bells Beach',       patterns: [/bells/i] },
-    { venue: 'Gold Coast',        patterns: [/gold coast/i, /snapper/i, /kirra/i] },
-    { venue: 'Margaret River',    patterns: [/margaret river/i] },
-    { venue: 'Tahiti',            patterns: [/tahiti/i, /teahupo/i] },
-    { venue: 'Fiji',              patterns: [/fiji/i, /cloudbreak/i] },
-    { venue: 'Trestles',          patterns: [/trestles/i] },
-    { venue: 'Portugal',          patterns: [/portugal/i, /peniche/i] },
-    { venue: 'J-Bay',             patterns: [/j-bay/i, /jeffrey/i] },
-    { venue: 'Rio',               patterns: [/\brio\b/i] },
-    { venue: 'El Salvador',       patterns: [/el salvador/i, /punta roca/i] },
-    { venue: 'New Zealand',       patterns: [/new zealand/i, /\bnz\b/i, /raglan/i] },
-    { venue: 'Abu Dhabi',         patterns: [/abu dhabi/i] },
-    { venue: 'Haleiwa',           patterns: [/haleiwa/i] },
-    { venue: 'Sunset Beach',      patterns: [/sunset beach/i] },
-    { venue: 'Hossegor',          patterns: [/hossegor/i] },
-    { venue: 'Huntington Beach',  patterns: [/huntington/i] },
-    { venue: 'France',            patterns: [/\bfrance\b/i] },
-    { venue: 'WSL Finals',        patterns: [/wsl finals/i] },
-  ];
-
-  // Count wins per athlete per venue per gender
-  const winsMap = {};
-  venuePatterns.forEach(vp => { winsMap[vp.venue] = { women: {}, men: {} }; });
-  for (const gender of ['women', 'men']) {
-    for (const ev of (DATA.event_results[gender] || [])) {
-      if (!ev.winner) continue;
-      const vp = venuePatterns.find(vp => vp.patterns.some(p => p.test(ev.name)));
-      if (!vp) continue;
-      const m = winsMap[vp.venue][gender];
-      m[ev.winner] = (m[ev.winner] || 0) + 1;
-    }
-  }
-
-  function buildVenueTable(tbodyId, genderKey) {
-    const rows = venuePatterns.map(vp => {
-      const gMap = winsMap[vp.venue][genderKey];
-      const entries = Object.entries(gMap);
-      if (!entries.length) return null;
-      const maxWins = Math.max(...entries.map(([,w]) => w));
-      const holders = entries
-        .filter(([,w]) => w === maxWins)
-        .sort(([a],[b]) => a.localeCompare(b));
-      const SHOW = 2;
-      const shown = holders.slice(0, SHOW).map(([name]) => {
-        const canLink = !!(DATA.athletes && DATA.athletes[name]);
-        return canLink
-          ? `<a class="athlete-link" href="#athletes/${encodeURIComponent(name)}">${name}</a>`
-          : name;
-      });
-      const extra = holders.length - SHOW;
-      const holderHtml = shown.join(', ') + (extra > 0 ? ` <span style="color:var(--text-dim);font-size:0.78rem">+${extra} tied</span>` : '');
-      const isTied = holders.length > 1;
-      return { venue: vp.venue, holderHtml, maxWins, isTied };
-    }).filter(Boolean);
-
-    rows.sort((a, b) => b.maxWins - a.maxWins);
-
-    document.getElementById(tbodyId).innerHTML = rows.map(r => `<tr>
-      <td style="font-weight:600;color:var(--navy);white-space:nowrap">${r.venue}</td>
-      <td>${r.holderHtml}${r.isTied ? ' <span style="font-size:0.7rem;color:var(--text-dim)">(tied)</span>' : ''}</td>
-      <td class="wins-num">${r.maxWins}</td>
-    </tr>`).join('');
-  }
-
-  buildVenueTable('venue-women-tbody', 'women');
-  buildVenueTable('venue-men-tbody',   'men');
+  document.getElementById('winners-women-tbody').innerHTML = winsRowsHTML(WINNERS_DATA.women);
+  document.getElementById('winners-men-tbody').innerHTML   = winsRowsHTML(WINNERS_DATA.men);
+  document.getElementById('venue-women-tbody').innerHTML   = venueRecordRowsHTML('women');
+  document.getElementById('venue-men-tbody').innerHTML     = venueRecordRowsHTML('men');
+  renderStreaks();
 
   if (document.getElementById('results-accordion').innerHTML === '')
     renderResultsAccordion();
+}
+
+// ── Consecutive event wins (CT only) ──
+// Walks every CT event in tour order (season key, then event order `o`) and
+// collects runs where the same athlete won back-to-back events. A run is
+// "single season" if it starts and ends in the same season, otherwise
+// "cross-season". 1983–1987 keys are the split seasons (1983/84 … 1987/88).
+function buildStreaks(gender) {
+  const SPLIT_YEARS = {1983:'1983/84',1984:'1984/85',1985:'1985/86',1986:'1986/87',1987:'1987/88'};
+  const byYear = (EVENTS_BY_YEAR && EVENTS_BY_YEAR[gender]) || {};
+  const seq = [];
+  Object.keys(byYear).map(Number).sort((a, b) => a - b).forEach(y => {
+    (byYear[y] || []).slice().sort((a, b) => (a.o || 0) - (b.o || 0))
+      .forEach(e => seq.push({ y, e }));
+  });
+  const label = y => SPLIT_YEARS[y] || String(y);
+  const nowYr = new Date().getFullYear();
+  const out = [];
+  let i = 0;
+  while (i < seq.length) {
+    const w = seq[i].e.w;
+    let j = i;
+    while (w && j + 1 < seq.length && seq[j + 1].e.w === w) j++;
+    if (w && j > i) {
+      const y0 = seq[i].y, y1 = seq[j].y;
+      out.push({
+        name: w,
+        wins: j - i + 1,
+        cross: y0 !== y1,
+        seasons: y0 === y1 ? label(y0) : label(y0) + ' → ' + label(y1),
+        first: seq[i].e.n,
+        last: seq[j].e.n,
+        events: seq.slice(i, j + 1).map(x => x.e.n),
+        active: j === seq.length - 1 && y1 >= nowYr,
+        start: i,
+      });
+    }
+    i = j + 1;
+  }
+  // Longest first; ties in chronological order of when the run began
+  out.sort((a, b) => b.wins - a.wins || a.start - b.start);
+  return out;
+}
+
+function renderStreaks() {
+  const layout = document.getElementById('streaks-layout');
+  if (!layout) return;
+  const isCT = (typeof currentWSLTour === 'undefined') || currentWSLTour === 'ct';
+  layout.style.display = isCT ? '' : 'none';
+  if (!isCT) return;
+  ['women', 'men'].forEach(g => {
+    const tbody = document.getElementById('streak-' + g + '-tbody');
+    if (tbody) tbody.innerHTML = streakRowsHTML(g);
+  });
 }
 
 // ── World Champions ──
@@ -2551,23 +2734,53 @@ function buildChampions(gender) {
 let CHAMPS_WOMEN = buildChampions('women');
 let CHAMPS_MEN = buildChampions('men');
 function renderChampions() {
-  function buildTable(tbodyId, champs) {
-    const tbody = document.getElementById(tbodyId);
-    tbody.innerHTML = champs.map((c, i) => {
-      const canLink = !!(DATA.athletes && DATA.athletes[c.name]);
-      const nameHtml = canLink
-        ? `<a class="athlete-link" href="#athletes/${encodeURIComponent(c.name)}">${escHtml(c.name)}</a>`
-        : escHtml(c.name);
-      return `<tr>
-        <td class="num">${i + 1}</td>
-        <td style="font-weight:700;color:var(--navy)">${c.year}</td>
-        <td>${nameHtml}</td>
-        <td style="color:var(--text-dim);font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">${nationFlag(c.nation)}${escHtml(c.nation)}</td>
-      </tr>`;
-    }).join('');
+  document.getElementById('champs-women-tbody').innerHTML = champsRowsHTML(CHAMPS_WOMEN);
+  document.getElementById('champs-men-tbody').innerHTML   = champsRowsHTML(CHAMPS_MEN);
+}
+
+// ── Full-list tab: #winlist/<tour>/<list-id> ──
+// Opened in a new browser tab from any Winners board header.
+let _winlistPrevTitle = null;
+function renderWinList(param) {
+  const parts = (param || '').split('/');
+  const tour = parts.length > 1 ? parts[0] : 'ct';
+  const id   = parts.length > 1 ? parts[1] : parts[0];
+  const def  = WINLISTS[id];
+  // Point the live data at the requested tour (same swap as setWSLTour, minus navigation)
+  if (tour !== currentWSLTour) {
+    if (tour === 'cs' && typeof CS_DATA !== 'undefined' && CS_DATA && CS_DATA.athletes) {
+      DATA = CS_DATA; WINNERS_DATA = CS_WINNERS_DATA; EVENTS_BY_YEAR = CS_EVENTS_BY_YEAR; currentWSLTour = 'cs';
+    } else if (tour === 'lt' && typeof LT_DATA !== 'undefined' && LT_DATA && LT_DATA.athletes) {
+      DATA = LT_DATA; WINNERS_DATA = LT_WINNERS_DATA; EVENTS_BY_YEAR = LT_EVENTS_BY_YEAR; currentWSLTour = 'lt';
+    } else {
+      DATA = CT_DATA; WINNERS_DATA = CT_WINNERS_DATA; EVENTS_BY_YEAR = CT_EVENTS_BY_YEAR; currentWSLTour = 'ct';
+    }
+    try { CHAMPS_WOMEN = buildChampions('women'); CHAMPS_MEN = buildChampions('men'); } catch (e) {}
+    document.querySelectorAll('#wsl-tour-nav .nav-btn, #mobile-wsl-tour-nav .msn-btn').forEach(function(b) {
+      b.classList.toggle('active', b.id === 'wsl-tour-' + currentWSLTour || b.id === 'm-wsl-tour-' + currentWSLTour);
+    });
   }
-  buildTable('champs-women-tbody', CHAMPS_WOMEN);
-  buildTable('champs-men-tbody',   CHAMPS_MEN);
+  const tourName = { ct: 'Championship Tour', cs: 'Challenger Series', lt: 'Longboard Tour' }[currentWSLTour] || '';
+  const titleEl = document.getElementById('winlist-title');
+  const subEl   = document.getElementById('winlist-sub');
+  const headEl  = document.getElementById('winlist-thead');
+  const bodyEl  = document.getElementById('winlist-tbody');
+  if (!def) {
+    titleEl.textContent = 'List not found'; subEl.textContent = '';
+    headEl.innerHTML = ''; bodyEl.innerHTML = _winEmpty(1, 'Unknown list — go back to Winners');
+    return;
+  }
+  titleEl.textContent = def.title;
+  subEl.textContent = tourName + ' · ' + def.sub;
+  headEl.innerHTML = WINLIST_HEADS[def.kind];
+  let html;
+  if (def.kind === 'champs')      html = champsRowsHTML(def.g === 'women' ? CHAMPS_WOMEN : CHAMPS_MEN);
+  else if (def.kind === 'wins')   html = winsRowsHTML(WINNERS_DATA[def.g]);
+  else if (def.kind === 'venue')  html = venueFullRowsHTML(def.g);
+  else if (def.kind === 'streak') html = streakRowsHTML(def.g);
+  bodyEl.innerHTML = html || '';
+  if (_winlistPrevTitle === null) _winlistPrevTitle = document.title;
+  document.title = def.title + ' — ' + tourName;
 }
 
 function renderResultsAccordion() {
