@@ -1048,7 +1048,7 @@
 <option value="Bells">Bells</option>
 <option value="Margaret River">Margaret River</option>
 <option value="Gold Coast">Gold Coast</option>
-<option value="NZ">NZ</option>
+<option value="Raglan">Raglan</option>
 <option value="El Salvador">El Salvador</option>
 <option value="Rio">Rio</option>
 <option value="Tahiti">Tahiti</option>
@@ -1062,6 +1062,26 @@
 <option value="WSL Finals">WSL Finals</option>
 <option value="Newcastle">Newcastle</option>
 <option value="G-Land">G-Land</option>
+<option value="Sydney">Sydney</option>
+<option value="Rottnest">Rottnest</option>
+<option value="Mexico">Mexico</option>
+<option value="Bali">Bali</option>
+<option value="Hossegor">Hossegor</option>
+<option value="Maui">Maui</option>
+<option value="US Open">US Open</option>
+<option value="Cascais">Cascais</option>
+<option value="Taranaki">Taranaki</option>
+<option value="Piha">Piha</option>
+<option value="Bondi">Bondi</option>
+<option value="Beachley">Beachley</option>
+<option value="Biarritz">Biarritz</option>
+<option value="Santa Cruz">Santa Cruz</option>
+<option value="New York">New York</option>
+<option value="San Francisco">San Francisco</option>
+<option value="Santa Catarina">Santa Catarina</option>
+<option value="Peru">Peru</option>
+<option value="Puerto Rico">Puerto Rico</option>
+<option value="Mundaka">Mundaka</option>
     </select>
     <div class="gender-tabs">
       <button class="gender-tab active" id="eg-women" onclick="setEventGender('women')">Women</button>
@@ -1293,7 +1313,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261006042912"></script>
+<script src="data.js?v=20261007205737"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -2546,41 +2566,60 @@ function winsRowsHTML(athletes) {
   }).join('');
 }
 
-// Venue wins, computed from raw event_results
+// Venue wins, computed from raw event_results.
+// A row tagged with an event tab (the "Tab" column of the Events index) counts
+// for that tab's entry — that's how the World Cup years held at Haleiwa count
+// for Sunset.  `tab` names the event tab each entry stands for.  Untagged rows
+// (events with no tab) still fall back to matching the event name.
 const VENUE_PATTERNS = [
-  { venue: 'Pipeline',          patterns: [/pipe/i] },
-  { venue: 'Bells Beach',       patterns: [/bells/i] },
-  { venue: 'Gold Coast',        patterns: [/gold coast/i, /snapper/i, /kirra/i] },
-  { venue: 'Margaret River',    patterns: [/margaret river/i] },
-  { venue: 'Tahiti',            patterns: [/tahiti/i, /teahupo/i] },
-  { venue: 'Fiji',              patterns: [/fiji/i, /cloudbreak/i] },
-  { venue: 'Trestles',          patterns: [/trestles/i] },
-  { venue: 'Portugal',          patterns: [/portugal/i, /peniche/i] },
-  { venue: 'J-Bay',             patterns: [/j-bay/i, /jeffrey/i] },
-  { venue: 'Rio',               patterns: [/\brio\b/i] },
-  { venue: 'El Salvador',       patterns: [/el salvador/i, /punta roca/i] },
-  { venue: 'New Zealand',       patterns: [/new zealand/i, /\bnz\b/i, /raglan/i] },
-  { venue: 'Abu Dhabi',         patterns: [/abu dhabi/i] },
-  { venue: 'Haleiwa',           patterns: [/haleiwa/i] },
-  { venue: 'Sunset Beach',      patterns: [/sunset beach/i] },
-  { venue: 'Hossegor',          patterns: [/hossegor/i] },
-  { venue: 'Huntington Beach',  patterns: [/huntington/i] },
-  { venue: 'France',            patterns: [/\bfrance\b/i] },
-  { venue: 'WSL Finals',        patterns: [/wsl finals/i] },
+  { venue: 'Pipeline',          tab: 'Pipe',           patterns: [/pipe/i] },
+  { venue: 'Bells Beach',       tab: 'Bells',          patterns: [/bells/i] },
+  { venue: 'Gold Coast',        tab: 'Gold Coast',     patterns: [/gold coast/i, /snapper/i, /kirra/i] },
+  { venue: 'Margaret River',    tab: 'Margaret River', patterns: [/margaret river/i] },
+  { venue: 'Tahiti',            tab: 'Tahiti',         patterns: [/tahiti/i, /teahupo/i] },
+  { venue: 'Fiji',              tab: 'Fiji',           patterns: [/fiji/i, /cloudbreak/i] },
+  { venue: 'Trestles',          tab: 'Trestles',       patterns: [/trestles/i] },
+  { venue: 'Portugal',          tab: 'Portugal',       patterns: [/portugal/i, /peniche/i] },
+  { venue: 'J-Bay',             tab: 'J-Bay',          patterns: [/j-bay/i, /jeffrey/i] },
+  { venue: 'Rio',               tab: 'Rio',            patterns: [/\brio\b/i] },
+  { venue: 'El Salvador',       tab: 'El Salvador',    patterns: [/el salvador/i, /punta roca/i] },
+  { venue: 'Raglan',            tab: 'Raglan',         patterns: [/raglan/i] },
+  { venue: 'Taranaki',          tab: 'Taranaki',       patterns: [/taranaki/i, /surf festival/i] },
+  { venue: 'Piha',              tab: 'Piha',           patterns: [/piha/i] },
+  { venue: 'Abu Dhabi',                                patterns: [/abu dhabi/i] },
+  { venue: 'Haleiwa',                                  patterns: [/haleiwa/i] },
+  { venue: 'Sunset Beach',      tab: 'Sunset',         patterns: [/sunset beach/i] },
+  { venue: 'Newcastle',         tab: 'Newcastle',      patterns: [/newcastle/i] },
+  { venue: 'G-Land',            tab: 'G-Land',         patterns: [/g-land/i, /grajagan/i] },
+  { venue: 'Hossegor',                                 patterns: [/hossegor/i] },
+  { venue: 'Huntington Beach',                         patterns: [/huntington/i] },
+  { venue: 'France',                                   patterns: [/\bfrance\b/i] },
+  { venue: 'WSL Finals',        tab: 'WSL Finals',     patterns: [/wsl finals/i] },
 ];
+// Which VENUE_PATTERNS entry an event counts for (null = none).  A tagged row
+// whose tab has no entry above gets one named after the tab.
+function venueEntryFor(ev) {
+  if (ev.tab) {
+    return VENUE_PATTERNS.find(vp => vp.tab === ev.tab) || { venue: ev.tab, tab: ev.tab, patterns: [] };
+  }
+  return VENUE_PATTERNS.find(vp => vp.patterns.some(p => p.test(ev.name))) || null;
+}
 // → [{ venue, max, athletes:[[name,wins],…] sorted wins desc, name asc }] for
 //   venues where someone has 2+ wins; venues sorted by record, then name.
 function venueStats(gender) {
   const m = {};
+  const order = VENUE_PATTERNS.map(vp => vp.venue);
   VENUE_PATTERNS.forEach(vp => { m[vp.venue] = {}; });
   for (const ev of ((DATA.event_results || {})[gender] || [])) {
     if (!ev.winner) continue;
-    const vp = VENUE_PATTERNS.find(vp => vp.patterns.some(p => p.test(ev.name)));
+    const vp = venueEntryFor(ev);
     if (!vp) continue;
+    if (!m[vp.venue]) { m[vp.venue] = {}; order.push(vp.venue); }
     m[vp.venue][ev.winner] = (m[vp.venue][ev.winner] || 0) + 1;
   }
   const out = [];
-  VENUE_PATTERNS.forEach(vp => {
+  order.forEach(venue => {
+    const vp = { venue };
     const athletes = Object.entries(m[vp.venue])
       .filter(([, w]) => w > 1)
       .sort(([an, aw], [bn, bw]) => bw - aw || an.localeCompare(bn));
