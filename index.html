@@ -1074,7 +1074,6 @@
 <option value="Piha">Piha</option>
 <option value="Bondi">Bondi</option>
 <option value="Beachley">Beachley</option>
-<option value="Biarritz">Biarritz</option>
 <option value="Santa Cruz">Santa Cruz</option>
 <option value="New York">New York</option>
 <option value="San Francisco">San Francisco</option>
@@ -1325,7 +1324,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261009043958"></script>
+<script src="data.js?v=20261010102222"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -2290,7 +2289,7 @@ function renderProfile(name, panelEl) {
   // accordion bodies/chevrons so the profile opens fully closed.
   panel.querySelectorAll(
     '.er-body.open, .er-chevron.open, .season-acc-body.open, .season-acc-chevron.open, .acc-body.open, .acc-year-hdr.open'
-  ).forEach(el => el.classList.remove('open'));
+  ).forEach(el => { if (!el.closest('.er-keep-open')) el.classList.remove('open'); });
   // Auto-resize any notes textareas that have existing content
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
   } finally {
@@ -5602,7 +5601,11 @@ function buildISAWlcSection(name, noTitle, noWrapper) {
       .map(function(ev) { return { ev: ev, place: entry.results[ev.id], nat: entry.country }; });
     if (myEvs.length) {
       allPairs = allPairs.concat(myEvs);
-      divAccordions += buildWJEventAccordion(entry.div_label, myEvs, cssId(name) + '_wlc_' + entry.division);
+      // Tagged er-keep-open so renderProfile's load-collapsed pass leaves it
+      // open — almost every WLC athlete has a single division, so a closed
+      // accordion is just an extra click.
+      divAccordions += buildWJEventAccordion(entry.div_label, myEvs, cssId(name) + '_wlc_' + entry.division)
+        .replace('<div class="er">', '<div class="er er-keep-open">');
     }
   });
 
