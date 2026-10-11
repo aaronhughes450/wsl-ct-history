@@ -1324,12 +1324,28 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261011102819"></script>
+<script src="data.js?v=20261011143100"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
 // data.js provides CT_* and CS_* consts; these `let`s are what the whole app reads.
 let DATA           = (typeof CT_DATA           !== 'undefined') ? CT_DATA           : {athletes:{},events:{},seasons:{},tour_seasons:{},rookies:{},event_results:{women:[],men:[]}};
+// QS 6000 INTL events sit in the Challenger Series data, tagged Tier "QS 6000"
+// (event_results .tier / EVENTS_BY_YEAR .t). They count toward CS rankings but
+// are kept out of Event Wins and listed as their own QS wins.
+const QS_TIER = 'QS 6000';
+function isQSEvent(e) { return !!e && (e.tier === QS_TIER || e.t === QS_TIER); }
+function qsWinsListHtml(wins) {
+  if (!wins.length) return '';
+  return '<div class="section-title">QS 6000 INTL Wins (' + wins.length + ')</div>'
+    + '<ul class="wins-list">' + wins.map(function (w) {
+        var label = w.url
+          ? '<a href="' + w.url + '" target="_blank" rel="noopener" style="color:#001834;text-decoration:none;font-weight:700" title="View results on WSL">' + w.name + '</a>'
+          : '<span>' + w.name + '</span>';
+        var loc = w.location ? '<span class="win-location">' + w.location + '</span>' : '';
+        return '<li>' + label + loc + '</li>';
+      }).join('') + '</ul>';
+}
 let WINNERS_DATA   = (typeof CT_WINNERS_DATA   !== 'undefined') ? CT_WINNERS_DATA   : {women:[],men:[]};
 let EVENTS_BY_YEAR = (typeof CT_EVENTS_BY_YEAR !== 'undefined') ? CT_EVENTS_BY_YEAR : {women:{},men:{}};
 let currentWSLTour = 'ct';
@@ -2044,7 +2060,8 @@ function renderProfile(name, panelEl) {
 
   const hasWc = !!(st.wc && st.wc > 0);
   // Derive event wins directly from event_results so it stays in sync with the wins list
-  const ewCount = (DATA.event_results[gender] || []).filter(e => e.winner === name && !e.name.includes('Finals')).length;
+  const ewCount = (DATA.event_results[gender] || []).filter(e => e.winner === name && !e.name.includes('Finals') && !isQSEvent(e)).length;
+  const qsWins  = (DATA.event_results[gender] || []).filter(e => e.winner === name && isQSEvent(e)).sort((a, b) => b.year - a.year);
   const bentoStatGrid = isWildcardOnly ? '' : `
     <div class="bento-stat-grid">
       <div class="bento-stat-card${hasWc ? ' card-gold' : ''}">
@@ -2055,7 +2072,7 @@ function renderProfile(name, panelEl) {
       <div class="bento-stat-card">
         <div class="stat-card-label">Event Wins</div>
         <div class="stat-card-value">${ewCount || '—'}</div>
-        <div class="stat-card-sub" style="visibility:hidden">—</div>
+        <div class="stat-card-sub"${qsWins.length ? '' : ' style="visibility:hidden"'}>${qsWins.length ? '+ ' + qsWins.length + ' QS 6000 win' + (qsWins.length !== 1 ? 's' : '') : '—'}</div>
       </div>
       <div class="bento-stat-card">
         <div class="stat-card-label">Best Ranking</div>
@@ -2190,7 +2207,7 @@ function renderProfile(name, panelEl) {
 
   // Event wins from Events - Women / Events - Men sheets (includes full name + WSL link)
   const allWins = (DATA.event_results[gender] || [])
-    .filter(e => e.winner === name)
+    .filter(e => e.winner === name && !isQSEvent(e))
     .sort((a, b) => b.year - a.year);
   const winsTitle = isWildcardOnly ? 'Event Wins' : 'CT Wins';
   const winsHtml = allWins.length
@@ -2203,8 +2220,8 @@ function renderProfile(name, panelEl) {
            const loc = w.location ? `<span class="win-location">${w.location}</span>` : '';
            return `<li>${label}${loc}</li>`;
          }).join('')}
-       </ul>`
-    : '';
+       </ul>` + qsWinsListHtml(qsWins)
+    : qsWinsListHtml(qsWins);
 
   // ── Decide which overview panel opens by default ────────────────────────
   const openSection = _profileOpenedFromISA ? 'isa' : 'wsl';
@@ -2848,7 +2865,8 @@ function renderResultsAccordion() {
   function buildRows(evs) {
     return (evs || []).map(e => {
       const isFinal = /finals/i.test(e.n);
-      const badge = isFinal ? '<span class="res-finals-badge">Finals</span>' : '';
+      const badge = isFinal ? '<span class="res-finals-badge">Finals</span>'
+                  : isQSEvent(e) ? '<span class="res-finals-badge">QS 6000</span>' : '';
       const nameHtml = e.u
         ? `<a href="${e.u}" target="_blank" rel="noopener">${escHtml(e.n)}</a>${badge}`
         : `<span class="ev-label">${escHtml(e.n)}</span>${badge}`;
@@ -4061,7 +4079,7 @@ function buildCSSection(name, innerOnly) {
     +   '<div class="bento-stat-card">'
     +     '<div class="stat-card-label">Event Wins</div>'
     +     '<div class="stat-card-value">' + (st.ew || '—') + '</div>'
-    +     '<div class="stat-card-sub" style="visibility:hidden">—</div>'
+    +     '<div class="stat-card-sub"' + (st.qw ? '' : ' style="visibility:hidden"') + '>' + (st.qw ? '+ ' + st.qw + ' QS 6000 win' + (st.qw !== 1 ? 's' : '') : '—') + '</div>'
     +   '</div>'
     +   '<div class="bento-stat-card">'
     +     '<div class="stat-card-label">Best Ranking</div>'
@@ -4095,10 +4113,13 @@ function buildCSSection(name, innerOnly) {
   if (bestRank) chips.push('<span class="chip ' + (bestRank === 1 ? 'w' : bestRank === 2 ? 'ru' : bestRank <= 4 ? 'sf' : 'ev') + '">Best CS #' + bestRank + '</span>');
   if (st.seasons) chips.push('<span class="chip ev">' + st.seasons + ' season' + (st.seasons !== 1 ? 's' : '') + '</span>');
   if (st.ew) chips.push('<span class="chip w">' + st.ew + ' event win' + (st.ew !== 1 ? 's' : '') + '</span>');
+  if (st.qw) chips.push('<span class="chip ev">' + st.qw + ' QS 6000 win' + (st.qw !== 1 ? 's' : '') + '</span>');
 
   // ── Event wins list (event name + location + WSL link) — mirrors the CT card ─
-  const csWins = (CS_DATA.event_results[gender] || [])
+  const csAllWins = (CS_DATA.event_results[gender] || [])
     .filter(e => e.winner === name).sort((x, y) => y.year - x.year);
+  const csWins   = csAllWins.filter(e => !isQSEvent(e));
+  const csQsWins = csAllWins.filter(isQSEvent);
   const csWinsHtml = csWins.length
     ? '<div><div class="section-title" style="margin-top:0">CS Wins (' + csWins.length + ')</div>'
       + '<ul class="wins-list' + (csWins.length > 10 ? ' two-col' : '') + '">'
@@ -4109,8 +4130,8 @@ function buildCSSection(name, innerOnly) {
           var loc = w.location ? '<span class="win-location">' + w.location + '</span>' : '';
           return '<li>' + label + loc + '</li>';
         }).join('')
-      + '</ul></div>'
-    : '';
+      + '</ul></div>' + (csQsWins.length ? '<div>' + qsWinsListHtml(csQsWins) + '</div>' : '')
+    : (csQsWins.length ? '<div>' + qsWinsListHtml(csQsWins) + '</div>' : '');
 
   const bodyId = 'cs_ovw__' + cssId(name);
   const chevId = 'cs_chev__' + cssId(name);
