@@ -794,6 +794,10 @@
     <button class="nav-btn" id="isa-sub-sup" onclick="setISASub('sup')">WSUPPC</button>
     <button class="nav-btn" id="isa-sub-wpsc" onclick="setISASub('wpsc')">WPSC</button>
   </nav>
+  <nav class="nav" id="oly-subnav" style="display:none">
+    <button class="nav-btn active" id="oly-sub-olympics" onclick="setOlySub('olympics')">Olympic Games</button>
+    <button class="nav-btn" id="oly-sub-panam" onclick="setOlySub('panam')">Pan Am Games</button>
+  </nav>
   <span class="org-divider" id="isa-nations-divider" style="display:none"></span>
   <nav class="nav" id="isa-nations-nav" style="display:none">
     <button class="nav-btn" id="isa-sub-nations" onclick="setISASub('nations')">Nations</button>
@@ -862,6 +866,12 @@
 <div class="mobile-subnav" id="mobile-isa-nations-nav" style="display:none">
   <button class="msn-btn" id="m-isa-sub-nations" onclick="setISASub('nations')">Nations</button>
   <button class="msn-btn" id="m-isa-sub-events" onclick="setISASub('events')">Events</button>
+</div>
+
+<!-- Mobile-only Olympics sub-nav (Olympic Games / Pan Am Games) -->
+<div class="mobile-subnav mobile-tour-nav" id="mobile-oly-subnav" style="display:none">
+  <button class="msn-btn active" id="m-oly-sub-olympics" onclick="setOlySub('olympics')">Olympic Games</button>
+  <button class="msn-btn" id="m-oly-sub-panam" onclick="setOlySub('panam')">Pan Am Games</button>
 </div>
 
 <!-- Winners view -->
@@ -1323,8 +1333,26 @@
   </div>
 </div>
 
+<!-- Pan American Games view (sub-tab of the Olympics org) -->
+<div class="view" id="view-panam">
+  <div class="athletes-layout">
+    <div class="athlete-list-panel">
+      <div class="list-filters">
+        <div class="gender-tabs">
+          <button class="gender-tab active" id="pan-tab-women" onclick="setPanGender('women')">Women</button>
+          <button class="gender-tab" id="pan-tab-men" onclick="setPanGender('men')">Men</button>
+        </div>
+      </div>
+      <div class="athlete-list" id="pan-list"></div>
+    </div>
+    <div class="profile-panel" id="pan-profile">
+      <div class="profile-empty">Select an athlete to view their Pan American Games history</div>
+    </div>
+  </div>
+</div>
+
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261016170415"></script>
+<script src="data.js?v=20261018143018"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1370,7 +1398,8 @@ function _renderView(name) {
   // ever gets the 'active' class, leaving a blank page on deep links.
   var resolvedName = (name === 'wj' || name === 'wlc' || name === 'sup' || name === 'wpsc'
                       || name === 'nations' || name === 'isaev') ? 'isa' : name;
-  var orgForView = (resolvedName === 'olympics') ? 'olympics' : (resolvedName === 'isa') ? 'isa' : 'wsl';
+  var orgForView = (resolvedName === 'olympics' || resolvedName === 'panam') ? 'olympics' : (resolvedName === 'isa') ? 'isa' : 'wsl';
+  if (name === 'olympics' || name === 'panam') { olySubView = name; _syncOlySubBtns(); }
   document.querySelectorAll('.bottom-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.org === orgForView);
   });
@@ -1411,6 +1440,7 @@ function _renderView(name) {
       if (name === 'season')    renderSeasonTour();
       if (name === 'winners')   renderWinners();
       if (name === 'olympics')  renderOlympics();
+      if (name === 'panam')     renderPanAm();
       if (name === 'isa')       renderISA();
       if (name === 'wj')        { setISASub('wj'); filterWJ(document.getElementById('global-search')?.value || ''); }
       if (name === 'wlc')       { setISASub('wlc'); filterWLC(document.getElementById('global-search')?.value || ''); }
@@ -1452,6 +1482,8 @@ function applyHash() {
       '<div class="profile-empty">Select an athlete to view their profile</div>';
   } else if (view === 'olympics' && name) {
     setTimeout(() => _selectOlyAthlete(name), 50);
+  } else if (view === 'panam' && name) {
+    setTimeout(() => _selectPanAthlete(name), 50);
   } else if (view === 'isa' && name) {
     // Ensure the WSG sub-view is the visible one (mirrors the wj/wlc/sup/
     // nations branches below) — otherwise the profile lands in a hidden panel.
@@ -1497,7 +1529,7 @@ function applyHash() {
     setTimeout(() => _selectNation(name), 80);
   }
   // Keep org tabs in sync with current view
-  var orgForHash = (view === 'olympics') ? 'olympics' : (view === 'isa' || view === 'wj' || view === 'wlc' || view === 'sup' || view === 'wpsc' || view === 'nations' || view === 'isaev') ? 'isa' : 'wsl';
+  var orgForHash = (view === 'olympics' || view === 'panam') ? 'olympics' : (view === 'isa' || view === 'wj' || view === 'wlc' || view === 'sup' || view === 'wpsc' || view === 'nations' || view === 'isaev') ? 'isa' : 'wsl';
   document.querySelectorAll('.org-btn').forEach(function(b) {
     b.classList.toggle('active', b.dataset.org === orgForHash);
   });
@@ -1506,7 +1538,11 @@ function applyHash() {
   var divider2 = document.querySelector('.org-divider');
   if (subnav2) subnav2.style.display = orgForHash === 'wsl' ? '' : 'none';
   if (isaSubnav2) isaSubnav2.style.display = orgForHash === 'isa' ? '' : 'none';
-  if (divider2) divider2.style.display = (orgForHash === 'wsl' || orgForHash === 'isa') ? '' : 'none';
+  if (divider2) divider2.style.display = (orgForHash === 'wsl' || orgForHash === 'isa' || orgForHash === 'olympics') ? '' : 'none';
+  var olySubnav2 = document.getElementById('oly-subnav');
+  if (olySubnav2) olySubnav2.style.display = orgForHash === 'olympics' ? '' : 'none';
+  var msnOly2 = document.getElementById('mobile-oly-subnav');
+  if (msnOly2) msnOly2.style.display = orgForHash === 'olympics' ? '' : 'none';
   // WSL tour selector (CT/CS/LT) + its divider
   var tourNav2 = document.getElementById('wsl-tour-nav');
   var tourDiv2 = document.getElementById('wsl-tour-divider');
@@ -2195,7 +2231,7 @@ function renderProfile(name, panelEl) {
         wcCount      ? `<div class="meta-tag" style="background:#fff;color:#f0b400;border-color:#f0b400">🏆 ${wcCount > 1 ? wcCount + '× ' : ''}World Champion</div>` : '',
         isRoty       ? `<div class="meta-tag" style="background:var(--navy);color:#fff;border-color:var(--navy)">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
       ]
-  ).join('') + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name) + buildISAWpscBadges(name);
+  ).join('') + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name) + buildISAWpscBadges(name) + buildPanAmBadges(name);
 
   // Rookie class
   const rookieClassHtml = rookieSeason && rookieClass.length
@@ -2301,6 +2337,7 @@ function renderProfile(name, panelEl) {
     ${wslResultsSection}
     ${buildISASection(name)}
     ${buildOlympicsSection(name)}
+    ${buildPanAmSection(name)}
   `;
   // Load every accordion collapsed — strip the default-open state from all
   // accordion bodies/chevrons so the profile opens fully closed.
@@ -3434,6 +3471,12 @@ function gsAllAthletes() {
       if (seen[a.name].sources.indexOf('OLY') === -1) seen[a.name].sources.push('OLY');
     });
   }
+  if (typeof PANAM_DATA !== 'undefined' && PANAM_DATA && PANAM_DATA.athletes) {
+    PANAM_DATA.athletes.forEach(function(a) {
+      if (!seen[a.name]) { seen[a.name] = { name: a.name, sources: [] }; results.push(seen[a.name]); }
+      if (seen[a.name].sources.indexOf('PAN') === -1) seen[a.name].sources.push('PAN');
+    });
+  }
   if (typeof ISA_WJ_DATA !== 'undefined' && ISA_WJ_DATA && ISA_WJ_DATA.athletes) {
     ISA_WJ_DATA.athletes.forEach(function(a) {
       if (!seen[a.name]) { seen[a.name] = { name: a.name, sources: [] }; results.push(seen[a.name]); }
@@ -3476,7 +3519,7 @@ function globalSearch(q) {
     else if (isaSubView === 'nations') filterNations(q);
     else filterISA(q);
   }
-  else if (currentOrg === 'olympics') filterOlympics(q);
+  else if (currentOrg === 'olympics') { if (olySubView === 'panam') filterPanAm(q); else filterOlympics(q); }
 
   if (!q.trim()) { dd.innerHTML = ''; dd.classList.remove('open'); return; }
 
@@ -3523,6 +3566,12 @@ function gsSelect(name, primarySource) {
     if (currentOrg !== 'olympics') { setOrg('olympics'); }
     requestAnimationFrame(function() {
       setTimeout(function() { location.hash = '#olympics/' + encodeURIComponent(name); }, 120);
+    });
+  } else if (primarySource === 'PAN') {
+    olySubView = 'panam';
+    if (currentOrg !== 'olympics') { setOrg('olympics'); }
+    requestAnimationFrame(function() {
+      setTimeout(function() { location.hash = '#panam/' + encodeURIComponent(name); }, 120);
     });
   } else if (primarySource === 'WJSC') {
     if (currentOrg !== 'isa') { setOrg('isa'); }
@@ -3939,7 +3988,11 @@ function setOrg(org) {
   var isaNatNav = document.getElementById('isa-nations-nav');
   if (isaNatDiv) isaNatDiv.style.display = org === 'isa' ? '' : 'none';
   if (isaNatNav) isaNatNav.style.display = org === 'isa' ? '' : 'none';
-  if (divider) divider.style.display = (org === 'wsl' || org === 'isa') ? '' : 'none';
+  if (divider) divider.style.display = (org === 'wsl' || org === 'isa' || org === 'olympics') ? '' : 'none';
+  var olySubnav = document.getElementById('oly-subnav');
+  if (olySubnav) olySubnav.style.display = org === 'olympics' ? '' : 'none';
+  var msnOly = document.getElementById('mobile-oly-subnav');
+  if (msnOly) msnOly.style.display = org === 'olympics' ? '' : 'none';
   if (tourNav) tourNav.style.display = org === 'wsl' ? '' : 'none';
   if (tourDiv) tourDiv.style.display = org === 'wsl' ? '' : 'none';
   var msn = document.getElementById('mobile-subnav');
@@ -3964,7 +4017,8 @@ function setOrg(org) {
     else if (isaSubView === 'wpsc') filterWPSC(document.getElementById('global-search')?.value || '');
     else if (isaSubView === 'nations') filterNations(document.getElementById('global-search')?.value || '');
   } else if (org === 'olympics') {
-    showView('olympics');
+    _syncOlySubBtns();
+    showView(olySubView);
   }
 }
 
@@ -4500,6 +4554,7 @@ function renderOlyProfile(name) {
     + buildISAWlcBadges(name)
     + buildISASUPBadges(name)
     + buildISAWpscBadges(name)
+    + buildPanAmBadges(name)
     + '</div>'
     + '<div class="section-title">Olympic Results</div>'
     + '<table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden">'
@@ -4514,12 +4569,228 @@ function renderOlyProfile(name) {
   if (!isWslAthlete(name)) {
     var isaSection = buildISASection(name);
     if (isaSection) panel.innerHTML += isaSection;
+    var panSection = buildPanAmSection(name);
+    if (panSection) panel.innerHTML += panSection;
   }
 }
 
 function renderOlympics() {
   filterOlympics(document.getElementById('global-search')?.value || '');
   if (olySelected) renderOlyProfile(olySelected);
+}
+// ── Pan American Games ───────────────────────────────────────────────────────
+// PANAM_DATA (data.js, from panam-data.json via generate.py) holds one entry per
+// athlete per discipline — Shortboard, Longboard, SUP Surfing, SUP Race — so a
+// profile aggregates every discipline a surfer contested. Results are placings,
+// or a status string (e.g. "DSQ") that counts as an appearance but no placing.
+var panGender = 'women';
+var panSelected = null;
+var olySubView = 'olympics';        // 'olympics' or 'panam' — sub-tab of the Olympics org
+
+function _panData() {
+  return (typeof PANAM_DATA !== 'undefined' && PANAM_DATA && PANAM_DATA.athletes) ? PANAM_DATA : null;
+}
+// Names are compared NFC-normalised: some sources store accents decomposed, so
+// a hash or link typed with precomposed accents must still find the athlete.
+function _panKey(n) { return (n || '').normalize ? n.normalize('NFC') : n; }
+function panEntries(name) {
+  var d = _panData();
+  if (!d) return [];
+  var k = _panKey(name);
+  return d.athletes.filter(function(a) { return _panKey(a.name) === k; })
+    .sort(function(a, b) { return a.disc_order - b.disc_order; });
+}
+function panPlaceLabel(p) {
+  return (typeof p === 'number') ? olyPlaceLabel(p) : '<span style="color:#94a3b8;font-weight:800">' + escHtml(String(p)) + '</span>';
+}
+function _panLatestYear(entry) {
+  var d = _panData(), yr = 0;
+  d.events.forEach(function(ev) { if (entry.results[ev.id] !== undefined && ev.year > yr) yr = ev.year; });
+  return yr;
+}
+// Combined record for a person across disciplines.
+function panSummary(entries) {
+  var games = {}, m = { gold: 0, silver: 0, bronze: 0 };
+  entries.forEach(function(e) {
+    Object.keys(e.results).forEach(function(id) { games[id] = true; });
+    m.gold += e.medals.gold; m.silver += e.medals.silver; m.bronze += e.medals.bronze;
+  });
+  return { games: Object.keys(games).length, medals: m };
+}
+
+function setOlySub(sub) {
+  olySubView = (sub === 'panam') ? 'panam' : 'olympics';
+  _syncOlySubBtns();
+  showView(olySubView);
+}
+function _syncOlySubBtns() {
+  ['oly-sub-olympics', 'm-oly-sub-olympics'].forEach(function(id) {
+    var b = document.getElementById(id); if (b) b.classList.toggle('active', olySubView === 'olympics');
+  });
+  ['oly-sub-panam', 'm-oly-sub-panam'].forEach(function(id) {
+    var b = document.getElementById(id); if (b) b.classList.toggle('active', olySubView === 'panam');
+  });
+}
+
+function buildPanAmBadges(name) {
+  var entries = panEntries(name);
+  if (!entries.length) return '';
+  var s = panSummary(entries);
+  var parts = [];
+  parts.push('<div class="meta-tag" style="background:#fff1f2;color:#be123c;border-color:#fda4af">'
+    + (s.games === 1 ? 'Pan Am Games' : s.games + '× Pan Am Games') + '</div>');
+  if (s.medals.gold)   parts.push('<div class="meta-tag" style="background:#fff8dc;color:#b8860b;border-color:#f0d060">🥇 Pan Am Gold'   + (s.medals.gold   > 1 ? ' ×' + s.medals.gold   : '') + '</div>');
+  if (s.medals.silver) parts.push('<div class="meta-tag" style="background:#f4f6f8;color:#607080;border-color:#c8d0da">🥈 Pan Am Silver' + (s.medals.silver > 1 ? ' ×' + s.medals.silver : '') + '</div>');
+  if (s.medals.bronze) parts.push('<div class="meta-tag" style="background:#fdf0e8;color:#a0623c;border-color:#e8c0a0">🥉 Pan Am Bronze' + (s.medals.bronze > 1 ? ' ×' + s.medals.bronze : '') + '</div>');
+  return parts.join('');
+}
+
+// One accordion per discipline under a "Pan American Games" title. `open`
+// leaves the accordions expanded (the Pan Am profile itself); elsewhere they
+// sit collapsed alongside the other sources.
+function buildPanAmSection(name, open) {
+  var d = _panData();
+  var entries = panEntries(name);
+  if (!d || !entries.length) return '';
+  var th = 'padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0';
+  var cards = entries.map(function(e) {
+    var evs = d.events.filter(function(ev) { return e.results[ev.id] !== undefined; })
+      .sort(function(a, b) { return b.year - a.year; });
+    if (!evs.length) return '';
+    var bodyId = 'panev__' + cssId(name) + '__' + e.discipline;
+    var chevId = 'panchev__' + cssId(name) + '__' + e.discipline;
+    var best = e.best;
+    var bestCls = best === 1 ? 'w' : best === 2 ? 'ru' : best && best <= 4 ? 'sf' : best && best <= 8 ? 'qf' : 'ev';
+    var chips = (best ? '<span class="chip ' + bestCls + '">Best ' + olyPlaceLabel(best) + '</span>' : '')
+      + '<span class="chip ev">' + evs.length + ' appearance' + (evs.length !== 1 ? 's' : '') + '</span>';
+    var rows = evs.map(function(ev) {
+      var place = e.results[ev.id];
+      var rowBg = place === 1 ? '#fffbea' : place === 2 ? '#f6f8fa' : place === 3 ? '#fff5f0' : '#fff';
+      var games = ev.resultUrl
+        ? '<a href="' + ev.resultUrl + '" target="_blank" rel="noopener" style="color:#001834;text-decoration:underline" title="Official results">' + escHtml(ev.name) + '</a>'
+        : escHtml(ev.name);
+      return '<tr style="background:' + rowBg + '">'
+        + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:#001834">' + games + '</td>'
+        + '<td style="padding:9px 14px;font-size:0.78rem;color:#5a7090;border-bottom:1px solid #f1f5f9">' + escHtml(ev.venue || '') + '</td>'
+        + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9">' + panPlaceLabel(place) + '</td>'
+        + '</tr>';
+    }).join('');
+    return '<div class="er' + (open ? ' er-keep-open' : '') + '">'
+      + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
+      + '<span class="er-loc">' + escHtml(e.disc_label) + '</span>'
+      + '<div class="er-chips">' + chips
+      + '<svg id="' + chevId + '" class="er-chevron' + (open ? ' open' : '') + '" width="12" height="12" viewBox="0 0 12 12">'
+      + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '</svg></div></div>'
+      + '<div class="er-body' + (open ? ' open' : '') + '" id="' + bodyId + '">'
+      + '<table style="width:100%;border-collapse:collapse">'
+      + '<thead><tr style="background:#f8fafc"><th style="' + th + '">Games</th><th style="' + th + '">Venue</th><th style="' + th + '">Result</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table>'
+      + '</div></div>';
+  }).join('');
+  if (!cards) return '';
+  return '<div class="section-title">Pan American Games</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">' + cards + '</div>';
+}
+
+// One list row per person; nation is taken from their most recent Games.
+function panPeople(gender) {
+  var d = _panData();
+  if (!d) return [];
+  var by = {};
+  d.athletes.forEach(function(a) {
+    if (a.gender !== gender) return;
+    var yr = _panLatestYear(a);
+    if (!by[a.name] || yr > by[a.name].yr) by[a.name] = { name: a.name, country: a.country, yr: yr };
+  });
+  return Object.keys(by).map(function(k) { return by[k]; });
+}
+
+function setPanGender(g) {
+  panGender = g;
+  document.getElementById('pan-tab-men').classList.toggle('active', g === 'men');
+  document.getElementById('pan-tab-women').classList.toggle('active', g === 'women');
+  filterPanAm(document.getElementById('global-search')?.value || '');
+  document.getElementById('pan-profile').innerHTML = '<div class="profile-empty">Select an athlete to view their Pan American Games history</div>';
+  panSelected = null;
+}
+
+function filterPanAm(query) {
+  var list = document.getElementById('pan-list');
+  if (!list) return;
+  if (!_panData()) {
+    list.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:0.8rem">No data available.</div>';
+    return;
+  }
+  var q = (query || '').toLowerCase();
+  list.innerHTML = '';
+  panPeople(panGender)
+    .filter(function(a) { return !q || a.name.toLowerCase().includes(q) || (a.country || '').toLowerCase().includes(q); })
+    .sort(function(a, b) { return a.name.localeCompare(b.name); })
+    .forEach(function(a) {
+      var div = document.createElement('div');
+      div.className = 'athlete-item' + (a.name === panSelected ? ' selected' : '');
+      div.innerHTML = '<span class="athlete-item-name">' + escHtml(a.name) + '</span><span class="athlete-item-nation">' + escHtml(a.country) + '</span>';
+      div.onclick = function() {
+        var newHash = '#panam/' + encodeURIComponent(a.name);
+        if (location.hash === newHash) _selectPanAthlete(a.name);
+        else location.hash = newHash;
+      };
+      list.appendChild(div);
+    });
+}
+
+function _selectPanAthlete(name) {
+  var entries = panEntries(name);
+  if (!entries.length) return;
+  name = entries[0].name;   // the data's own spelling, which the other sources share
+  var g = entries[0].gender;
+  if (g !== panGender) {
+    panGender = g;
+    document.getElementById('pan-tab-men').classList.toggle('active', g === 'men');
+    document.getElementById('pan-tab-women').classList.toggle('active', g === 'women');
+  }
+  panSelected = name;
+  filterPanAm(document.getElementById('global-search')?.value || '');
+  var sel = document.querySelector('#pan-list .athlete-item.selected');
+  if (sel) sel.scrollIntoView({ block: 'nearest' });
+  if (isWslAthlete(name)) {
+    renderProfile(name, document.getElementById('pan-profile'));
+  } else {
+    renderPanProfile(name);
+  }
+}
+
+function renderPanProfile(name) {
+  var entries = panEntries(name);
+  if (!entries.length) return;
+  var panel = document.getElementById('pan-profile');
+  var latest = entries.reduce(function(best, e) { return _panLatestYear(e) > _panLatestYear(best) ? e : best; }, entries[0]);
+  var s = panSummary(entries);
+  panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
+    + '<div class="profile-meta">'
+    + '<span class="meta-tag">' + nationFlag(latest.country) + escHtml(latest.country) + '</span>'
+    + '<span class="meta-tag">' + (latest.gender === 'men' ? 'Men' : 'Women') + '</span>'
+    + buildPanAmBadges(name)
+    + buildOlympicBadges(name)
+    + buildISAWsgBadges(name)
+    + buildISAWjBadges(name)
+    + buildISAWlcBadges(name)
+    + buildISASUPBadges(name)
+    + buildISAWpscBadges(name)
+    + '</div>'
+    + buildPanAmSection(name, true);
+  if (!isWslAthlete(name)) {
+    var isaSection = buildISASection(name);
+    if (isaSection) panel.innerHTML += isaSection;
+    var olySection = buildOlympicsSection(name);
+    if (olySection) panel.innerHTML += olySection;
+  }
+}
+
+function renderPanAm() {
+  filterPanAm(document.getElementById('global-search')?.value || '');
+  if (panSelected) _selectPanAthlete(panSelected);
 }
 // ── ISA World Surfing Games ───────────────────────────────────────────────────
 // ISA_WSG_DATA is injected inline by generate.py from isa-wsg-data.json
@@ -5283,12 +5554,14 @@ function renderWJProfile(name) {
     + buildISAWlcBadges(name)
     + buildISASUPBadges(name)
     + buildISAWpscBadges(name)
-    + buildOlympicBadges(name);
+    + buildOlympicBadges(name)
+    + buildPanAmBadges(name);
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + bioFields
-    + buildISASection(name);
+    + buildISASection(name)
+    + (isWslAthlete(name) ? '' : buildPanAmSection(name));
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
 }
@@ -5563,12 +5836,14 @@ function renderWLCProfile(name) {
     + buildISAWjBadges(name)
     + buildISASUPBadges(name)
     + buildISAWpscBadges(name)
-    + buildOlympicBadges(name);
+    + buildOlympicBadges(name)
+    + buildPanAmBadges(name);
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + bioFields
-    + buildISASection(name);
+    + buildISASection(name)
+    + (isWslAthlete(name) ? '' : buildPanAmSection(name));
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
 }
@@ -5791,12 +6066,14 @@ function renderSUPProfile(name) {
     + buildISAWsgBadges(name)
     + buildISAWjBadges(name)
     + buildISAWlcBadges(name)
-    + buildOlympicBadges(name);
+    + buildOlympicBadges(name)
+    + buildPanAmBadges(name);
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + bioFields
-    + buildISASection(name);
+    + buildISASection(name)
+    + (isWslAthlete(name) ? '' : buildPanAmSection(name));
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
 }
@@ -6005,12 +6282,14 @@ function renderWPSCProfile(name) {
     + buildISAWjBadges(name)
     + buildISAWlcBadges(name)
     + buildISASUPBadges(name)
-    + buildOlympicBadges(name);
+    + buildOlympicBadges(name)
+    + buildPanAmBadges(name);
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + bioFields
-    + buildISASection(name);
+    + buildISASection(name)
+    + (isWslAthlete(name) ? '' : buildPanAmSection(name));
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
 }
@@ -6197,7 +6476,8 @@ function renderISAProfile(name) {
     + buildISAWlcBadges(name)
     + buildISASUPBadges(name)
     + buildISAWpscBadges(name)
-    + buildOlympicBadges(name);
+    + buildOlympicBadges(name)
+    + buildPanAmBadges(name);
 
   // ── Assemble panel ─────────────────────────────────────────────────────────
   panel.innerHTML = '<div class="profile-name">' + escHtml(a.name) + '</div>'
@@ -6209,6 +6489,8 @@ function renderISAProfile(name) {
   if (!isWslAthlete(name)) {
     var olySection = buildOlympicsSection(name);
     if (olySection) panel.innerHTML += olySection;
+    var panSection = buildPanAmSection(name);
+    if (panSection) panel.innerHTML += panSection;
   }
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
@@ -6782,7 +7064,7 @@ if ('serviceWorker' in navigator) {
 
     // Highlight active item in bottom tab bar (tabs are org-level)
     const currentView = (location.hash.slice(1).split('/')[0]) || 'athletes';
-    const orgForTab = (currentView === 'olympics') ? 'olympics'
+    const orgForTab = (currentView === 'olympics' || currentView === 'panam') ? 'olympics'
       : (currentView === 'isa' || currentView === 'wj' || currentView === 'wlc' || currentView === 'sup' || currentView === 'wpsc' || currentView === 'nations') ? 'isa'
       : 'wsl';
     document.querySelectorAll('.bottom-tab').forEach(b => {
@@ -6797,7 +7079,7 @@ if ('serviceWorker' in navigator) {
     // for a selected athlete is "#<view>/<name>", so a name segment after the
     // slash is what distinguishes a profile from a bare list view.
     const onMobile  = window.innerWidth <= 768;
-    const onProfile = /^#(athletes|olympics|isa|wj|wlc|sup|wpsc)\/.+/.test(location.hash);
+    const onProfile = /^#(athletes|olympics|panam|isa|wj|wlc|sup|wpsc)\/.+/.test(location.hash);
     document.querySelectorAll('.athletes-layout').forEach(function (el) {
       el.classList.toggle('mobile-profile', onMobile && onProfile);
     });
