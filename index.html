@@ -779,6 +779,8 @@
     <button class="nav-btn active" id="wsl-tour-ct" onclick="setWSLTour('ct')">CT</button>
     <button class="nav-btn" id="wsl-tour-cs" onclick="setWSLTour('cs')">CS</button>
     <button class="nav-btn" id="wsl-tour-lt" onclick="setWSLTour('lt')">LT</button>
+    <button class="nav-btn" id="wsl-tour-qs" onclick="setWSLTour('qs')" title="Qualifying Series (WSL website data, 2010 on)">QS</button>
+    <button class="nav-btn" id="wsl-tour-pj" onclick="setWSLTour('pj')" title="Pro Junior (WSL website data, 2010 on)">PJ</button>
   </nav>
   <span class="org-divider" id="wsl-tour-divider"></span>
   <nav class="nav" id="wsl-subnav">
@@ -838,11 +840,13 @@
   </div>
 </div>
 
-<!-- Mobile-only WSL tour sub-nav (CT / CS / LT) — desktop version lives in the topbar -->
+<!-- Mobile-only WSL tour sub-nav (CT / CS / LT / QS / PJ) — desktop version lives in the topbar -->
 <div class="mobile-subnav mobile-tour-nav" id="mobile-wsl-tour-nav">
   <button class="msn-btn active" id="m-wsl-tour-ct" onclick="setWSLTour('ct')">CT</button>
   <button class="msn-btn" id="m-wsl-tour-cs" onclick="setWSLTour('cs')">CS</button>
   <button class="msn-btn" id="m-wsl-tour-lt" onclick="setWSLTour('lt')">LT</button>
+  <button class="msn-btn" id="m-wsl-tour-qs" onclick="setWSLTour('qs')">QS</button>
+  <button class="msn-btn" id="m-wsl-tour-pj" onclick="setWSLTour('pj')">PJ</button>
 </div>
 
 <!-- Mobile-only WSL sub-nav (org-level nav lives in the bottom tab bar) -->
@@ -1123,6 +1127,42 @@
   </div>
 </div>
 
+<!-- QS / Pro Junior view (scraped WSL reference data — qspj.js) -->
+<div class="view" id="view-qspj">
+  <div id="qp-athletes" class="athletes-layout">
+    <div class="athlete-list-panel">
+      <div class="list-filters">
+        <div class="gender-tabs">
+          <button class="gender-tab active" id="qp-tab-women" onclick="qpSetGender('women')">Women</button>
+          <button class="gender-tab" id="qp-tab-men" onclick="qpSetGender('men')">Men</button>
+        </div>
+      </div>
+      <div class="athlete-list" id="qp-list"></div>
+    </div>
+    <div class="profile-panel" id="qp-profile">
+      <div class="profile-empty">Select an athlete</div>
+    </div>
+  </div>
+  <div id="qp-events" style="display:none">
+    <div class="events-controls">
+      <select id="qp-year" onchange="qpSetYear(this.value)"></select>
+      <div class="gender-tabs">
+        <button class="gender-tab active" id="qp-eg-women" onclick="qpSetGender('women')">Women</button>
+        <button class="gender-tab" id="qp-eg-men" onclick="qpSetGender('men')">Men</button>
+      </div>
+      <select id="qp-tier" onchange="qpOpen=null;qpRenderEvents()"></select>
+      <span id="qp-ev-count" style="font-size:0.75rem;color:var(--text-dim)"></span>
+      <span style="font-size:0.66rem;color:#94a3b8;margin-left:auto">Source: worldsurfleague.com · tap an event for full results</span>
+    </div>
+    <div class="events-table-wrap">
+      <table class="winners-table">
+        <thead><tr><th>Date</th><th>Event</th><th class="er-loc-col">Tier</th><th>Winner</th><th class="num">Field</th></tr></thead>
+        <tbody id="qp-ev-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- Seasons view -->
 <div class="view" id="view-seasons">
   <div class="seasons-controls">
@@ -1352,7 +1392,8 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261025151619"></script>
+<script src="data.js?v=20261027182622"></script>
+<script src="qspj.js?v=20261028011457" onerror="this.remove()"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1398,6 +1439,16 @@ function _renderView(name) {
   // ever gets the 'active' class, leaving a blank page on deep links.
   var resolvedName = (name === 'wj' || name === 'wlc' || name === 'sup' || name === 'wpsc'
                       || name === 'nations' || name === 'isaev') ? 'isa' : name;
+  // QS / PJ views share one container; their nav state maps onto Athletes / Events
+  if (!qpIsView(name) && qpActive() && ['athletes','events','season','seasons','winners'].indexOf(name) !== -1) qpLeave();
+  if (qpIsView(name)) {
+    resolvedName = 'qspj';
+    qpSyncTour(name.slice(0, 2));
+    var qpNav = name.slice(-2) === 'ev' ? 'events' : 'athletes';
+    document.querySelectorAll('.nav-btn[data-view], .msn-btn[data-view]').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.view === qpNav);
+    });
+  }
   var orgForView = (resolvedName === 'olympics' || resolvedName === 'panam') ? 'olympics' : (resolvedName === 'isa') ? 'isa' : 'wsl';
   if (name === 'olympics' || name === 'panam') { olySubView = name; _syncOlySubBtns(); }
   document.querySelectorAll('.bottom-tab').forEach(b => {
@@ -1448,6 +1499,7 @@ function _renderView(name) {
       if (name === 'wpsc')      { setISASub('wpsc'); filterWPSC(document.getElementById('global-search')?.value || ''); }
       if (name === 'nations')   { setISASub('nations'); filterNations(document.getElementById('global-search')?.value || ''); }
       if (name === 'isaev')     { setISASub('events'); }
+      if (qpIsView(name))       qpRender(name);
     }, 0);
   });
 }
@@ -1470,7 +1522,9 @@ function applyHash() {
 
   _renderView(view);
 
-  if (view === 'athletes' && name) {
+  if (qpIsView(view)) {
+    qpApplyHash(view, name);
+  } else if (view === 'athletes' && name) {
     const a = DATA.athletes[name];
     if (a) {
       setGender(a.gender);
@@ -1568,6 +1622,10 @@ window.addEventListener('hashchange', applyHash);
 
 // ── View switching ──
 function showView(name) {
+  if (qpActive()) {
+    if (name === 'athletes') name = currentWSLTour;
+    else if (name === 'events') name = currentWSLTour + 'ev';
+  }
   const newHash = '#' + name;
   if (location.hash === newHash) {
     _renderView(name); // already on this hash, re-render in place
@@ -2312,7 +2370,9 @@ function renderProfile(name, panelEl) {
   // the CT-labelled inline card for them).
   const csCard   = buildCSSection(name, true);   // '' if athlete isn't in CS_DATA
   const ltCard   = buildLTSection(name, true);   // '' if athlete isn't in LT_DATA
-  const wslInner = (_srcTour === 'ct' ? (wslOverviewAccordion || '') : '') + csCard + ltCard;
+  const qsCard   = buildQPCard(name, 'qs');      // '' if no QS results (qspj.js)
+  const pjCard   = buildQPCard(name, 'pj');
+  const wslInner = (_srcTour === 'ct' ? (wslOverviewAccordion || '') : '') + csCard + ltCard + qsCard + pjCard;
   const wslResultsSection = wslInner
     ? '<div class="section-title">WSL Results</div>'
       + '<div class="event-accordion" style="margin-bottom:8px">'
@@ -3501,6 +3561,17 @@ function gsAllAthletes() {
       if (seen[a.name].sources.indexOf('WPSC') === -1) seen[a.name].sources.push('WPSC');
     });
   }
+  if (qpHasData()) {
+    var _Q = qpIndex();
+    ['qs', 'pj'].forEach(function (t) {
+      var tag = t === 'qs' ? 'QS' : 'PJ';
+      _Q.list[t].forEach(function (i) {
+        var n = _Q.A[i][0];
+        if (!seen[n]) { seen[n] = { name: n, sources: [] }; results.push(seen[n]); }
+        if (seen[n].sources.indexOf(tag) === -1) seen[n].sources.push(tag);
+      });
+    });
+  }
   return results;
 }
 
@@ -3510,7 +3581,7 @@ function globalSearch(q) {
   if (!dd) return;
 
   // Also filter the current view's list in real time
-  if (currentOrg === 'wsl') filterAthletes(q);
+  if (currentOrg === 'wsl') { if (qpActive()) qpFilter(q); else filterAthletes(q); }
   else if (currentOrg === 'isa') {
     if (isaSubView === 'wj') filterWJ(q);
     else if (isaSubView === 'wlc') filterWLC(q);
@@ -3536,7 +3607,10 @@ function globalSearch(q) {
 
   dd.innerHTML = matches.map(function(a) {
     var tags = a.sources.map(function(s) { return '<span class="gs-item-tag">' + s + '</span>'; }).join(' ');
-    return '<div class="gs-item" data-name="' + escHtml(a.name) + '" data-source="' + a.sources[0] + '" onclick="gsSelect(this.dataset.name,this.dataset.source)">'
+    // In the QS / PJ tab, open a surfer's QS / PJ page rather than their first-listed source
+    var _qpSrc = qpActive() ? currentWSLTour.toUpperCase() : null;
+    var _src = (_qpSrc && a.sources.indexOf(_qpSrc) !== -1) ? _qpSrc : a.sources[0];
+    return '<div class="gs-item" data-name="' + escHtml(a.name) + '" data-source="' + _src + '" onclick="gsSelect(this.dataset.name,this.dataset.source)">'
       + '<span class="gs-item-name">' + escHtml(a.name) + '</span>'
       + '<span style="display:flex;gap:3px;flex-shrink:0">' + tags + '</span></div>';
   }).join('');
@@ -3590,6 +3664,14 @@ function gsSelect(name, primarySource) {
     setISASub('sup');
     requestAnimationFrame(function() {
       setTimeout(function() { location.hash = '#sup/' + encodeURIComponent(name); }, 120);
+    });
+  } else if (primarySource === 'QS' || primarySource === 'PJ') {
+    var _t = primarySource.toLowerCase(), _ix = qpHasData() ? (qpIndex().nameIdx[name] || [])[0] : null;
+    if (_ix == null) return;
+    if (currentOrg !== 'wsl') setOrg('wsl');
+    qpSyncTour(_t);
+    requestAnimationFrame(function() {
+      setTimeout(function() { location.hash = '#' + _t + '/' + _ix; }, 60);
     });
   } else if (primarySource === 'WPSC') {
     if (currentOrg !== 'isa') { setOrg('isa'); }
@@ -3933,9 +4015,354 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// ── QS / Pro Junior (scraped WSL reference data — app/qspj.js) ───────────────
+// Built by build_qspj_app.py from qs_pj_scrape.py output. Lives outside the
+// CT/CS/LT DATA model (hundreds of one-off events, thousands of surfers): its
+// own Athletes list + Events browser, plus Qualifying Series / Pro Junior cards
+// on CT/CS/LT profiles. Views: #qs, #pj (athletes), #qs/<idx> (athlete),
+// #qsev, #pjev (events). Placings are as published by the WSL; surfers who
+// never surfed a heat (no-show / injury placings) are already left out.
+var QP_VIEWS = ['qs', 'pj', 'qsev', 'pjev'];
+var QP_LABEL = { qs: 'Qualifying Series', pj: 'Pro Junior' };
+var qpTour = 'qs', qpGender = 'women', qpIdx = null, qpYear = null, qpOpen = null;
+var QP = null;
+function qpIsView(v) { return QP_VIEWS.indexOf(v) !== -1; }
+function qpActive() { return currentWSLTour === 'qs' || currentWSLTour === 'pj'; }
+function qpHasData() { return typeof QSPJ_DATA !== 'undefined' && QSPJ_DATA && QSPJ_DATA.athletes; }
+function qpNorm(s) { return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+
+function qpIndex() {
+  if (QP) return QP;
+  var A = QSPJ_DATA.athletes, res = {}, nameIdx = {}, years = { qs: {}, pj: {} }, list = { qs: [], pj: [] };
+  ['qs', 'pj'].forEach(function (t) {
+    QSPJ_DATA.events[t].forEach(function (e, ei) {
+      years[t][e[1]] = 1;
+      var f = e[9];
+      for (var i = 0; i < f.length; i += 3) {
+        var r = res[f[i]] || (res[f[i]] = { qs: [], pj: [] });
+        r[t].push([ei, f[i + 1], f[i + 2]]);
+      }
+    });
+  });
+  A.forEach(function (a, i) {
+    (nameIdx[a[0]] || (nameIdx[a[0]] = [])).push(i);
+    ['qs', 'pj'].forEach(function (t) { if (res[i] && res[i][t].length) list[t].push(i); });
+  });
+  var norm = A.map(function (a) { return qpNorm(a[0] + ' ' + a[1]); });
+  ['qs', 'pj'].forEach(function (t) { list[t].sort(function (x, y) { return A[x][0].localeCompare(A[y][0]); }); });
+  QP = { A: A, res: res, nameIdx: nameIdx, years: years, list: list, norm: norm };
+  return QP;
+}
+
+// All of an athlete's results on one tour, newest first: [[evIdx, place, pts], ...]
+function qpResults(name, tour) {
+  var Q = qpIndex(), rows = [];
+  (Q.nameIdx[name] || []).forEach(function (i) { if (Q.res[i]) rows = rows.concat(Q.res[i][tour]); });
+  var E = QSPJ_DATA.events[tour];
+  rows.sort(function (a, b) { return E[b[0]][2] - E[a[0]][2]; });
+  return rows;
+}
+
+function qpPlaceCls(p) { return p === 1 ? 'w' : p === 2 ? 'ru' : p <= 4 ? 'sf' : p <= 8 ? 'qf' : 'ev'; }
+function qpRowBg(p) { return p === 1 ? '#fffbea' : p === 2 ? '#f3faf6' : p <= 4 ? '#f4f8fd' : '#fff'; }
+function qpEvLink(e, label) {
+  return '<a href="' + e[8] + '" target="_blank" rel="noopener" style="color:#001834;text-decoration:none;font-weight:700" title="View results on WSL">' + escHtml(label || e[4]) + '</a>';
+}
+var QP_TH = 'padding:7px 12px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0;white-space:nowrap';
+var QP_TD = 'padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:0.8rem;vertical-align:middle';
+
+// Qualifying Series / Pro Junior card (same .er accordion as the CT/CS/LT cards)
+function buildQPCard(name, tour, keepOpen) {
+  if (!qpHasData()) return '';
+  var rows = qpResults(name, tour);
+  if (!rows.length) return '';
+  var E = QSPJ_DATA.events[tour];
+  var wins = rows.filter(function (r) { return r[1] === 1; });
+  var finals = rows.filter(function (r) { return r[1] <= 2; }).length;
+  var best = Math.min.apply(null, rows.map(function (r) { return r[1]; }));
+  var bestN = rows.filter(function (r) { return r[1] === best; }).length;
+  var yrs = {};
+  rows.forEach(function (r) { yrs[E[r[0]][1]] = 1; });
+  var yrList = Object.keys(yrs).map(Number).sort(function (a, b) { return a - b; });
+  var span = yrList.length ? (yrList[0] === yrList[yrList.length - 1] ? yrList[0] : yrList[0] + '–' + yrList[yrList.length - 1]) : '';
+  var winYears = wins.map(function (r) { return E[r[0]][1]; }).filter(function (y, i, a) { return a.indexOf(y) === i; }).sort().join(', ');
+
+  var chips = '<span class="chip ev">' + rows.length + ' event' + (rows.length !== 1 ? 's' : '') + '</span>'
+    + (wins.length ? '<span class="chip w">' + wins.length + ' win' + (wins.length !== 1 ? 's' : '') + '</span>'
+                   : '<span class="chip ' + qpPlaceCls(best) + '">Best ' + csOrdinal(best) + '</span>');
+
+  var grid = '<div class="bento-stat-grid">'
+    + '<div class="bento-stat-card' + (wins.length ? ' card-gold' : '') + '"><div class="stat-card-label">Event Wins</div>'
+    +   '<div class="stat-card-value">' + (wins.length || '—') + '</div>'
+    +   '<div class="stat-card-sub"' + (winYears ? '' : ' style="visibility:hidden"') + '>' + (winYears || '—') + '</div></div>'
+    + '<div class="bento-stat-card"><div class="stat-card-label">Finals</div>'
+    +   '<div class="stat-card-value">' + (finals || '—') + '</div>'
+    +   '<div class="stat-card-sub">1st or 2nd</div></div>'
+    + '<div class="bento-stat-card"><div class="stat-card-label">Best Result</div>'
+    +   '<div class="stat-card-value">' + csOrdinal(best) + '</div>'
+    +   '<div class="stat-card-sub">' + bestN + '×</div></div>'
+    + '<div class="bento-stat-card card-bundle">'
+    +   '<div class="bento-bundle-row"><span class="bento-bundle-label">Events</span><span class="bento-bundle-val">' + rows.length + '</span></div>'
+    +   '<div class="bento-bundle-row"><span class="bento-bundle-label">Seasons</span><span class="bento-bundle-val">' + yrList.length + '</span></div>'
+    +   '<div class="bento-bundle-row"><span class="bento-bundle-label">Years</span><span class="bento-bundle-val">' + span + '</span></div>'
+    + '</div></div>';
+
+  var winsHtml = wins.length
+    ? '<div><div class="section-title" style="margin-top:0">' + (tour === 'qs' ? 'QS' : 'Pro Junior') + ' Wins (' + wins.length + ')</div>'
+      + '<ul class="wins-list' + (wins.length > 10 ? ' two-col' : '') + '">'
+      + wins.map(function (r) {
+          var e = E[r[0]];
+          return '<li>' + qpEvLink(e, e[1] + ' ' + e[4]) + '<span class="win-location">' + escHtml([e[5], e[6]].filter(Boolean).join(' · ')) + '</span></li>';
+        }).join('') + '</ul></div>'
+    : '';
+
+  var body = '', lastY = null;
+  rows.forEach(function (r) {
+    var e = E[r[0]], p = r[1];
+    if (e[1] !== lastY) {
+      lastY = e[1];
+      var yr = rows.filter(function (x) { return E[x[0]][1] === lastY; });
+      var yb = Math.min.apply(null, yr.map(function (x) { return x[1]; }));
+      body += '<tr><td colspan="5" style="padding:10px 12px 6px;background:#f8fafc;border-bottom:1px solid #e2e8f0;font-size:0.7rem;font-weight:800;letter-spacing:0.12em;color:#001834">'
+        + lastY + '<span style="font-weight:600;color:#94a3b8;letter-spacing:0.04em;margin-left:10px">' + yr.length + ' event' + (yr.length !== 1 ? 's' : '') + ' · best ' + csOrdinal(yb) + '</span></td></tr>';
+    }
+    body += '<tr style="background:' + qpRowBg(p) + '">'
+      + '<td style="' + QP_TD + ';color:#5a7090;white-space:nowrap;font-size:0.72rem">' + escHtml((e[7] || '').replace(/,?\s*20\d\d/g, '')) + '</td>'
+      + '<td style="' + QP_TD + '">' + qpEvLink(e) + '<div style="font-size:0.7rem;color:#5a7090;margin-top:2px">' + escHtml(e[6]) + '</div></td>'
+      + '<td class="er-loc-col" style="' + QP_TD + ';color:#5a7090;font-size:0.72rem;white-space:nowrap">' + escHtml(e[5]) + '</td>'
+      + '<td style="' + QP_TD + ';white-space:nowrap"><span class="chip ' + qpPlaceCls(p) + '">' + csOrdinal(p) + '</span></td>'
+      + '<td style="' + QP_TD + ';color:#5a7090;font-size:0.72rem;text-align:right">' + (r[2] ? r[2].toLocaleString() : '—') + '</td>'
+      + '</tr>';
+  });
+  var table = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr><th style="' + QP_TH + '">Date</th><th style="' + QP_TH + '">Event</th><th class="er-loc-col" style="' + QP_TH + '">Tier</th>'
+    + '<th style="' + QP_TH + '">Result</th><th style="' + QP_TH + ';text-align:right">Pts</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+
+  var bodyId = 'qp_' + tour + '_ovw__' + cssId(name), chevId = 'qp_' + tour + '_chev__' + cssId(name);
+  return '<div class="er' + (keepOpen ? ' er-keep-open' : '') + '">'
+    + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
+    +   '<span class="er-loc">' + QP_LABEL[tour] + '</span>'
+    +   '<div class="er-chips">' + chips
+    +     '<svg id="' + chevId + '" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    +   '</div></div>'
+    + '<div class="er-body open" id="' + bodyId + '">'
+    +   '<div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px">' + grid + winsHtml
+    +     '<div><div class="section-title" style="margin-top:0">Results</div>' + table + '</div>'
+    +     '<div style="font-size:0.66rem;color:#94a3b8">Source: worldsurfleague.com — placings as published by the WSL (2010 onward).</div>'
+    +   '</div></div></div>';
+}
+
+// ── Tour switching ──
+function qpToggleSubnav(on) {
+  document.querySelectorAll('#wsl-subnav [data-view="season"], #wsl-subnav [data-view="winners"], #mobile-subnav [data-view="season"], #mobile-subnav [data-view="winners"]')
+    .forEach(function (b) { b.style.display = on ? 'none' : ''; });
+}
+function qpSyncTour(t) {
+  qpTour = t; currentWSLTour = t;
+  document.querySelectorAll('#wsl-tour-nav .nav-btn, #mobile-wsl-tour-nav .msn-btn').forEach(function (b) {
+    b.classList.toggle('active', b.id === 'wsl-tour-' + t || b.id === 'm-wsl-tour-' + t);
+  });
+  qpToggleSubnav(true);
+}
+var qpPrevTour = 'ct';
+function qpEnterTour(t) {
+  if (!qpActive()) qpPrevTour = currentWSLTour || 'ct';
+  if (typeof CT_DATA !== 'undefined') { DATA = CT_DATA; WINNERS_DATA = CT_WINNERS_DATA; EVENTS_BY_YEAR = CT_EVENTS_BY_YEAR; }
+  if (qpTour !== t) { qpIdx = null; qpOpen = null; qpYear = null; }
+  qpSyncTour(t);
+  var v = (location.hash.slice(1).split('/')[0]) || 'athletes';
+  var toEvents = v === 'events' || v === 'qsev' || v === 'pjev' || v === 'season' || v === 'winners';
+  showView(toEvents ? 'events' : 'athletes');
+}
+
+// Back/forward (or a link) onto a CT/CS/LT view while QS/PJ is active: put the
+// tour the user came from back, without re-routing.
+function qpLeave() {
+  var t = qpPrevTour || 'ct';
+  if (t === 'cs' && typeof CS_DATA !== 'undefined' && CS_DATA && CS_DATA.athletes) {
+    DATA = CS_DATA; WINNERS_DATA = CS_WINNERS_DATA; EVENTS_BY_YEAR = CS_EVENTS_BY_YEAR;
+  } else if (t === 'lt' && typeof LT_DATA !== 'undefined' && LT_DATA && LT_DATA.athletes) {
+    DATA = LT_DATA; WINNERS_DATA = LT_WINNERS_DATA; EVENTS_BY_YEAR = LT_EVENTS_BY_YEAR;
+  } else { t = 'ct'; DATA = CT_DATA; WINNERS_DATA = CT_WINNERS_DATA; EVENTS_BY_YEAR = CT_EVENTS_BY_YEAR; }
+  currentWSLTour = t;
+  document.querySelectorAll('#wsl-tour-nav .nav-btn, #mobile-wsl-tour-nav .msn-btn').forEach(function (b) {
+    b.classList.toggle('active', b.id === 'wsl-tour-' + t || b.id === 'm-wsl-tour-' + t);
+  });
+  qpToggleSubnav(false);
+  try { CHAMPS_WOMEN = buildChampions('women'); CHAMPS_MEN = buildChampions('men'); } catch (e) {}
+  try { filterAthletes((document.getElementById('global-search') || {}).value || ''); } catch (e) {}
+}
+
+// Render a QS/PJ view (called from _renderView)
+function qpRender(view) {
+  var ev = view.slice(-2) === 'ev';
+  document.getElementById('qp-athletes').style.display = ev ? 'none' : '';
+  document.getElementById('qp-events').style.display = ev ? '' : 'none';
+  if (!qpHasData()) {
+    var msg = '<div class="no-data">QS / Pro Junior data not loaded — run build_qspj_app.py</div>';
+    document.getElementById('qp-list').innerHTML = msg;
+    document.getElementById('qp-ev-tbody').innerHTML = '<tr><td>' + msg + '</td></tr>';
+    return;
+  }
+  ['women', 'men'].forEach(function (g) {
+    ['qp-tab-', 'qp-eg-'].forEach(function (p) {
+      var b = document.getElementById(p + g); if (b) b.classList.toggle('active', g === qpGender);
+    });
+  });
+  if (ev) qpRenderEvents();
+  else {
+    qpFilter((document.getElementById('global-search') || {}).value || '');
+    if (qpIdx == null) document.getElementById('qp-profile').innerHTML =
+      '<div class="profile-empty">Select an athlete to view their ' + QP_LABEL[qpTour] + ' results</div>';
+  }
+}
+
+function qpSetGender(g) {
+  qpGender = g; qpOpen = null;
+  var parts = location.hash.slice(1).split('/'), v = parts[0];
+  if ((v === 'qs' || v === 'pj') && parts.length > 1) {   // leave an open profile of the other gender
+    qpIdx = null; location.hash = '#' + v; return;
+  }
+  qpIdx = null;
+  qpRender(qpIsView(v) ? v : qpTour);
+}
+
+// ── Athletes list ──
+var QP_LIST_CAP = 300;
+function qpFilter(q) {
+  var list = document.getElementById('qp-list');
+  if (!list || !qpHasData()) return;
+  var Q = qpIndex(), g = qpGender === 'women' ? 'w' : 'm', ql = qpNorm(q.trim());
+  var hits = Q.list[qpTour].filter(function (i) { return Q.A[i][2] === g && (!ql || Q.norm[i].indexOf(ql) !== -1); });
+  var html = '<div class="athlete-list-section-header">' + hits.length.toLocaleString() + ' ' + QP_LABEL[qpTour] + ' surfer' + (hits.length !== 1 ? 's' : '')
+    + (hits.length > QP_LIST_CAP ? ' — showing ' + QP_LIST_CAP + ', search to narrow' : '') + '</div>';
+  html += hits.slice(0, QP_LIST_CAP).map(function (i) {
+    var a = Q.A[i];
+    return '<div class="athlete-item' + (i === qpIdx ? ' selected' : '') + '" data-qp="' + i + '" onclick="location.hash=\'#' + qpTour + '/' + i + '\'">'
+      + '<span class="athlete-item-name">' + escHtml(a[0]) + '</span>'
+      + '<span class="athlete-item-nation">' + escHtml(a[1]) + '</span></div>';
+  }).join('');
+  if (!hits.length) html += '<div class="no-data">No athletes found</div>';
+  list.innerHTML = html;
+}
+
+// ── Athlete page ──
+function qpOtherTour(name) {
+  if (typeof CT_DATA !== 'undefined' && CT_DATA.athletes && CT_DATA.athletes[name]) return 'ct';
+  if (typeof CS_DATA !== 'undefined' && CS_DATA && CS_DATA.athletes && CS_DATA.athletes[name]) return 'cs';
+  if (typeof LT_DATA !== 'undefined' && LT_DATA && LT_DATA.athletes && LT_DATA.athletes[name]) return 'lt';
+  return null;
+}
+function qpOpenFull(name) {
+  var t = qpOtherTour(name);
+  if (!t) return;
+  setWSLTour(t);
+  setTimeout(function () { location.hash = '#athletes/' + encodeURIComponent(name); }, 60);
+}
+function qpSelectAthlete(i) {
+  if (!qpHasData()) return;
+  var Q = qpIndex(), a = Q.A[i];
+  if (!a) return;
+  qpIdx = i;
+  var g = a[2] === 'w' ? 'women' : 'men';
+  if (g !== qpGender) { qpGender = g; qpRender(qpTour); }
+  document.querySelectorAll('#qp-list .athlete-item').forEach(function (el) {
+    el.classList.toggle('selected', +el.dataset.qp === i);
+  });
+  var name = a[0], other = qpOtherTour(name);
+  var tags = (a[1] ? '<div class="meta-tag">' + escHtml(a[1]) + '</div>' : '')
+    + ['qs', 'pj'].filter(function (t) { return qpResults(name, t).length; })
+        .map(function (t) { return '<div class="meta-tag">' + QP_LABEL[t] + '</div>'; }).join('')
+    + (other ? '<button class="meta-tag" style="cursor:pointer;background:#001834;color:#fff;border-color:#001834" onclick="qpOpenFull(\'' + name.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')">'
+        + { ct: 'CT', cs: 'CS', lt: 'LT' }[other] + ' profile →</button>' : '');
+  var first = qpTour, second = qpTour === 'qs' ? 'pj' : 'qs';
+  var panel = document.getElementById('qp-profile');
+  panel.innerHTML = '<button class="mobile-back-btn" onclick="location.hash=\'#' + qpTour + '\'">← Athletes</button>'
+    + '<div class="profile-name">' + escHtml(name) + '</div>'
+    + '<div class="profile-meta">' + tags + '</div>'
+    + '<div class="section-title">WSL Results</div>'
+    + '<div class="event-accordion" style="display:flex;flex-direction:column;gap:12px">'
+    + buildQPCard(name, first, true) + buildQPCard(name, second, false) + '</div>';
+  // second tour's card starts collapsed
+  panel.querySelectorAll('.er:not(.er-keep-open) .er-body.open, .er:not(.er-keep-open) .er-chevron.open')
+    .forEach(function (el) { el.classList.remove('open'); });
+  var sel = document.querySelector('#qp-list .athlete-item.selected');
+  if (sel) sel.scrollIntoView({ block: 'nearest' });
+}
+
+function qpApplyHash(view, name) {
+  if ((view === 'qs' || view === 'pj') && name != null && name !== '') {
+    setTimeout(function () { qpSelectAthlete(parseInt(name, 10)); }, 50);
+  } else if (view === 'qs' || view === 'pj') {
+    qpIdx = null;
+  }
+}
+
+// ── Events browser ──
+function qpRenderEvents() {
+  var Q = qpIndex(), E = QSPJ_DATA.events[qpTour], g = qpGender === 'women' ? 'w' : 'm';
+  var ySel = document.getElementById('qp-year'), tSel = document.getElementById('qp-tier');
+  var years = Object.keys(Q.years[qpTour]).map(Number).sort(function (a, b) { return b - a; });
+  if (qpYear == null || years.indexOf(qpYear) === -1) qpYear = years[0];
+  if (ySel.dataset.tour !== qpTour) {
+    ySel.innerHTML = years.map(function (y) { return '<option value="' + y + '">' + y + '</option>'; }).join('');
+    ySel.dataset.tour = qpTour;
+  }
+  ySel.value = String(qpYear);
+  var inYear = E.map(function (e, i) { return i; }).filter(function (i) { return E[i][1] === qpYear && E[i][3] === g; });
+  var tiers = [];
+  inYear.forEach(function (i) { if (E[i][5] && tiers.indexOf(E[i][5]) === -1) tiers.push(E[i][5]); });
+  tiers.sort(function (a, b) { return (parseInt(b.replace(/\D/g, ''), 10) || 0) - (parseInt(a.replace(/\D/g, ''), 10) || 0) || a.localeCompare(b); });
+  var keepTier = tSel.value;
+  tSel.innerHTML = '<option value="">All tiers</option>' + tiers.map(function (t) { return '<option>' + escHtml(t) + '</option>'; }).join('');
+  tSel.value = tiers.indexOf(keepTier) !== -1 ? keepTier : '';
+  var rows = inYear.filter(function (i) { return !tSel.value || E[i][5] === tSel.value; })
+    .sort(function (a, b) { return E[a][2] - E[b][2] || E[a][4].localeCompare(E[b][4]); });
+
+  var html = rows.map(function (i) {
+    var e = E[i], f = e[9], w = f.length ? Q.A[f[0]] : null;
+    var winner = (w && f[1] === 1)
+      ? '<a href="#' + qpTour + '/' + f[0] + '" onclick="event.stopPropagation()" style="color:#001834;font-weight:700;text-decoration:none">' + escHtml(w[0]) + '</a>'
+      : '—';
+    var open = qpOpen === e[0];
+    var out = '<tr style="cursor:pointer' + (open ? ';background:#f4f8fd' : '') + '" onclick="qpToggleEvent(\'' + e[0] + '\')">'
+      + '<td style="white-space:nowrap;color:#5a7090;font-size:0.76rem">' + escHtml((e[7] || '').replace(/,?\s*20\d\d/g, '')) + '</td>'
+      + '<td><span style="font-weight:700;color:#001834">' + escHtml(e[4]) + '</span><div style="font-size:0.72rem;color:#5a7090;margin-top:2px">' + escHtml(e[6]) + '</div></td>'
+      + '<td class="er-loc-col" style="white-space:nowrap;color:#5a7090;font-size:0.76rem">' + escHtml(e[5]) + '</td>'
+      + '<td>' + winner + '</td>'
+      + '<td class="num">' + (f.length / 3) + '</td></tr>';
+    if (open) out += '<tr><td colspan="5" style="padding:0 0 14px;background:#f4f8fd">' + qpEventDetail(e) + '</td></tr>';
+    return out;
+  }).join('');
+  document.getElementById('qp-ev-tbody').innerHTML = html
+    || '<tr><td colspan="5" class="no-data">No ' + QP_LABEL[qpTour] + ' events for ' + (qpGender === 'women' ? 'women' : 'men') + ' in ' + qpYear + '</td></tr>';
+  document.getElementById('qp-ev-count').textContent = rows.length + ' event' + (rows.length !== 1 ? 's' : '');
+}
+function qpSetYear(y) { qpYear = parseInt(y, 10); qpOpen = null; qpRenderEvents(); }
+function qpToggleEvent(key) { qpOpen = qpOpen === key ? null : key; qpRenderEvents(); }
+function qpEventDetail(e) {
+  var Q = qpIndex(), f = e[9], rows = '';
+  for (var i = 0; i < f.length; i += 3) {
+    var a = Q.A[f[i]], p = f[i + 1];
+    rows += '<tr style="background:' + qpRowBg(p) + '">'
+      + '<td style="' + QP_TD + ';width:60px"><span class="chip ' + qpPlaceCls(p) + '">' + csOrdinal(p) + '</span></td>'
+      + '<td style="' + QP_TD + '"><a href="#' + qpTour + '/' + f[i] + '" style="color:#001834;font-weight:700;text-decoration:none">' + escHtml(a[0]) + '</a></td>'
+      + '<td style="' + QP_TD + ';color:#5a7090;font-size:0.74rem">' + escHtml(a[1]) + '</td>'
+      + '<td style="' + QP_TD + ';color:#5a7090;font-size:0.74rem;text-align:right">' + (f[i + 2] ? f[i + 2].toLocaleString() : '—') + '</td></tr>';
+  }
+  return '<div style="margin:0 12px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #e2e8f0;gap:12px;flex-wrap:wrap">'
+    +   '<span style="font-size:0.72rem;color:#5a7090">' + escHtml([e[5], e[7]].filter(Boolean).join(' · ')) + '</span>'
+    +   '<a href="' + e[8] + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:0.66rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#001834">View on WSL ↗</a></div>'
+    + '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + QP_TH + '">Place</th><th style="' + QP_TH + '">Athlete</th>'
+    + '<th style="' + QP_TH + '">Nation</th><th style="' + QP_TH + ';text-align:right">Pts</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
 // ── Org switching ─────────────────────────────────────────────────────────────
 // ── WSL tour switch (CT / CS / LT) — swaps the live data pointers ────────────
 function setWSLTour(tour) {
+  if (tour === 'qs' || tour === 'pj') { qpEnterTour(tour); return; }
+  qpToggleSubnav(false);
   currentWSLTour = tour;
   if (tour === 'cs' && typeof CS_DATA !== 'undefined' && CS_DATA && CS_DATA.athletes) {
     DATA           = CS_DATA;
@@ -4006,7 +4433,7 @@ function setOrg(org) {
   // Route to the right view
   if (org === 'wsl') {
     var currentView = location.hash.slice(1).split('/')[0];
-    var wslViews = ['athletes','events','season','seasons','winners'];
+    var wslViews = ['athletes','events','season','seasons','winners'].concat(QP_VIEWS);
     showView(wslViews.includes(currentView) ? currentView : 'athletes');
   } else if (org === 'isa') {
     showView('isa');
@@ -7079,7 +7506,7 @@ if ('serviceWorker' in navigator) {
     // for a selected athlete is "#<view>/<name>", so a name segment after the
     // slash is what distinguishes a profile from a bare list view.
     const onMobile  = window.innerWidth <= 768;
-    const onProfile = /^#(athletes|olympics|panam|isa|wj|wlc|sup|wpsc)\/.+/.test(location.hash);
+    const onProfile = /^#(athletes|olympics|panam|isa|wj|wlc|sup|wpsc|qs|pj)\/.+/.test(location.hash);
     document.querySelectorAll('.athletes-layout').forEach(function (el) {
       el.classList.toggle('mobile-profile', onMobile && onProfile);
     });
