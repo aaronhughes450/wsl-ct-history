@@ -1411,7 +1411,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261028110033"></script>
+<script src="data.js?v=20261028151607"></script>
 <script src="qspj.js?v=20261028175316" onerror="this.remove()"></script>
 <script>
 // DATA moved to data.js.
@@ -1533,11 +1533,43 @@ function _selectAthlete(name) {
   if (sel) sel.scrollIntoView({ block: 'nearest' });
 }
 
+// #find/<section>/<name> -- a profile by NAME from outside the app (the press
+// desk's fact sheets). Sections: ct, cs, lt, qs, pj, wsg, wj, wlc, sup, wpsc,
+// olympics, panam. QS / PJ profiles are addressed by position inside the app,
+// which changes with every rebuild, so outside links must come in by name.
+function _findRoute(rest) {
+  var i = rest.indexOf('/');
+  if (i < 0) return;
+  var src = rest.slice(0, i).toLowerCase(), nm = rest.slice(i + 1);
+  var key = qpNorm(nm);
+  if (src === 'ct' || src === 'cs' || src === 'lt') {
+    if (currentOrg !== 'wsl') setOrg('wsl');
+    setWSLTour(src);
+    var hit = DATA.athletes[nm] ? nm : Object.keys(DATA.athletes).find(function (n) { return qpNorm(n) === key; });
+    location.replace(hit ? '#athletes/' + encodeURIComponent(hit) : '#athletes');
+    return;
+  }
+  if (src === 'qs' || src === 'pj') {
+    if (!qpHasData()) { location.replace('#athletes'); return; }
+    var Q = qpIndex(), ix = (Q.nameIdx[nm] || [])[0];
+    if (ix == null) { for (var j = 0; j < Q.A.length; j++) { if (qpNorm(Q.A[j][0]) === key) { ix = j; break; } } }
+    if (ix == null) { location.replace('#athletes'); return; }
+    if (currentOrg !== 'wsl') setOrg('wsl');
+    qpSyncTour(src);
+    location.replace('#' + src + '/' + ix);
+    return;
+  }
+  var map = { wsg: 'ISA', isa: 'ISA', wj: 'WJSC', wlc: 'WLC', sup: 'SUP', wpsc: 'WPSC', olympics: 'OLY', panam: 'PAN' };
+  if (map[src]) { history.replaceState(null, '', location.pathname + location.search); gsSelect(nm, map[src]); }
+  else location.replace('#athletes');
+}
+
 function applyHash() {
   const raw  = location.hash.slice(1);           // strip leading '#'
   const sep  = raw.indexOf('/');
   const view = sep === -1 ? (raw || 'athletes') : raw.slice(0, sep);
   const name = sep === -1 ? null : decodeURIComponent(raw.slice(sep + 1));
+  if (view === 'find') { if (name) _findRoute(name); return; }
 
   _renderView(view);
 
