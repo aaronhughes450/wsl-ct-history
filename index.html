@@ -1143,6 +1143,25 @@
       <div class="profile-empty">Select an athlete</div>
     </div>
   </div>
+  <div id="qp-winners" style="display:none"></div>
+  <div id="qp-rankings" style="display:none">
+    <div class="events-controls">
+      <select id="qp-rk-region" onchange="qpRkRegion=+this.value;qpRkLabel=null;qpRenderRankings()"></select>
+      <select id="qp-rk-season" onchange="qpRkLabel=this.value;qpRenderRankings()"></select>
+      <div class="gender-tabs">
+        <button class="gender-tab active" id="qp-rg-women" onclick="qpGender='women';qpRenderRankings()">Women</button>
+        <button class="gender-tab" id="qp-rg-men" onclick="qpGender='men';qpRenderRankings()">Men</button>
+      </div>
+      <span id="qp-rk-status" style="font-size:0.75rem;color:var(--text-dim)"></span>
+      <span id="qp-rk-link" style="margin-left:auto;font-size:0.66rem"></span>
+    </div>
+    <div class="events-table-wrap">
+      <table class="winners-table">
+        <thead><tr><th class="num">Rank</th><th>Surfer</th><th class="er-loc-col">Nation</th><th style="text-align:right">Points</th></tr></thead>
+        <tbody id="qp-rk-tbody"></tbody>
+      </table>
+    </div>
+  </div>
   <div id="qp-events" style="display:none">
     <div class="events-controls">
       <select id="qp-year" onchange="qpSetYear(this.value)"></select>
@@ -1392,8 +1411,8 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261027182622"></script>
-<script src="qspj.js?v=20261028011457" onerror="this.remove()"></script>
+<script src="data.js?v=20261028103317"></script>
+<script src="qspj.js?v=20261028171123" onerror="this.remove()"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1444,7 +1463,7 @@ function _renderView(name) {
   if (qpIsView(name)) {
     resolvedName = 'qspj';
     qpSyncTour(name.slice(0, 2));
-    var qpNav = name.slice(-2) === 'ev' ? 'events' : 'athletes';
+    var qpNav = name === 'pjwin' ? 'winners' : name.slice(-2) === 'rk' ? 'season' : name.slice(-2) === 'ev' ? 'events' : 'athletes';
     document.querySelectorAll('.nav-btn[data-view], .msn-btn[data-view]').forEach(function (b) {
       b.classList.toggle('active', b.dataset.view === qpNav);
     });
@@ -1625,6 +1644,8 @@ function showView(name) {
   if (qpActive()) {
     if (name === 'athletes') name = currentWSLTour;
     else if (name === 'events') name = currentWSLTour + 'ev';
+    else if (name === 'winners' && currentWSLTour === 'pj') name = 'pjwin';
+    else if (name === 'season' || name === 'seasons') name = currentWSLTour + 'rk';
   }
   const newHash = '#' + name;
   if (location.hash === newHash) {
@@ -2289,7 +2310,7 @@ function renderProfile(name, panelEl) {
         wcCount      ? `<div class="meta-tag" style="background:#fff;color:#f0b400;border-color:#f0b400">🏆 ${wcCount > 1 ? wcCount + '× ' : ''}World Champion</div>` : '',
         isRoty       ? `<div class="meta-tag" style="background:var(--navy);color:#fff;border-color:var(--navy)">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
       ]
-  ).join('') + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name) + buildISAWpscBadges(name) + buildPanAmBadges(name);
+  ).join('') + buildWJCBadges(name) + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name) + buildISAWpscBadges(name) + buildPanAmBadges(name);
 
   // Rookie class
   const rookieClassHtml = rookieSeason && rookieClass.length
@@ -4022,7 +4043,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // on CT/CS/LT profiles. Views: #qs, #pj (athletes), #qs/<idx> (athlete),
 // #qsev, #pjev (events). Placings are as published by the WSL; surfers who
 // never surfed a heat (no-show / injury placings) are already left out.
-var QP_VIEWS = ['qs', 'pj', 'qsev', 'pjev'];
+var QP_VIEWS = ['qs', 'pj', 'qsev', 'pjev', 'pjwin', 'qsrk', 'pjrk'];
 var QP_LABEL = { qs: 'Qualifying Series', pj: 'Pro Junior' };
 var qpTour = 'qs', qpGender = 'women', qpIdx = null, qpYear = null, qpOpen = null;
 var QP = null;
@@ -4146,7 +4167,7 @@ function buildQPCard(name, tour, keepOpen) {
     +     '<svg id="' + chevId + '" class="er-chevron open" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     +   '</div></div>'
     + '<div class="er-body open" id="' + bodyId + '">'
-    +   '<div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px">' + grid + winsHtml
+    +   '<div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px">' + grid + qpRankChips(name, tour) + winsHtml
     +     '<div><div class="section-title" style="margin-top:0">Results</div>' + table + '</div>'
     +     '<div style="font-size:0.66rem;color:#94a3b8">Source: worldsurfleague.com — placings as published by the WSL (2010 onward).</div>'
     +   '</div></div></div>';
@@ -4154,11 +4175,16 @@ function buildQPCard(name, tour, keepOpen) {
 
 // ── Tour switching ──
 function qpToggleSubnav(on) {
-  document.querySelectorAll('#wsl-subnav [data-view="season"], #wsl-subnav [data-view="winners"], #mobile-subnav [data-view="season"], #mobile-subnav [data-view="winners"]')
-    .forEach(function (b) { b.style.display = on ? 'none' : ''; });
+  // Seasons becomes Rankings (regional QS / Junior Tour rankings) on QS and PJ
+  document.querySelectorAll('#wsl-subnav [data-view="season"], #mobile-subnav [data-view="season"]')
+    .forEach(function (b) { b.style.display = ''; b.textContent = on ? 'Rankings' : 'Seasons'; });
+  // Winners stays on PJ (World Junior Champions); hidden on QS
+  var hideWin = on && currentWSLTour !== 'pj';
+  document.querySelectorAll('#wsl-subnav [data-view="winners"], #mobile-subnav [data-view="winners"]')
+    .forEach(function (b) { b.style.display = hideWin ? 'none' : ''; });
 }
 function qpSyncTour(t) {
-  qpTour = t; currentWSLTour = t;
+  qpTour = t; currentWSLTour = t;   // set before qpToggleSubnav, which reads it
   document.querySelectorAll('#wsl-tour-nav .nav-btn, #mobile-wsl-tour-nav .msn-btn').forEach(function (b) {
     b.classList.toggle('active', b.id === 'wsl-tour-' + t || b.id === 'm-wsl-tour-' + t);
   });
@@ -4171,8 +4197,10 @@ function qpEnterTour(t) {
   if (qpTour !== t) { qpIdx = null; qpOpen = null; qpYear = null; }
   qpSyncTour(t);
   var v = (location.hash.slice(1).split('/')[0]) || 'athletes';
-  var toEvents = v === 'events' || v === 'qsev' || v === 'pjev' || v === 'season' || v === 'winners';
-  showView(toEvents ? 'events' : 'athletes');
+  var toEvents = v === 'events' || v === 'qsev' || v === 'pjev';
+  var toWinners = (v === 'winners' || v === 'pjwin');
+  var toRank = (v === 'season' || v === 'seasons' || v === 'qsrk' || v === 'pjrk');
+  showView(toWinners ? (t === 'pj' ? 'winners' : 'events') : toRank ? 'season' : toEvents ? 'events' : 'athletes');
 }
 
 // Back/forward (or a link) onto a CT/CS/LT view while QS/PJ is active: put the
@@ -4195,9 +4223,13 @@ function qpLeave() {
 
 // Render a QS/PJ view (called from _renderView)
 function qpRender(view) {
-  var ev = view.slice(-2) === 'ev';
-  document.getElementById('qp-athletes').style.display = ev ? 'none' : '';
+  var ev = view.slice(-2) === 'ev', win = view === 'pjwin', rk = view.slice(-2) === 'rk';
+  document.getElementById('qp-athletes').style.display = (ev || win || rk) ? 'none' : '';
   document.getElementById('qp-events').style.display = ev ? '' : 'none';
+  document.getElementById('qp-winners').style.display = win ? '' : 'none';
+  document.getElementById('qp-rankings').style.display = rk ? '' : 'none';
+  if (win) { qpRenderWJC(); return; }
+  if (rk) { qpRenderRankings(); return; }
   if (!qpHasData()) {
     var msg = '<div class="no-data">QS / Pro Junior data not loaded — run build_qspj_app.py</div>';
     document.getElementById('qp-list').innerHTML = msg;
@@ -4270,7 +4302,7 @@ function qpSelectAthlete(i) {
     el.classList.toggle('selected', +el.dataset.qp === i);
   });
   var name = a[0], other = qpOtherTour(name);
-  var tags = (a[1] ? '<div class="meta-tag">' + escHtml(a[1]) + '</div>' : '')
+  var tags = (a[1] ? '<div class="meta-tag">' + escHtml(a[1]) + '</div>' : '') + buildWJCBadges(name)
     + ['qs', 'pj'].filter(function (t) { return qpResults(name, t).length; })
         .map(function (t) { return '<div class="meta-tag">' + QP_LABEL[t] + '</div>'; }).join('')
     + (other ? '<button class="meta-tag" style="cursor:pointer;background:#001834;color:#fff;border-color:#001834" onclick="qpOpenFull(\'' + name.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')">'
@@ -4356,6 +4388,152 @@ function qpEventDetail(e) {
     +   '<a href="' + e[8] + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:0.66rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#001834">View on WSL ↗</a></div>'
     + '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + QP_TH + '">Place</th><th style="' + QP_TH + '">Athlete</th>'
     + '<th style="' + QP_TH + '">Nation</th><th style="' + QP_TH + ';text-align:right">Pts</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+
+// ── Regional QS / Junior Tour rankings (QSPJ_DATA.rankings) ───────────────────
+// Built by qs_pj_rankings.py from the WSL's regional ranking pages, from the
+// 2021 season (the first after the International QS list ended) to now:
+// end-of-season tables for finished seasons, the live table for the current one.
+var qpRkRegion = 2, qpRkLabel = null;
+var QP_RK_IDX = null;
+function qpRk() { return (qpHasData() && QSPJ_DATA.rankings && QSPJ_DATA.rankings.tables) || []; }
+function qpRegionName(r) { return ((QSPJ_DATA.rankings || {}).regions || {})[String(r)] || ('Region ' + r); }
+function qpShortLabel(l) { return String(l).replace(/^(20\d\d)\/20(\d\d)$/, '$1/$2'); }
+// athlete index -> [{t, l, r, rank, f, c, a}], newest season first
+function qpRkIndex() {
+  if (QP_RK_IDX) return QP_RK_IDX;
+  var idx = {};
+  qpRk().forEach(function (t) {
+    t.rows.forEach(function (row) {
+      if (typeof row[0] !== 'number') return;
+      (idx[row[0]] || (idx[row[0]] = [])).push({ t: t.t, l: t.l, y: t.y, n: t.n, r: t.r, rank: row[1], pts: row[2], f: t.f, c: t.c, a: t.a });
+    });
+  });
+  Object.keys(idx).forEach(function (k) { idx[k].sort(function (a, b) { return (b.y - a.y) || (b.n - a.n) || (b.l.length - a.l.length); }); });
+  QP_RK_IDX = idx;
+  return idx;
+}
+function qpRankChips(name, tour) {
+  var Q = qpIndex(), I = qpRkIndex(), list = [];
+  (Q.nameIdx[name] || []).forEach(function (i) { (I[i] || []).forEach(function (x) { if (x.t === tour && (x.f || x.c)) list.push(x); }); });
+  if (!list.length) return '';
+  list.sort(function (a, b) { return (b.y - a.y) || (b.n - a.n) || (b.l.length - a.l.length); });
+  var chips = list.map(function (x) {
+    var cls = x.rank === 1 ? 'rk-1' : x.rank <= 5 ? 'rk-top5' : '';
+    var title = x.l + ' ' + qpRegionName(x.r) + (x.c ? ' — current, as of ' + (x.a || '?') : ' — final') + (x.pts ? ' · ' + x.pts.toLocaleString() + ' pts' : '');
+    return '<div class="ranking-chip ' + cls + '" title="' + escHtml(title) + '"' + (x.c ? ' style="border-style:dashed"' : '') + '>'
+      + '<span class="yr">' + escHtml(qpShortLabel(x.l)) + (x.c ? ' · now' : '') + '</span>'
+      + '<span class="rk">' + x.rank + '</span>'
+      + '<span class="yr" style="font-size:0.5rem;letter-spacing:0.04em">' + escHtml(qpRegionName(x.r)) + '</span></div>';
+  }).join('');
+  return '<div><div class="section-title" style="margin-top:0">Regional Rankings</div><div class="rankings-row">' + chips + '</div></div>';
+}
+function qpRenderRankings() {
+  var tabs = qpRk(), tour = qpTour, g = qpGender === 'women' ? 'w' : 'm';
+  ['women', 'men'].forEach(function (x) { var b = document.getElementById('qp-rg-' + x); if (b) b.classList.toggle('active', x === qpGender); });
+  var tb = document.getElementById('qp-rk-tbody');
+  if (!tabs.length) { tb.innerHTML = '<tr><td colspan="4" class="no-data">Rankings not loaded — run qs_pj_rankings.py, then build_qspj_app.py</td></tr>'; return; }
+  var mine = tabs.filter(function (t) { return t.t === tour && t.g === g; });
+  var regions = []; mine.forEach(function (t) { if (regions.indexOf(t.r) === -1) regions.push(t.r); });
+  regions.sort(function (a, b) { return a - b; });
+  if (regions.indexOf(qpRkRegion) === -1) qpRkRegion = regions[0];
+  var rSel = document.getElementById('qp-rk-region');
+  rSel.innerHTML = regions.map(function (r) { return '<option value="' + r + '">' + escHtml(qpRegionName(r)) + '</option>'; }).join('');
+  rSel.value = String(qpRkRegion);
+  var seasons = mine.filter(function (t) { return t.r === qpRkRegion; })
+    .sort(function (a, b) { return (b.y - a.y) || (b.n - a.n) || (b.l.length - a.l.length); });
+  if (!seasons.some(function (t) { return t.l === qpRkLabel; })) qpRkLabel = seasons.length ? seasons[0].l : null;
+  var sSel = document.getElementById('qp-rk-season');
+  sSel.innerHTML = seasons.map(function (t) { return '<option value="' + escHtml(t.l) + '">' + escHtml(t.l) + (t.c ? ' (current)' : '') + '</option>'; }).join('');
+  if (qpRkLabel) sSel.value = qpRkLabel;
+  var t = seasons.filter(function (x) { return x.l === qpRkLabel; })[0];
+  if (!t) { tb.innerHTML = '<tr><td colspan="4" class="no-data">No rankings for this region since 2021</td></tr>'; return; }
+  document.getElementById('qp-rk-status').textContent = (t.f ? 'Final rankings' : 'Current rankings') + (t.a ? ' — as of ' + t.a : '') + ' · ' + t.rows.length + ' surfers';
+  document.getElementById('qp-rk-link').innerHTML = '<a href="' + t.u + '" target="_blank" rel="noopener" style="color:#001834;font-weight:800;letter-spacing:0.12em;text-transform:uppercase">View on WSL ↗</a>';
+  var Q = qpIndex();
+  tb.innerHTML = t.rows.map(function (row) {
+    var ref = row[0], name, nat, link;
+    if (typeof ref === 'number') {
+      name = Q.A[ref][0]; nat = Q.A[ref][1];
+      link = '<a href="#' + tour + '/' + ref + '" style="color:#001834;font-weight:700;text-decoration:none">' + escHtml(name) + '</a>';
+    } else { name = ref[0]; nat = ref[1]; link = '<span style="font-weight:700;color:#001834">' + escHtml(name) + '</span>'; }
+    var top = row[1] === 1 ? ' style="background:#fffbea"' : '';
+    return '<tr' + top + '><td class="num" style="font-weight:800;color:#001834">' + row[1] + '</td><td>' + link + '</td>'
+      + '<td class="er-loc-col" style="color:#5a7090;font-size:0.78rem">' + escHtml(nat || '') + '</td>'
+      + '<td style="text-align:right;color:#5a7090;font-size:0.8rem">' + (row[2] != null ? row[2].toLocaleString() : '—') + '</td></tr>';
+  }).join('');
+}
+
+// ── WSL World Junior Champions (QSPJ_DATA.world_juniors) ──────────────────────
+// One row per season + gender: {s: season, g: 'm'|'w', c: champion, r: runner-up,
+// e: event key, src: 'results'|'wikipedia', x: 'Cancelled …'}. Champion +
+// runner-up come from the championship final where the WSL results have it;
+// otherwise the champion is from Wikipedia and the runner-up is unknown. An
+// event held in January counts for the previous year's title.
+function qpWJC() { return (qpHasData() && QSPJ_DATA.world_juniors) || []; }
+function qpSameName(a, b) { return !!a && !!b && qpNorm(a).replace(/[^a-z]/g, '') === qpNorm(b).replace(/[^a-z]/g, ''); }
+function buildWJCBadges(name) {
+  var rows = qpWJC(), won = [], ru = [];
+  rows.forEach(function (r) {
+    if (qpSameName(r.c, name)) won.push(r.s);
+    else if (qpSameName(r.r, name)) ru.push(r.s);
+  });
+  var out = '';
+  if (won.length) out += '<div class="meta-tag" style="background:#fff8dc;color:#b8860b;border-color:#f0d060" title="WSL World Junior Champion">🏆 '
+    + (won.length > 1 ? won.length + '× ' : '') + 'World Junior Champion ' + won.sort().join(', ') + '</div>';
+  if (ru.length) out += '<div class="meta-tag" style="background:#f4f6f8;color:#607080;border-color:#c8d0da" title="WSL World Junior Championship runner-up">'
+    + 'World Junior Runner-Up ' + ru.sort().join(', ') + '</div>';
+  return out;
+}
+function qpWJCName(name) {
+  if (!name) return '<span style="color:#cbd5e1">—</span>';
+  var Q = qpIndex(), ix = (Q.nameIdx[name] || []).filter(function (i) { return Q.res[i] && Q.res[i].pj.length; })[0];
+  var nat = '';
+  var any = (Q.nameIdx[name] || [])[0];
+  if (any != null && Q.A[any][1]) nat = '<span style="font-size:0.7rem;color:#94a3b8;margin-left:6px">' + escHtml(Q.A[any][1]) + '</span>';
+  if (ix != null) return '<a href="#pj/' + ix + '" style="color:#001834;font-weight:700;text-decoration:none">' + escHtml(name) + '</a>' + nat;
+  if (qpOtherTour(name)) return '<a href="javascript:void(0)" onclick="qpOpenFull(\'' + name.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')" style="color:#001834;font-weight:700;text-decoration:none">' + escHtml(name) + '</a>' + nat;
+  return '<span style="font-weight:700;color:#001834">' + escHtml(name) + '</span>' + nat;
+}
+function qpRenderWJC() {
+  var el = document.getElementById('qp-winners');
+  var rows = qpWJC();
+  if (!rows.length) { el.innerHTML = '<div class="no-data">World Junior Champions not loaded — run build_qspj_app.py</div>'; return; }
+  var evByKey = {};
+  QSPJ_DATA.events.pj.forEach(function (e) { evByKey[e[0]] = e; });
+  var anyWiki = false;
+  function table(g, title) {
+    var list = rows.filter(function (r) { return r.g === g; }).sort(function (a, b) { return b.s - a.s; });
+    var champs = {};
+    list.forEach(function (r) { if (r.c) champs[r.c] = (champs[r.c] || 0) + 1; });
+    var body = list.map(function (r) {
+      if (r.x) return '<tr><td class="num" style="font-weight:800;color:#001834">' + r.s + '</td><td colspan="3" style="color:#94a3b8;font-style:italic">' + escHtml(r.x) + '</td></tr>';
+      var series = r.src === 'series', wiki = r.src === 'wikipedia' || series;
+      var evs = (Array.isArray(r.e) ? r.e : (r.e ? [r.e] : [])).map(function (k) { return evByKey[k]; }).filter(Boolean);
+      if (wiki) anyWiki = true;
+      var evCell = evs.length
+        ? evs.map(function (e) { return '<a href="' + e[8] + '" target="_blank" rel="noopener" style="color:#5a7090;text-decoration:none;font-size:0.74rem" title="' + escHtml(e[4] + ' · ' + e[7]) + '">' + escHtml(e[6]) + '</a>'; }).join('<span style="color:#cbd5e1"> + </span>')
+          + (series ? '<span style="color:#94a3b8;font-size:0.7rem"> ‡</span>' : '')
+        : '<span style="color:#cbd5e1;font-size:0.74rem">' + (wiki ? 'Wikipedia †' : '') + '</span>';
+      return '<tr' + (r.s % 2 ? '' : ' style="background:#fafbfd"') + '>'
+        + '<td class="num" style="font-weight:800;color:#001834">' + r.s + '</td>'
+        + '<td>' + qpWJCName(r.c) + (champs[r.c] > 1 ? ' <span class="chip w" style="margin-left:4px;white-space:nowrap;display:inline-block">' + champs[r.c] + '×</span>' : '') + '</td>'
+        + '<td>' + (wiki ? '<span style="color:#cbd5e1" title="' + (series ? 'Two-event series — runner-up not confirmed' : 'Runner-up not available — no WSL results for this championship') + '">—</span>' : qpWJCName(r.r)) + '</td>'
+        + '<td class="er-loc-col">' + evCell + '</td></tr>';
+    }).join('');
+    return '<div style="flex:1 1 420px;min-width:0">'
+      + '<div class="section-title" style="margin-top:0">' + title + '</div>'
+      + '<div class="events-table-wrap"><table class="winners-table"><thead><tr><th class="num">Year</th><th>Champion</th><th>Runner-Up</th><th class="er-loc-col">Venue</th></tr></thead><tbody>'
+      + body + '</tbody></table></div></div>';
+  }
+  var html = '<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:14px">'
+    + '<div style="font-size:1.6rem;font-weight:600;font-style:italic;text-transform:uppercase;letter-spacing:-0.04em;color:#001834">WSL World Junior Champions</div>'
+    + '<div style="font-size:0.7rem;color:#94a3b8">A championship held in January counts for the previous year.</div></div>'
+    + '<div style="display:flex;gap:24px;flex-wrap:wrap">' + table('w', 'Women') + table('m', 'Men') + '</div>';
+  html += '<div style="font-size:0.68rem;color:#94a3b8;margin-top:14px;line-height:1.6">Champion and runner-up from the WSL championship final where results are published (2010 on). '
+    + '† Champion from Wikipedia (World Surf League — Annual Junior champions); runner-up not available. '
+    + '‡ Title decided over a two-event series; runner-up not confirmed.</div>';
+  el.innerHTML = html;
 }
 
 // ── Org switching ─────────────────────────────────────────────────────────────
