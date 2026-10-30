@@ -151,6 +151,13 @@
 
   /* ── Profile panel ── */
   .profile-panel { background: var(--surface); border: 1px solid #e2e8f0; border-radius: 2px; padding: 28px 32px; min-height: 400px; }
+  .ath-solo { max-width: 1100px; margin: 0 auto; }
+  .reg-preview-note { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #b54708; margin-bottom: 10px; }
+  .reg-link { display: inline-block; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #1f5fa8; text-decoration: none; margin: 2px 0 6px; }
+  .reg-link:hover { text-decoration: underline; }
+  .reg-stat-val { font-size: 1.05rem !important; line-height: 1.35; }
+  .reg-sec { margin-bottom: 8px; }
+  .reg-sec-body { padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 12px; }
   .profile-empty { display: flex; align-items: center; justify-content: center; height: 300px; color: var(--text-dim); font-size: 0.95rem; }
   .profile-name { font-size: 2.8rem; font-weight: 600; font-style: italic; color: #001834; letter-spacing: -0.04em; text-transform: uppercase; line-height: 1; margin-bottom: 8px; }
   .profile-meta { display: flex; gap: 8px; margin-top: 10px; margin-bottom: 4px; flex-wrap: wrap; align-items: center; }
@@ -1182,6 +1189,11 @@
   </div>
 </div>
 
+<!-- All-tours athlete profile (#athlete/<registry id>) -->
+<div class="view" id="view-athlete">
+  <div class="ath-solo"><div class="profile-panel" id="ath-profile"><div class="profile-empty">Select an athlete</div></div></div>
+</div>
+
 <!-- Seasons view -->
 <div class="view" id="view-seasons">
   <div class="seasons-controls">
@@ -1411,8 +1423,10 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261028151607"></script>
-<script src="qspj.js?v=20261028175316" onerror="this.remove()"></script>
+<script src="data.js?v=20261029195358"></script>
+<script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
+<script src="registry-public.js?v=20261030024030" onerror="this.remove()"></script>
+<script src="registry.js?v=20261030024030" onerror="this.remove()"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1445,6 +1459,7 @@ let currentAthlete = null;
 // Enables browser back/forward and open-in-new-tab on all athlete links.
 
 function _renderView(name) {
+  if (name !== 'athlete') { var _ap = document.getElementById('ath-profile'); if (_ap && _ap.querySelector('.profile-name')) _ap.innerHTML = '<div class="profile-empty">Select an athlete</div>'; }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn[data-view]').forEach(b => {
     b.classList.toggle('active', b.dataset.view === name);
@@ -1537,6 +1552,289 @@ function _selectAthlete(name) {
 // desk's fact sheets). Sections: ct, cs, lt, qs, pj, wsg, wj, wlc, sup, wpsc,
 // olympics, panam. QS / PJ profiles are addressed by position inside the app,
 // which changes with every rebuild, so outside links must come in by name.
+// ── All-tours athlete profile (#athlete/<registry id>) ──────────────────────
+// Every athlete gets the CT profile's layout — header, bio, WSL Overview (CT,
+// CS, LT, QS, PJ), ISA Overview (WSG, WJSC, WLC, SUP, WPSC), Olympic Overview
+// (Olympic Games, Pan American Games) — via renderProfile(name, panel, reg),
+// with each tour's card looked up under the name that tour uses, from the
+// Athletes Registry (registry.js, written by build_registry.py).
+var REG_ORDER = ['CT', 'CS', 'LT', 'QS', 'PJ', 'WSG', 'WJSC', 'WLC', 'SUP', 'WPSC', 'Olympics', 'PanAm'];
+var _reg = null;
+function regData() {
+  if (_reg) return _reg;
+  var REGD = (typeof window !== 'undefined' && window.ATHLETE_REGISTRY) || null;
+  if (!REGD) return null;
+  var F = REGD.fields, byId = {}, bySrc = {};
+  REGD.athletes.forEach(function (row) {
+    var a = {};
+    F.forEach(function (f, i) { a[f] = row[i]; });
+    byId[a.id] = a;
+    Object.keys(a.sources || {}).forEach(function (s) {
+      (a.sources[s] || []).forEach(function (n) {
+        var k = s + '|' + n;
+        (bySrc[k] = bySrc[k] || []).push(a.id);
+      });
+    });
+  });
+  _reg = { byId: byId, bySrc: bySrc };
+  return _reg;
+}
+// registry id for a name as written in one source (or any source); null if
+// unknown or if two athletes share that name there
+function regIdFor(name, srcs) {
+  var R = regData();
+  if (!R || !name) return null;
+  var list = srcs || REG_ORDER;
+  for (var i = 0; i < list.length; i++) {
+    var ids = R.bySrc[list[i] + '|' + name];
+    if (ids && ids.length === 1) return ids[0];
+  }
+  return null;
+}
+// run fn for every name this athlete has in one source, join the HTML
+function regEach(reg, src, fn) {
+  return ((reg.sources || {})[src] || []).map(function (n) {
+    try { return fn(n) || ''; } catch (e) { console.warn('[registry]', src, n, e); return ''; }
+  }).join('');
+}
+// a tag per flag, with the years surfed under it
+function regFlagTags(reg) {
+  return (reg.flags || []).map(function (f) {
+    var yrs = f[1] === f[2] ? f[1] : f[1] + '–' + f[2];
+    return '<div class="meta-tag"><span>' + nationFlag(f[0]) + escHtml(f[0])
+      + '</span><span style="color:#94a3b8;margin-left:6px">' + yrs + '</span></div>';
+  }).join('');
+}
+// the profile's achievement badges, each looked up under that source's name
+function regBadges(reg) {
+  var S = reg.sources || {};
+  var juniorNames = (S.PJ || []).concat(S.QS || [], S.CT || [], S.CS || []);
+  var seen = {}, wjc = juniorNames.filter(function (n) { return seen[n] ? false : (seen[n] = true); })
+    .map(function (n) { return buildWJCBadges(n); }).join('');
+  return wjc
+    + regEach(reg, 'Olympics', buildOlympicBadges)
+    + regEach(reg, 'WSG', buildISAWsgBadges)
+    + regEach(reg, 'WJSC', buildISAWjBadges)
+    + regEach(reg, 'WLC', buildISAWlcBadges)
+    + regEach(reg, 'SUP', buildISASUPBadges)
+    + regEach(reg, 'WPSC', buildISAWpscBadges)
+    + regEach(reg, 'PanAm', buildPanAmBadges);
+}
+function regOverview(title, overviewLabel, key, innerHtml) {
+  if (!innerHtml) return '';
+  var bodyId = 'ovw-' + key, chevId = 'chev-ovw-' + key;
+  return '<div class="section-title">' + title + '</div>'
+    + '<div class="event-accordion" style="margin-bottom:8px"><div class="er">'
+    + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
+    + '<span class="er-loc">' + overviewLabel + '</span>'
+    + '<svg id="' + chevId + '" class="er-chevron" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    + '</div><div class="er-body" id="' + bodyId + '">'
+    + '<div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:12px">' + innerHtml + '</div>'
+    + '</div></div></div>';
+}
+// ISA Overview, each event under the name that event's sheet uses
+function buildRegISASection(reg) {
+  var inner = regEach(reg, 'WSG', function (name) {
+    if (!ISA_WSG_DATA || !ISA_WSG_DATA.athletes) return '';
+    var rows = isaRows(ISA_WSG_DATA, name);
+    if (!rows.length) return '';
+    var A = isaMergeRows(rows);
+    var evs = ISA_WSG_DATA.events.filter(function (ev) { return A.results[ev.id] !== undefined; })
+      .sort(function (x, y) { return y.year - x.year; })
+      .map(function (ev) { return { ev: ev, place: A.results[ev.id], nat: A.nations[ev.id] }; });
+    return evs.length ? buildWJEventAccordion('ISA World Surfing Games', evs, cssId(name) + '_wsg_isa',
+                                              buildIsaStatGrid(evs, A.medals, A.appearances)) : '';
+  })
+    + regEach(reg, 'WJSC', function (n) { return buildISAWjSection(n, true, true); })
+    + regEach(reg, 'WLC', function (n) { return buildISAWlcSection(n, true, true); })
+    + regEach(reg, 'SUP', function (n) { return buildISASUPSection(n, true, true); })
+    + regEach(reg, 'WPSC', function (n) { return buildISAWpscSection(n, true, true); });
+  return regOverview('ISA Results', 'ISA Overview', 'isa__' + cssId(reg.id), inner);
+}
+// Olympic Overview: Olympic Games and Pan American Games cards together
+function regStripTitle(html) { return (html || '').replace(/^\s*<div class="section-title">[^<]*<\/div>/, ''); }
+// one "Pan American Games" card; the discipline is a column in the listing
+function buildRegPanAmCard(name) {
+  var d = _panData(), entries = panEntries(name);
+  if (!d || !entries.length) return '';
+  var th = 'padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0';
+  var rows = [], best = null, games = {};
+  entries.forEach(function (e) {
+    d.events.forEach(function (ev) {
+      if (e.results[ev.id] === undefined) return;
+      var place = e.results[ev.id];
+      games[ev.id] = 1;
+      if (typeof place === 'number' && (best === null || place < best)) best = place;
+      rows.push({ ev: ev, e: e, place: place });
+    });
+  });
+  if (!rows.length) return '';
+  rows.sort(function (x, y) { return (y.ev.year - x.ev.year) || (x.e.disc_order - y.e.disc_order); });
+  var nGames = Object.keys(games).length;
+  var bestCls = best === 1 ? 'w' : best === 2 ? 'ru' : best && best <= 4 ? 'sf' : best && best <= 8 ? 'qf' : 'ev';
+  var chips = (best ? '<span class="chip ' + bestCls + '">Best ' + olyPlaceLabel(best) + '</span>' : '')
+    + '<span class="chip ev">' + nGames + ' appearance' + (nGames !== 1 ? 's' : '') + '</span>';
+  var body = rows.map(function (r) {
+    var place = r.place;
+    var rowBg = place === 1 ? '#fffbea' : place === 2 ? '#f6f8fa' : place === 3 ? '#fff5f0' : '#fff';
+    var gm = r.ev.resultUrl
+      ? '<a href="' + r.ev.resultUrl + '" target="_blank" rel="noopener" style="color:#001834;text-decoration:underline" title="Official results">' + escHtml(r.ev.name) + '</a>'
+      : escHtml(r.ev.name);
+    return '<tr style="background:' + rowBg + '">'
+      + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:#001834">' + gm + '</td>'
+      + '<td style="padding:9px 14px;font-size:0.78rem;color:#001834;border-bottom:1px solid #f1f5f9">' + escHtml(r.e.disc_label || '') + '</td>'
+      + '<td style="padding:9px 14px;font-size:0.78rem;color:#5a7090;border-bottom:1px solid #f1f5f9">' + escHtml(r.ev.venue || '') + '</td>'
+      + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9">' + panPlaceLabel(place) + '</td>'
+      + '</tr>';
+  }).join('');
+  var bodyId = 'regpan__' + cssId(name), chevId = 'regpanchev__' + cssId(name);
+  return '<div class="er">'
+    + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
+    + '<span class="er-loc">Pan American Games</span>'
+    + '<div class="er-chips">' + chips
+    + '<svg id="' + chevId + '" class="er-chevron" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    + '</div></div>'
+    + '<div class="er-body" id="' + bodyId + '">'
+    + '<table style="width:100%;border-collapse:collapse">'
+    + '<thead><tr style="background:#f8fafc"><th style="' + th + '">Games</th><th style="' + th + '">Discipline</th><th style="' + th + '">Venue</th><th style="' + th + '">Result</th></tr></thead>'
+    + '<tbody>' + body + '</tbody></table></div></div>';
+}
+function buildRegOlySection(reg) {
+  var inner = regEach(reg, 'Olympics', function (n) { return regStripTitle(buildOlympicsSection(n)); })
+    + regEach(reg, 'PanAm', buildRegPanAmCard);
+  return regOverview('Olympic Results', 'Olympic Overview', 'oly__' + cssId(reg.id), inner);
+}
+
+function renderAthlete(id) {
+  var panel = document.getElementById('ath-profile');
+  if (!panel) return;
+  var R = regData();
+  if (!R) { panel.innerHTML = '<div class="profile-empty">Athletes Registry not loaded — run build_registry.py</div>'; return; }
+  var reg = R.byId[id];
+  if (!reg) { panel.innerHTML = '<div class="profile-empty">No athlete with id “' + escHtml(id) + '”</div>'; return; }
+  regRenderInto(panel, reg);
+  document.title = reg.name + ' — Surf Comp Archive';
+  window.scrollTo(0, 0);
+}
+
+// ── The all-tours profile is the default ──────────────────────────────────────
+// Every profile panel shows the all-tours layout for an athlete the registry
+// knows. The per-tour renderers still run first (they keep list selection and
+// view state); the panel is then re-rendered from the registry. With no
+// registry loaded, or an athlete it doesn't know, nothing changes.
+var REG_PANEL_SRC = { 'profile-panel': null, 'qp-profile': ['QS', 'PJ'], 'isa-profile': ['WSG'], 'wj-profile': ['WJSC'],
+  'wlc-profile': ['WLC'], 'sup-profile': ['SUP'], 'wpsc-profile': ['WPSC'], 'oly-profile': ['Olympics'],
+  'pan-profile': ['PanAm'], 'ath-profile': null };
+var REG_PANEL_BACK = { 'profile-panel': 'athletes', 'isa-profile': 'isa', 'wj-profile': 'wj', 'wlc-profile': 'wlc',
+  'sup-profile': 'sup', 'wpsc-profile': 'wpsc', 'oly-profile': 'olympics', 'pan-profile': 'panam' };
+var _regRendering = false;
+// Notes and bio fields are saved under a name (bio__<name>__dob, notes__<name>,
+// evnotes__<name>__<event>) — other features read them by name too, so they
+// stay that way. The all-tours profile uses the athlete's main name; anything
+// saved under one of their other spellings is copied across to it here
+// (never overwriting: a bio field already set stays; notes are appended once).
+// The old keys are kept, so nothing that reads them breaks.
+function regConsolidateNotes(reg, base) {
+  var names = {};
+  Object.keys(reg.sources || {}).forEach(function (s) { (reg.sources[s] || []).forEach(function (n) { names[n] = 1; }); });
+  names[reg.name] = 1;
+  delete names[base];
+  var others = Object.keys(names);
+  if (!others.length) return;
+  var get = function (k) { var v = localStorage.getItem(k); return v !== null ? v : ((typeof APP_DATA !== 'undefined' && APP_DATA[k]) || ''); };
+  var keys = {};
+  var collect = function (k) {
+    others.forEach(function (n) {
+      var m = k.match(/^([a-z]*_)?(bio|notes|evnotes)__(.*)$/);
+      if (!m) return;
+      var rest = m[3];
+      if (m[2] === 'notes' ? rest === n : rest.indexOf(n + '__') === 0) keys[k] = { name: n, pre: m[1] || '', kind: m[2], tail: rest.slice(n.length) };
+    });
+  };
+  for (var i = 0; i < localStorage.length; i++) collect(localStorage.key(i));
+  if (typeof APP_DATA !== 'undefined') Object.keys(APP_DATA).forEach(collect);
+  Object.keys(keys).forEach(function (k) {
+    var info = keys[k], val = get(k);
+    if (!val) return;
+    var target = info.pre + info.kind + '__' + base + info.tail;
+    // once per key pair: if the main entry is later edited or cleared, the
+    // old spelling's text never comes back
+    var flag = 'regmerged__' + k + '>>' + target;
+    if (localStorage.getItem(flag)) return;
+    localStorage.setItem(flag, '1');
+    var cur = get(target);
+    var next = null;
+    if (!cur) next = val;
+    else if (info.kind !== 'bio' && cur !== val && cur.indexOf(val) === -1) next = cur + '\n\n[' + info.name + '] ' + val;
+    if (next !== null) {
+      localStorage.setItem(target, next);
+      if (typeof _fbSet === 'function') _fbSet(target, next);
+    }
+  });
+}
+function regRenderInto(panel, reg) {
+  // ids inside the cards are built from names: clear the other panels so a
+  // toggle never finds a hidden copy first
+  Object.keys(REG_PANEL_SRC).forEach(function (pid) {
+    var p = document.getElementById(pid);
+    if (p && p !== panel && p.querySelector('.profile-name')) p.innerHTML = '<div class="profile-empty">Select an athlete</div>';
+  });
+  var S = reg.sources || {};
+  var base = (S.CT || S.CS || S.LT || [reg.name])[0];
+  try { regConsolidateNotes(reg, base); } catch (e) { console.warn('[registry] notes', e); }
+  _regRendering = true;
+  try { _regOrigRenderProfile(base, panel, reg); } finally { _regRendering = false; }
+  var back = panel.id === 'qp-profile' ? (typeof qpTour !== 'undefined' ? qpTour : 'qs') : REG_PANEL_BACK[panel.id];
+  if (back && !panel.querySelector('.mobile-back-btn')) {
+    var b = document.createElement('button');
+    b.className = 'mobile-back-btn';
+    b.textContent = '← Athletes';
+    b.addEventListener('click', function () { location.hash = '#' + back; });
+    panel.prepend(b);
+  }
+}
+function regTakeOver(panelId, name, pref) {
+  if (_regRendering || !regData() || !name) return false;
+  var panel = document.getElementById(panelId);
+  if (!panel) return false;
+  var id = regIdFor(name, (pref || []).concat(REG_ORDER));
+  if (!id) return false;
+  regRenderInto(panel, regData().byId[id]);
+  return true;
+}
+var _regOrigRenderProfile = renderProfile;
+renderProfile = function (name, panelEl, reg) {
+  if (reg || _regRendering || !regData()) return _regOrigRenderProfile(name, panelEl, reg);
+  var panel = panelEl || document.getElementById('profile-panel');
+  var pref = REG_PANEL_SRC[panel && panel.id];
+  if (panel && panel.id === 'profile-panel') pref = [String(currentWSLTour || 'ct').toUpperCase()];
+  var id = regIdFor(name, (pref || ['CT', 'CS', 'LT']).concat(REG_ORDER));
+  if (!id) return _regOrigRenderProfile(name, panelEl);
+  regRenderInto(panel, regData().byId[id]);
+};
+[['renderOlyProfile', 'oly-profile', ['Olympics']], ['renderPanProfile', 'pan-profile', ['PanAm']],
+ ['renderWJProfile', 'wj-profile', ['WJSC']], ['renderWLCProfile', 'wlc-profile', ['WLC']],
+ ['renderSUPProfile', 'sup-profile', ['SUP']], ['renderWPSCProfile', 'wpsc-profile', ['WPSC']],
+ ['renderISAProfile', 'isa-profile', ['WSG']]].forEach(function (w) {
+  var orig = window[w[0]];
+  if (typeof orig !== 'function') return;
+  window[w[0]] = function (name) {
+    var r = orig.apply(this, arguments);
+    regTakeOver(w[1], name, w[2]);
+    return r;
+  };
+});
+(function () {
+  var orig = window.qpSelectAthlete;
+  if (typeof orig !== 'function') return;
+  window.qpSelectAthlete = function (i) {
+    var r = orig.apply(this, arguments);
+    var a = (typeof QSPJ_DATA !== 'undefined' && QSPJ_DATA && QSPJ_DATA.athletes) ? QSPJ_DATA.athletes[i] : null;
+    if (a) regTakeOver('qp-profile', a[0], [qpTour === 'pj' ? 'PJ' : 'QS', qpTour === 'pj' ? 'QS' : 'PJ']);
+    return r;
+  };
+})();
+
 function _findRoute(rest) {
   var i = rest.indexOf('/');
   if (i < 0) return;
@@ -1573,7 +1871,9 @@ function applyHash() {
 
   _renderView(view);
 
-  if (qpIsView(view)) {
+  if (view === 'athlete') {
+    renderAthlete(name || '');
+  } else if (qpIsView(view)) {
     qpApplyHash(view, name);
   } else if (view === 'athletes' && name) {
     const a = DATA.athletes[name];
@@ -2153,7 +2453,7 @@ function getAthleteNation(name) {
   return a.nation || '';
 }
 
-function renderProfile(name, panelEl) {
+function renderProfile(name, panelEl, reg) {
   // Profiles aggregate all tours. Render the base section from the tour the
   // athlete belongs to (CT if present, else CS) regardless of the active tour,
   // then append the CS / ISA / Olympics accordions. Pointers are restored after.
@@ -2167,8 +2467,14 @@ function renderProfile(name, panelEl) {
     if (typeof LT_EVENTS_BY_YEAR !== 'undefined') EVENTS_BY_YEAR = LT_EVENTS_BY_YEAR;
   }
   try {
-  const a = DATA.athletes[name];
-  if (!a) return;
+  let a = DATA.athletes[name];
+  // reg (an Athletes Registry record) renders the all-tours profile; an athlete
+  // with no CT/CS/LT record gets the same page minus the CT card.
+  const _stub = !a && !!reg;
+  if (!a) {
+    if (!reg) return;
+    a = { gender: reg.gender === 'w' ? 'women' : 'men', nation: reg.nation || '', stats: {}, rankings: {} };
+  }
 
   const gender         = a.gender || 'women';
   const panel          = panelEl || document.getElementById('profile-panel');
@@ -2262,7 +2568,7 @@ function renderProfile(name, panelEl) {
   const isRoty      = rookieData.roty === name;
 
   // Age from stored DOB (global calcAge)
-  const dobVal = bioGet('dob') || officialDob(name);
+  const dobVal = bioGet('dob') || officialDob(name) || (reg && reg.dob ? reg.dob : '');
   const age    = profileAge(dobVal, name);
 
   // ISA lookup needed here for wildcard nation seeding (also reused below for ISA overview)
@@ -2293,7 +2599,7 @@ function renderProfile(name, panelEl) {
           <label>Date of Birth</label>
           <input class="bio-input" placeholder="e.g. 1988-02-15"
             value="${escHtml(dobVal)}"
-            onchange="saveBio('${safe}','dob',this.value);_profileOpenedFromISA=document.getElementById('${`ovw-isa__${cssId(name)}`}')?.classList.contains('open');renderProfile('${safe}',document.getElementById('${panel.id || 'profile-panel'}'))">
+            onchange="saveBio('${safe}','dob',this.value);_profileOpenedFromISA=document.getElementById('${`ovw-isa__${cssId(name)}`}')?.classList.contains('open');${reg ? `renderAthlete('${reg.id}')` : `renderProfile('${safe}',document.getElementById('${panel.id || 'profile-panel'}'))`}">
         </div>
         <div class="bento-info-field">
           <label>Age</label>
@@ -2337,12 +2643,14 @@ function renderProfile(name, panelEl) {
         (wcNation || a.nation) ? `<div class="meta-tag"><span>${nationFlag(wcNation || a.nation)}${wcNation || a.nation}</span></div>` : '',
       ]
     : [
-        a.nation     ? `<div class="meta-tag"><span>${nationFlag(a.nation)}${a.nation}</span></div>` : '',
+        (reg && reg.flags && reg.flags.length > 1) ? regFlagTags(reg)
+          : (a.nation  ? `<div class="meta-tag"><span>${nationFlag(a.nation)}${a.nation}</span></div>` : ''),
         rookieSeason ? `<div class="meta-tag">Rookie Season: <span>${rookieSeason}</span></div>` : '',
         wcCount      ? `<div class="meta-tag" style="background:#fff;color:#f0b400;border-color:#f0b400">🏆 ${wcCount > 1 ? wcCount + '× ' : ''}World Champion</div>` : '',
         isRoty       ? `<div class="meta-tag" style="background:var(--navy);color:#fff;border-color:var(--navy)">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
       ]
-  ).join('') + buildWJCBadges(name) + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name) + buildISAWpscBadges(name) + buildPanAmBadges(name);
+  ).join('') + (reg ? regBadges(reg) :
+    buildWJCBadges(name) + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name) + buildISAWpscBadges(name) + buildPanAmBadges(name));
 
   // Rookie class
   const rookieClassHtml = rookieSeason && rookieClass.length
@@ -2421,10 +2729,10 @@ function renderProfile(name, panelEl) {
   // CT athletes: CT card (inline) + CS card appended. CS-only athletes: the CS
   // card IS the base (buildCSSection carries the correct CS labels, so we skip
   // the CT-labelled inline card for them).
-  const csCard   = buildCSSection(name, true);   // '' if athlete isn't in CS_DATA
-  const ltCard   = buildLTSection(name, true);   // '' if athlete isn't in LT_DATA
-  const qsCard   = buildQPCard(name, 'qs');      // '' if no QS results (qspj.js)
-  const pjCard   = buildQPCard(name, 'pj');
+  const csCard   = reg ? regEach(reg, 'CS', function (n) { return buildCSSection(n, true); }) : buildCSSection(name, true);   // '' if athlete isn't in CS_DATA
+  const ltCard   = reg ? regEach(reg, 'LT', function (n) { return buildLTSection(n, true); }) : buildLTSection(name, true);   // '' if athlete isn't in LT_DATA
+  const qsCard   = reg ? regEach(reg, 'QS', function (n) { return buildQPCard(n, 'qs'); }) : buildQPCard(name, 'qs');      // '' if no QS results (qspj.js)
+  const pjCard   = reg ? regEach(reg, 'PJ', function (n) { return buildQPCard(n, 'pj'); }) : buildQPCard(name, 'pj');
   const wslInner = (_srcTour === 'ct' ? (wslOverviewAccordion || '') : '') + csCard + ltCard + qsCard + pjCard;
   const wslResultsSection = wslInner
     ? '<div class="section-title">WSL Results</div>'
@@ -2439,18 +2747,17 @@ function renderProfile(name, panelEl) {
       +     '</div>'
       +   '</div>'
       + '</div>'
-    : (winsHtml + '<div class="section-title">Event Record</div><div class="event-accordion">' + eventsHtml + '</div>');
+    : (_stub ? '' : (winsHtml + '<div class="section-title">Event Record</div><div class="event-accordion">' + eventsHtml + '</div>'));
 
   panel.innerHTML = `
-    <div class="profile-name">${name}</div>
+    <div class="profile-name">${reg ? escHtml(reg.name) : name}</div>
     <div class="profile-meta">${tags}</div>
 
     ${bioFields}
 
     ${wslResultsSection}
-    ${buildISASection(name)}
-    ${buildOlympicsSection(name)}
-    ${buildPanAmSection(name)}
+    ${reg ? buildRegISASection(reg) : buildISASection(name)}
+    ${reg ? buildRegOlySection(reg) : buildOlympicsSection(name) + buildPanAmSection(name)}
   `;
   // Load every accordion collapsed — strip the default-open state from all
   // accordion bodies/chevrons so the profile opens fully closed.
