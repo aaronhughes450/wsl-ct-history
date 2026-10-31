@@ -1423,7 +1423,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261029195358"></script>
+<script src="data.js?v=20261030215456"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261030024030" onerror="this.remove()"></script>
 <script src="registry.js?v=20261030024030" onerror="this.remove()"></script>
@@ -5053,9 +5053,13 @@ function buildCSSection(name, innerOnly) {
   DATA = CS_DATA;
   if (typeof CS_WINNERS_DATA   !== 'undefined') WINNERS_DATA   = CS_WINNERS_DATA;
   if (typeof CS_EVENTS_BY_YEAR !== 'undefined') EVENTS_BY_YEAR = CS_EVENTS_BY_YEAR;
-  let eventsHtml = '';
+  let eventsHtml = '', csSeasonProg = '';
   try { eventsHtml = buildEventsAccordion(name, gender, getAthleteEvents(name, gender), 'cs_'); }
   catch (e) { eventsHtml = '<div class="no-data" style="padding:16px">No event data available</div>'; }
+  // Per-season ranking progression (PS/E1..En + event placings) from the CS
+  // season tabs — same block the CT card shows, so the current CS season's
+  // standings appear on the profile as they do for CT.
+  try { csSeasonProg = buildSeasonProgression(name, gender); } catch (e) { csSeasonProg = ''; }
   finally { DATA = _pD; WINNERS_DATA = _pW; EVENTS_BY_YEAR = _pE; }
 
   if (!rankYears.length && (eventsHtml.indexOf('No event data') !== -1)) return '';
@@ -5145,7 +5149,8 @@ function buildCSSection(name, innerOnly) {
     +   '<div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:14px">'
     +     bentoStatGrid
     +     '<div><div class="section-title" style="margin-top:0">Year-by-Year Rankings</div>'
-    +       '<div class="rankings-row">' + (rankingChips || '<span style="color:var(--text-dim);font-size:0.85rem">No ranking data</span>') + '</div></div>'
+    +       '<div class="rankings-row">' + (rankingChips || '<span style="color:var(--text-dim);font-size:0.85rem">No ranking data</span>') + '</div>'
+    +       csSeasonProg + '</div>'
     +     csWinsHtml
     +   '</div>'
     +   '<div style="padding:0 18px 4px"><div class="section-title" style="margin-top:0">Event Record</div></div>'
