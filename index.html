@@ -806,6 +806,7 @@
   <nav class="nav" id="oly-subnav" style="display:none">
     <button class="nav-btn active" id="oly-sub-olympics" onclick="setOlySub('olympics')">Olympic Games</button>
     <button class="nav-btn" id="oly-sub-panam" onclick="setOlySub('panam')">Pan Am Games</button>
+    <button class="nav-btn" id="oly-sub-asiangames" onclick="setOlySub('asiangames')">Asian Games</button>
   </nav>
   <span class="org-divider" id="isa-nations-divider" style="display:none"></span>
   <nav class="nav" id="isa-nations-nav" style="display:none">
@@ -879,10 +880,11 @@
   <button class="msn-btn" id="m-isa-sub-events" onclick="setISASub('events')">Events</button>
 </div>
 
-<!-- Mobile-only Olympics sub-nav (Olympic Games / Pan Am Games) -->
+<!-- Mobile-only Olympics sub-nav (Olympic Games / Pan Am Games / Asian Games) -->
 <div class="mobile-subnav mobile-tour-nav" id="mobile-oly-subnav" style="display:none">
   <button class="msn-btn active" id="m-oly-sub-olympics" onclick="setOlySub('olympics')">Olympic Games</button>
   <button class="msn-btn" id="m-oly-sub-panam" onclick="setOlySub('panam')">Pan Am Games</button>
+  <button class="msn-btn" id="m-oly-sub-asiangames" onclick="setOlySub('asiangames')">Asian Games</button>
 </div>
 
 <!-- Winners view -->
@@ -1423,11 +1425,29 @@
   </div>
 </div>
 
+<!-- Asian Games view (sub-tab of the Olympics org) -->
+<div class="view" id="view-asiangames">
+  <div class="athletes-layout">
+    <div class="athlete-list-panel">
+      <div class="list-filters">
+        <div class="gender-tabs">
+          <button class="gender-tab active" id="ag-tab-women" onclick="setAgGender('women')">Women</button>
+          <button class="gender-tab" id="ag-tab-men" onclick="setAgGender('men')">Men</button>
+        </div>
+      </div>
+      <div class="athlete-list" id="ag-list"></div>
+    </div>
+    <div class="profile-panel" id="ag-profile">
+      <div class="profile-empty">Select an athlete to view their Asian Games history</div>
+    </div>
+  </div>
+</div>
+
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261106123320"></script>
+<script src="data.js?v=20261107073715"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
-<script src="registry-public.js?v=20261030024030" onerror="this.remove()"></script>
-<script src="registry.js?v=20261030024030" onerror="this.remove()"></script>
+<script src="registry-public.js?v=20261107022727" onerror="this.remove()"></script>
+<script src="registry.js?v=20261107022727" onerror="this.remove()"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1484,8 +1504,8 @@ function _renderView(name) {
       b.classList.toggle('active', b.dataset.view === qpNav);
     });
   }
-  var orgForView = (resolvedName === 'olympics' || resolvedName === 'panam') ? 'olympics' : (resolvedName === 'isa') ? 'isa' : 'wsl';
-  if (name === 'olympics' || name === 'panam') { olySubView = name; _syncOlySubBtns(); }
+  var orgForView = (resolvedName === 'olympics' || resolvedName === 'panam' || resolvedName === 'asiangames') ? 'olympics' : (resolvedName === 'isa') ? 'isa' : 'wsl';
+  if (name === 'olympics' || name === 'panam' || name === 'asiangames') { olySubView = name; _syncOlySubBtns(); }
   document.querySelectorAll('.bottom-tab').forEach(b => {
     b.classList.toggle('active', b.dataset.org === orgForView);
   });
@@ -1527,6 +1547,7 @@ function _renderView(name) {
       if (name === 'winners')   renderWinners();
       if (name === 'olympics')  renderOlympics();
       if (name === 'panam')     renderPanAm();
+      if (name === 'asiangames') renderAsianGames();
       if (name === 'isa')       renderISA();
       if (name === 'wj')        { setISASub('wj'); filterWJ(document.getElementById('global-search')?.value || ''); }
       if (name === 'wlc')       { setISASub('wlc'); filterWLC(document.getElementById('global-search')?.value || ''); }
@@ -1551,15 +1572,15 @@ function _selectAthlete(name) {
 
 // #find/<section>/<name> -- a profile by NAME from outside the app (the press
 // desk's fact sheets). Sections: ct, cs, lt, qs, pj, wsg, wj, wlc, sup, wpsc,
-// olympics, panam. QS / PJ profiles are addressed by position inside the app,
+// olympics, panam, asiangames. QS / PJ profiles are addressed by position inside the app,
 // which changes with every rebuild, so outside links must come in by name.
 // ── All-tours athlete profile (#athlete/<registry id>) ──────────────────────
 // Every athlete gets the CT profile's layout — header, bio, WSL Overview (CT,
 // CS, LT, QS, PJ), ISA Overview (WSG, WJSC, WLC, SUP, WPSC), Olympic Overview
-// (Olympic Games, Pan American Games) — via renderProfile(name, panel, reg),
+// (Olympic Games, Pan American Games, Asian Games) — via renderProfile(name, panel, reg),
 // with each tour's card looked up under the name that tour uses, from the
 // Athletes Registry (registry.js, written by build_registry.py).
-var REG_ORDER = ['CT', 'CS', 'LT', 'QS', 'PJ', 'WSG', 'WJSC', 'WLC', 'SUP', 'WPSC', 'Olympics', 'PanAm'];
+var REG_ORDER = ['CT', 'CS', 'LT', 'QS', 'PJ', 'WSG', 'WJSC', 'WLC', 'SUP', 'WPSC', 'Olympics', 'PanAm', 'AsianGames'];
 var _reg = null;
 function regData() {
   if (_reg) return _reg;
@@ -1619,7 +1640,8 @@ function regBadges(reg) {
     + regEach(reg, 'WLC', buildISAWlcBadges)
     + regEach(reg, 'SUP', buildISASUPBadges)
     + regEach(reg, 'WPSC', buildISAWpscBadges)
-    + regEach(reg, 'PanAm', buildPanAmBadges);
+    + regEach(reg, 'PanAm', buildPanAmBadges)
+    + regEach(reg, 'AsianGames', buildAsianGamesBadges);
 }
 function regOverview(title, overviewLabel, key, innerHtml) {
   if (!innerHtml) return '';
@@ -1652,11 +1674,12 @@ function buildRegISASection(reg) {
     + regEach(reg, 'WPSC', function (n) { return buildISAWpscSection(n, true, true); });
   return regOverview('ISA Results', 'ISA Overview', 'isa__' + cssId(reg.id), inner);
 }
-// Olympic Overview: Olympic Games and Pan American Games cards together
+// Olympic Overview: Olympic Games, Pan American Games and Asian Games cards together
 function regStripTitle(html) { return (html || '').replace(/^\s*<div class="section-title">[^<]*<\/div>/, ''); }
 // one "Pan American Games" card; the discipline is a column in the listing
-function buildRegPanAmCard(name) {
-  var d = _panData(), entries = panEntries(name);
+function buildRegPanAmCard(name) { return _buildRegGamesCard(name, _panData(), panEntries(name), 'Pan American Games', 'regpan'); }
+function buildRegAgCard(name) { return _buildRegGamesCard(name, _agData(), agEntries(name), 'Asian Games', 'regag'); }
+function _buildRegGamesCard(name, d, entries, title, idp) {
   if (!d || !entries.length) return '';
   var th = 'padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0';
   var rows = [], best = null, games = {};
@@ -1688,10 +1711,10 @@ function buildRegPanAmCard(name) {
       + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9">' + panPlaceLabel(place) + '</td>'
       + '</tr>';
   }).join('');
-  var bodyId = 'regpan__' + cssId(name), chevId = 'regpanchev__' + cssId(name);
+  var bodyId = idp + '__' + cssId(name), chevId = idp + 'chev__' + cssId(name);
   return '<div class="er">'
     + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
-    + '<span class="er-loc">Pan American Games</span>'
+    + '<span class="er-loc">' + title + '</span>'
     + '<div class="er-chips">' + chips
     + '<svg id="' + chevId + '" class="er-chevron" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
     + '</div></div>'
@@ -1702,7 +1725,8 @@ function buildRegPanAmCard(name) {
 }
 function buildRegOlySection(reg) {
   var inner = regEach(reg, 'Olympics', function (n) { return regStripTitle(buildOlympicsSection(n)); })
-    + regEach(reg, 'PanAm', buildRegPanAmCard);
+    + regEach(reg, 'PanAm', buildRegPanAmCard)
+    + regEach(reg, 'AsianGames', buildRegAgCard);
   return regOverview('Olympic Results', 'Olympic Overview', 'oly__' + cssId(reg.id), inner);
 }
 
@@ -1725,9 +1749,9 @@ function renderAthlete(id) {
 // registry loaded, or an athlete it doesn't know, nothing changes.
 var REG_PANEL_SRC = { 'profile-panel': null, 'qp-profile': ['QS', 'PJ'], 'isa-profile': ['WSG'], 'wj-profile': ['WJSC'],
   'wlc-profile': ['WLC'], 'sup-profile': ['SUP'], 'wpsc-profile': ['WPSC'], 'oly-profile': ['Olympics'],
-  'pan-profile': ['PanAm'], 'ath-profile': null };
+  'pan-profile': ['PanAm'], 'ag-profile': ['AsianGames'], 'ath-profile': null };
 var REG_PANEL_BACK = { 'profile-panel': 'athletes', 'isa-profile': 'isa', 'wj-profile': 'wj', 'wlc-profile': 'wlc',
-  'sup-profile': 'sup', 'wpsc-profile': 'wpsc', 'oly-profile': 'olympics', 'pan-profile': 'panam' };
+  'sup-profile': 'sup', 'wpsc-profile': 'wpsc', 'oly-profile': 'olympics', 'pan-profile': 'panam', 'ag-profile': 'asiangames' };
 var _regRendering = false;
 // Notes and bio fields are saved under a name (bio__<name>__dob, notes__<name>,
 // evnotes__<name>__<event>) — other features read them by name too, so they
@@ -1814,6 +1838,7 @@ renderProfile = function (name, panelEl, reg) {
   regRenderInto(panel, regData().byId[id]);
 };
 [['renderOlyProfile', 'oly-profile', ['Olympics']], ['renderPanProfile', 'pan-profile', ['PanAm']],
+ ['renderAgProfile', 'ag-profile', ['AsianGames']],
  ['renderWJProfile', 'wj-profile', ['WJSC']], ['renderWLCProfile', 'wlc-profile', ['WLC']],
  ['renderSUPProfile', 'sup-profile', ['SUP']], ['renderWPSCProfile', 'wpsc-profile', ['WPSC']],
  ['renderISAProfile', 'isa-profile', ['WSG']]].forEach(function (w) {
@@ -1858,7 +1883,7 @@ function _findRoute(rest) {
     location.replace('#' + src + '/' + ix);
     return;
   }
-  var map = { wsg: 'ISA', isa: 'ISA', wj: 'WJSC', wlc: 'WLC', sup: 'SUP', wpsc: 'WPSC', olympics: 'OLY', panam: 'PAN' };
+  var map = { wsg: 'ISA', isa: 'ISA', wj: 'WJSC', wlc: 'WLC', sup: 'SUP', wpsc: 'WPSC', olympics: 'OLY', panam: 'PAN', asiangames: 'AG' };
   if (map[src]) { history.replaceState(null, '', location.pathname + location.search); gsSelect(nm, map[src]); }
   else location.replace('#athletes');
 }
@@ -1890,6 +1915,8 @@ function applyHash() {
     setTimeout(() => _selectOlyAthlete(name), 50);
   } else if (view === 'panam' && name) {
     setTimeout(() => _selectPanAthlete(name), 50);
+  } else if (view === 'asiangames' && name) {
+    setTimeout(() => _selectAgAthlete(name), 50);
   } else if (view === 'isa' && name) {
     // Ensure the WSG sub-view is the visible one (mirrors the wj/wlc/sup/
     // nations branches below) — otherwise the profile lands in a hidden panel.
@@ -1935,7 +1962,7 @@ function applyHash() {
     setTimeout(() => _selectNation(name), 80);
   }
   // Keep org tabs in sync with current view
-  var orgForHash = (view === 'olympics' || view === 'panam') ? 'olympics' : (view === 'isa' || view === 'wj' || view === 'wlc' || view === 'sup' || view === 'wpsc' || view === 'nations' || view === 'isaev') ? 'isa' : 'wsl';
+  var orgForHash = (view === 'olympics' || view === 'panam' || view === 'asiangames') ? 'olympics' : (view === 'isa' || view === 'wj' || view === 'wlc' || view === 'sup' || view === 'wpsc' || view === 'nations' || view === 'isaev') ? 'isa' : 'wsl';
   document.querySelectorAll('.org-btn').forEach(function(b) {
     b.classList.toggle('active', b.dataset.org === orgForHash);
   });
@@ -2651,7 +2678,7 @@ function renderProfile(name, panelEl, reg) {
         isRoty       ? `<div class="meta-tag" style="background:var(--navy);color:#fff;border-color:var(--navy)">⭐ Rookie of the Year ${rookieSeason}</div>` : '',
       ]
   ).join('') + (reg ? regBadges(reg) :
-    buildWJCBadges(name) + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name) + buildISAWpscBadges(name) + buildPanAmBadges(name));
+    buildWJCBadges(name) + buildOlympicBadges(name) + buildISAWsgBadges(name) + buildISAWjBadges(name) + buildISAWlcBadges(name) + buildISASUPBadges(name) + buildISAWpscBadges(name) + buildPanAmBadges(name) + buildAsianGamesBadges(name));
 
   // Rookie class
   const rookieClassHtml = rookieSeason && rookieClass.length
@@ -2758,7 +2785,7 @@ function renderProfile(name, panelEl, reg) {
 
     ${wslResultsSection}
     ${reg ? buildRegISASection(reg) : buildISASection(name)}
-    ${reg ? buildRegOlySection(reg) : buildOlympicsSection(name) + buildPanAmSection(name)}
+    ${reg ? buildRegOlySection(reg) : buildOlympicsSection(name) + buildPanAmSection(name) + buildAsianGamesSection(name)}
   `;
   // Load every accordion collapsed — strip the default-open state from all
   // accordion bodies/chevrons so the profile opens fully closed.
@@ -3898,6 +3925,12 @@ function gsAllAthletes() {
       if (seen[a.name].sources.indexOf('PAN') === -1) seen[a.name].sources.push('PAN');
     });
   }
+  if (typeof ASIANGAMES_DATA !== 'undefined' && ASIANGAMES_DATA && ASIANGAMES_DATA.athletes) {
+    ASIANGAMES_DATA.athletes.forEach(function(a) {
+      if (!seen[a.name]) { seen[a.name] = { name: a.name, sources: [] }; results.push(seen[a.name]); }
+      if (seen[a.name].sources.indexOf('AG') === -1) seen[a.name].sources.push('AG');
+    });
+  }
   if (typeof ISA_WJ_DATA !== 'undefined' && ISA_WJ_DATA && ISA_WJ_DATA.athletes) {
     ISA_WJ_DATA.athletes.forEach(function(a) {
       if (!seen[a.name]) { seen[a.name] = { name: a.name, sources: [] }; results.push(seen[a.name]); }
@@ -3951,7 +3984,7 @@ function globalSearch(q) {
     else if (isaSubView === 'nations') filterNations(q);
     else filterISA(q);
   }
-  else if (currentOrg === 'olympics') { if (olySubView === 'panam') filterPanAm(q); else filterOlympics(q); }
+  else if (currentOrg === 'olympics') { if (olySubView === 'panam') filterPanAm(q); else if (olySubView === 'asiangames') filterAsianGames(q); else filterOlympics(q); }
 
   if (!q.trim()) { dd.innerHTML = ''; dd.classList.remove('open'); return; }
 
@@ -4007,6 +4040,12 @@ function gsSelect(name, primarySource) {
     if (currentOrg !== 'olympics') { setOrg('olympics'); }
     requestAnimationFrame(function() {
       setTimeout(function() { location.hash = '#panam/' + encodeURIComponent(name); }, 120);
+    });
+  } else if (primarySource === 'AG') {
+    olySubView = 'asiangames';
+    if (currentOrg !== 'olympics') { setOrg('olympics'); }
+    requestAnimationFrame(function() {
+      setTimeout(function() { location.hash = '#asiangames/' + encodeURIComponent(name); }, 120);
     });
   } else if (primarySource === 'WJSC') {
     if (currentOrg !== 'isa') { setOrg('isa'); }
@@ -5504,7 +5543,7 @@ function renderOlyProfile(name) {
     + buildISAWlcBadges(name)
     + buildISASUPBadges(name)
     + buildISAWpscBadges(name)
-    + buildPanAmBadges(name)
+    + buildPanAmBadges(name) + buildAsianGamesBadges(name)
     + '</div>'
     + '<div class="section-title">Olympic Results</div>'
     + '<table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden">'
@@ -5521,6 +5560,8 @@ function renderOlyProfile(name) {
     if (isaSection) panel.innerHTML += isaSection;
     var panSection = buildPanAmSection(name);
     if (panSection) panel.innerHTML += panSection;
+    var agSection = buildAsianGamesSection(name);
+    if (agSection) panel.innerHTML += agSection;
   }
 }
 
@@ -5535,7 +5576,7 @@ function renderOlympics() {
 // or a status string (e.g. "DSQ") that counts as an appearance but no placing.
 var panGender = 'women';
 var panSelected = null;
-var olySubView = 'olympics';        // 'olympics' or 'panam' — sub-tab of the Olympics org
+var olySubView = 'olympics';        // 'olympics', 'panam' or 'asiangames' — sub-tab of the Olympics org
 
 function _panData() {
   return (typeof PANAM_DATA !== 'undefined' && PANAM_DATA && PANAM_DATA.athletes) ? PANAM_DATA : null;
@@ -5569,7 +5610,7 @@ function panSummary(entries) {
 }
 
 function setOlySub(sub) {
-  olySubView = (sub === 'panam') ? 'panam' : 'olympics';
+  olySubView = (sub === 'panam' || sub === 'asiangames') ? sub : 'olympics';
   _syncOlySubBtns();
   showView(olySubView);
 }
@@ -5579,6 +5620,9 @@ function _syncOlySubBtns() {
   });
   ['oly-sub-panam', 'm-oly-sub-panam'].forEach(function(id) {
     var b = document.getElementById(id); if (b) b.classList.toggle('active', olySubView === 'panam');
+  });
+  ['oly-sub-asiangames', 'm-oly-sub-asiangames'].forEach(function(id) {
+    var b = document.getElementById(id); if (b) b.classList.toggle('active', olySubView === 'asiangames');
   });
 }
 
@@ -5721,7 +5765,7 @@ function renderPanProfile(name) {
     + '<div class="profile-meta">'
     + '<span class="meta-tag">' + nationFlag(latest.country) + escHtml(latest.country) + '</span>'
     + '<span class="meta-tag">' + (latest.gender === 'men' ? 'Men' : 'Women') + '</span>'
-    + buildPanAmBadges(name)
+    + buildPanAmBadges(name) + buildAsianGamesBadges(name)
     + buildOlympicBadges(name)
     + buildISAWsgBadges(name)
     + buildISAWjBadges(name)
@@ -5741,6 +5785,186 @@ function renderPanProfile(name) {
 function renderPanAm() {
   filterPanAm(document.getElementById('global-search')?.value || '');
   if (panSelected) _selectPanAthlete(panSelected);
+}
+// ── Asian Games ──────────────────────────────────────────────────────────────
+// ASIANGAMES_DATA (data.js, from asiangames-data.json via generate.py) has the
+// same shape as PANAM_DATA: one entry per athlete per discipline (Shortboard
+// only so far — surfing debuted at Aichi-Nagoya 2026). panSummary,
+// panPlaceLabel and _panKey are shared with the Pan Am module.
+var agGender = 'women';
+var agSelected = null;
+
+function _agData() {
+  return (typeof ASIANGAMES_DATA !== 'undefined' && ASIANGAMES_DATA && ASIANGAMES_DATA.athletes) ? ASIANGAMES_DATA : null;
+}
+function agEntries(name) {
+  var d = _agData();
+  if (!d) return [];
+  var k = _panKey(name);
+  return d.athletes.filter(function(a) { return _panKey(a.name) === k; })
+    .sort(function(a, b) { return a.disc_order - b.disc_order; });
+}
+function _agLatestYear(entry) {
+  var d = _agData(), yr = 0;
+  d.events.forEach(function(ev) { if (entry.results[ev.id] !== undefined && ev.year > yr) yr = ev.year; });
+  return yr;
+}
+
+function buildAsianGamesBadges(name) {
+  var entries = agEntries(name);
+  if (!entries.length) return '';
+  var s = panSummary(entries);
+  var parts = [];
+  parts.push('<div class="meta-tag" style="background:#ecfeff;color:#0e7490;border-color:#67e8f9">'
+    + (s.games === 1 ? 'Asian Games' : s.games + '× Asian Games') + '</div>');
+  if (s.medals.gold)   parts.push('<div class="meta-tag" style="background:#fff8dc;color:#b8860b;border-color:#f0d060">🥇 Asian Games Gold'   + (s.medals.gold   > 1 ? ' ×' + s.medals.gold   : '') + '</div>');
+  if (s.medals.silver) parts.push('<div class="meta-tag" style="background:#f4f6f8;color:#607080;border-color:#c8d0da">🥈 Asian Games Silver' + (s.medals.silver > 1 ? ' ×' + s.medals.silver : '') + '</div>');
+  if (s.medals.bronze) parts.push('<div class="meta-tag" style="background:#fdf0e8;color:#a0623c;border-color:#e8c0a0">🥉 Asian Games Bronze' + (s.medals.bronze > 1 ? ' ×' + s.medals.bronze : '') + '</div>');
+  return parts.join('');
+}
+
+// One accordion per discipline under an "Asian Games" title, as buildPanAmSection.
+function buildAsianGamesSection(name, open) {
+  var d = _agData();
+  var entries = agEntries(name);
+  if (!d || !entries.length) return '';
+  var th = 'padding:7px 14px;text-align:left;font-size:0.58rem;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#94a3b8;border-bottom:1px solid #e2e8f0';
+  var cards = entries.map(function(e) {
+    var evs = d.events.filter(function(ev) { return e.results[ev.id] !== undefined; })
+      .sort(function(a, b) { return b.year - a.year; });
+    if (!evs.length) return '';
+    var bodyId = 'agev__' + cssId(name) + '__' + e.discipline;
+    var chevId = 'agchev__' + cssId(name) + '__' + e.discipline;
+    var best = e.best;
+    var bestCls = best === 1 ? 'w' : best === 2 ? 'ru' : best && best <= 4 ? 'sf' : best && best <= 8 ? 'qf' : 'ev';
+    var chips = (best ? '<span class="chip ' + bestCls + '">Best ' + olyPlaceLabel(best) + '</span>' : '')
+      + '<span class="chip ev">' + evs.length + ' appearance' + (evs.length !== 1 ? 's' : '') + '</span>';
+    var rows = evs.map(function(ev) {
+      var place = e.results[ev.id];
+      var rowBg = place === 1 ? '#fffbea' : place === 2 ? '#f6f8fa' : place === 3 ? '#fff5f0' : '#fff';
+      var games = ev.resultUrl
+        ? '<a href="' + ev.resultUrl + '" target="_blank" rel="noopener" style="color:#001834;text-decoration:underline" title="Official results">' + escHtml(ev.name) + '</a>'
+        : escHtml(ev.name);
+      return '<tr style="background:' + rowBg + '">'
+        + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9;color:#001834">' + games + '</td>'
+        + '<td style="padding:9px 14px;font-size:0.78rem;color:#5a7090;border-bottom:1px solid #f1f5f9">' + escHtml(ev.venue || '') + '</td>'
+        + '<td style="padding:9px 14px;font-weight:700;font-size:0.85rem;border-bottom:1px solid #f1f5f9">' + panPlaceLabel(place) + '</td>'
+        + '</tr>';
+    }).join('');
+    return '<div class="er' + (open ? ' er-keep-open' : '') + '">'
+      + '<div class="er-head" onclick="toggleEvent(\'' + bodyId + '\',\'' + chevId + '\')">'
+      + '<span class="er-loc">' + escHtml(e.disc_label) + '</span>'
+      + '<div class="er-chips">' + chips
+      + '<svg id="' + chevId + '" class="er-chevron' + (open ? ' open' : '') + '" width="12" height="12" viewBox="0 0 12 12">'
+      + '<path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '</svg></div></div>'
+      + '<div class="er-body' + (open ? ' open' : '') + '" id="' + bodyId + '">'
+      + '<table style="width:100%;border-collapse:collapse">'
+      + '<thead><tr style="background:#f8fafc"><th style="' + th + '">Games</th><th style="' + th + '">Venue</th><th style="' + th + '">Result</th></tr></thead>'
+      + '<tbody>' + rows + '</tbody></table>'
+      + '</div></div>';
+  }).join('');
+  if (!cards) return '';
+  return '<div class="section-title">Asian Games</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">' + cards + '</div>';
+}
+
+function agPeople(gender) {
+  var d = _agData();
+  if (!d) return [];
+  var by = {};
+  d.athletes.forEach(function(a) {
+    if (a.gender !== gender) return;
+    var yr = _agLatestYear(a);
+    if (!by[a.name] || yr > by[a.name].yr) by[a.name] = { name: a.name, country: a.country, yr: yr };
+  });
+  return Object.keys(by).map(function(k) { return by[k]; });
+}
+
+function setAgGender(g) {
+  agGender = g;
+  document.getElementById('ag-tab-men').classList.toggle('active', g === 'men');
+  document.getElementById('ag-tab-women').classList.toggle('active', g === 'women');
+  filterAsianGames(document.getElementById('global-search')?.value || '');
+  document.getElementById('ag-profile').innerHTML = '<div class="profile-empty">Select an athlete to view their Asian Games history</div>';
+  agSelected = null;
+}
+
+function filterAsianGames(query) {
+  var list = document.getElementById('ag-list');
+  if (!list) return;
+  if (!_agData()) {
+    list.innerHTML = '<div style="padding:20px;color:#94a3b8;font-size:0.8rem">No data available.</div>';
+    return;
+  }
+  var q = (query || '').toLowerCase();
+  list.innerHTML = '';
+  agPeople(agGender)
+    .filter(function(a) { return !q || a.name.toLowerCase().includes(q) || (a.country || '').toLowerCase().includes(q); })
+    .sort(function(a, b) { return a.name.localeCompare(b.name); })
+    .forEach(function(a) {
+      var div = document.createElement('div');
+      div.className = 'athlete-item' + (a.name === agSelected ? ' selected' : '');
+      div.innerHTML = '<span class="athlete-item-name">' + escHtml(a.name) + '</span><span class="athlete-item-nation">' + escHtml(a.country) + '</span>';
+      div.onclick = function() {
+        var newHash = '#asiangames/' + encodeURIComponent(a.name);
+        if (location.hash === newHash) _selectAgAthlete(a.name);
+        else location.hash = newHash;
+      };
+      list.appendChild(div);
+    });
+}
+
+function _selectAgAthlete(name) {
+  var entries = agEntries(name);
+  if (!entries.length) return;
+  name = entries[0].name;   // the data's own spelling, which the other sources share
+  var g = entries[0].gender;
+  if (g !== agGender) {
+    agGender = g;
+    document.getElementById('ag-tab-men').classList.toggle('active', g === 'men');
+    document.getElementById('ag-tab-women').classList.toggle('active', g === 'women');
+  }
+  agSelected = name;
+  filterAsianGames(document.getElementById('global-search')?.value || '');
+  var sel = document.querySelector('#ag-list .athlete-item.selected');
+  if (sel) sel.scrollIntoView({ block: 'nearest' });
+  if (isWslAthlete(name)) {
+    renderProfile(name, document.getElementById('ag-profile'));
+  } else {
+    renderAgProfile(name);
+  }
+}
+
+function renderAgProfile(name) {
+  var entries = agEntries(name);
+  if (!entries.length) return;
+  var panel = document.getElementById('ag-profile');
+  var latest = entries.reduce(function(best, e) { return _agLatestYear(e) > _agLatestYear(best) ? e : best; }, entries[0]);
+  panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
+    + '<div class="profile-meta">'
+    + '<span class="meta-tag">' + nationFlag(latest.country) + escHtml(latest.country) + '</span>'
+    + '<span class="meta-tag">' + (latest.gender === 'men' ? 'Men' : 'Women') + '</span>'
+    + buildAsianGamesBadges(name)
+    + buildOlympicBadges(name)
+    + buildISAWsgBadges(name)
+    + buildISAWjBadges(name)
+    + buildISAWlcBadges(name)
+    + buildISASUPBadges(name)
+    + buildISAWpscBadges(name)
+    + '</div>'
+    + buildAsianGamesSection(name, true);
+  if (!isWslAthlete(name)) {
+    var isaSection = buildISASection(name);
+    if (isaSection) panel.innerHTML += isaSection;
+    var olySection = buildOlympicsSection(name);
+    if (olySection) panel.innerHTML += olySection;
+  }
+}
+
+function renderAsianGames() {
+  filterAsianGames(document.getElementById('global-search')?.value || '');
+  if (agSelected) _selectAgAthlete(agSelected);
 }
 // ── ISA World Surfing Games ───────────────────────────────────────────────────
 // ISA_WSG_DATA is injected inline by generate.py from isa-wsg-data.json
@@ -6505,13 +6729,13 @@ function renderWJProfile(name) {
     + buildISASUPBadges(name)
     + buildISAWpscBadges(name)
     + buildOlympicBadges(name)
-    + buildPanAmBadges(name);
+    + buildPanAmBadges(name) + buildAsianGamesBadges(name);
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + bioFields
     + buildISASection(name)
-    + (isWslAthlete(name) ? '' : buildPanAmSection(name));
+    + (isWslAthlete(name) ? '' : buildPanAmSection(name) + buildAsianGamesSection(name));
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
 }
@@ -6787,13 +7011,13 @@ function renderWLCProfile(name) {
     + buildISASUPBadges(name)
     + buildISAWpscBadges(name)
     + buildOlympicBadges(name)
-    + buildPanAmBadges(name);
+    + buildPanAmBadges(name) + buildAsianGamesBadges(name);
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + bioFields
     + buildISASection(name)
-    + (isWslAthlete(name) ? '' : buildPanAmSection(name));
+    + (isWslAthlete(name) ? '' : buildPanAmSection(name) + buildAsianGamesSection(name));
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
 }
@@ -7017,13 +7241,13 @@ function renderSUPProfile(name) {
     + buildISAWjBadges(name)
     + buildISAWlcBadges(name)
     + buildOlympicBadges(name)
-    + buildPanAmBadges(name);
+    + buildPanAmBadges(name) + buildAsianGamesBadges(name);
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + bioFields
     + buildISASection(name)
-    + (isWslAthlete(name) ? '' : buildPanAmSection(name));
+    + (isWslAthlete(name) ? '' : buildPanAmSection(name) + buildAsianGamesSection(name));
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
 }
@@ -7233,13 +7457,13 @@ function renderWPSCProfile(name) {
     + buildISAWlcBadges(name)
     + buildISASUPBadges(name)
     + buildOlympicBadges(name)
-    + buildPanAmBadges(name);
+    + buildPanAmBadges(name) + buildAsianGamesBadges(name);
 
   panel.innerHTML = '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + bioFields
     + buildISASection(name)
-    + (isWslAthlete(name) ? '' : buildPanAmSection(name));
+    + (isWslAthlete(name) ? '' : buildPanAmSection(name) + buildAsianGamesSection(name));
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
 }
@@ -7427,7 +7651,7 @@ function renderISAProfile(name) {
     + buildISASUPBadges(name)
     + buildISAWpscBadges(name)
     + buildOlympicBadges(name)
-    + buildPanAmBadges(name);
+    + buildPanAmBadges(name) + buildAsianGamesBadges(name);
 
   // ── Assemble panel ─────────────────────────────────────────────────────────
   panel.innerHTML = '<div class="profile-name">' + escHtml(a.name) + '</div>'
@@ -7441,6 +7665,8 @@ function renderISAProfile(name) {
     if (olySection) panel.innerHTML += olySection;
     var panSection = buildPanAmSection(name);
     if (panSection) panel.innerHTML += panSection;
+    var agSection = buildAsianGamesSection(name);
+    if (agSection) panel.innerHTML += agSection;
   }
 
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
@@ -8014,7 +8240,7 @@ if ('serviceWorker' in navigator) {
 
     // Highlight active item in bottom tab bar (tabs are org-level)
     const currentView = (location.hash.slice(1).split('/')[0]) || 'athletes';
-    const orgForTab = (currentView === 'olympics' || currentView === 'panam') ? 'olympics'
+    const orgForTab = (currentView === 'olympics' || currentView === 'panam' || currentView === 'asiangames') ? 'olympics'
       : (currentView === 'isa' || currentView === 'wj' || currentView === 'wlc' || currentView === 'sup' || currentView === 'wpsc' || currentView === 'nations') ? 'isa'
       : 'wsl';
     document.querySelectorAll('.bottom-tab').forEach(b => {
@@ -8029,7 +8255,7 @@ if ('serviceWorker' in navigator) {
     // for a selected athlete is "#<view>/<name>", so a name segment after the
     // slash is what distinguishes a profile from a bare list view.
     const onMobile  = window.innerWidth <= 768;
-    const onProfile = /^#(athletes|olympics|panam|isa|wj|wlc|sup|wpsc|qs|pj)\/.+/.test(location.hash);
+    const onProfile = /^#(athletes|olympics|panam|asiangames|isa|wj|wlc|sup|wpsc|qs|pj)\/.+/.test(location.hash);
     document.querySelectorAll('.athletes-layout').forEach(function (el) {
       el.classList.toggle('mobile-profile', onMobile && onProfile);
     });
