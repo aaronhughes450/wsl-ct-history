@@ -985,6 +985,30 @@
       </div>
     </div>
   </div>
+  <div class="winners-layout" id="roty-layout" style="margin-top:16px">
+    <div class="winners-board">
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('roty-women')" onkeydown="if(event.key==='Enter')openWinList('roty-women')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Women — Rookies of the Year</span>
+        <span class="winners-board-sub">CT rookie of the year</span>
+      </div>
+      <div class="winners-scroll">
+        <table class="winners-table"><thead>
+          <tr><th>Year</th><th>Rookie of the Year</th><th>Nation</th></tr>
+        </thead><tbody id="roty-women-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="winners-board">
+      <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('roty-men')" onkeydown="if(event.key==='Enter')openWinList('roty-men')">
+        <span class="winners-board-title"><span class="winlist-arrow" aria-hidden="true">↗</span>Men — Rookies of the Year</span>
+        <span class="winners-board-sub">CT rookie of the year</span>
+      </div>
+      <div class="winners-scroll">
+        <table class="winners-table"><thead>
+          <tr><th>Year</th><th>Rookie of the Year</th><th>Nation</th></tr>
+        </thead><tbody id="roty-men-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
   <!-- Event History accordion -->
   <div class="results-section" id="results-section">
     <div class="results-filter-bar">
@@ -1444,7 +1468,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261111205253"></script>
+<script src="data.js?v=20261117145210"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261107022727" onerror="this.remove()"></script>
 <script src="registry.js?v=20261107022727" onerror="this.remove()"></script>
@@ -3041,12 +3065,15 @@ const WINLISTS = {
   'venue-men':    { title: 'Men — Venue Records',       sub: 'every surfer with 2+ wins at each venue', kind: 'venue', g: 'men'   },
   'streak-women': { title: 'Women — Consecutive Wins',  sub: 'back-to-back CT event wins', kind: 'streak', g: 'women' },
   'streak-men':   { title: 'Men — Consecutive Wins',    sub: 'back-to-back CT event wins', kind: 'streak', g: 'men'   },
+  'roty-women':   { title: 'Women — Rookies of the Year', sub: 'CT rookie of the year by season', kind: 'roty', g: 'women' },
+  'roty-men':     { title: 'Men — Rookies of the Year',   sub: 'CT rookie of the year by season', kind: 'roty', g: 'men'   },
 };
 const WINLIST_HEADS = {
   champs: '<tr><th class="num">#</th><th>Year</th><th>Champion</th><th>Nation</th></tr>',
   wins:   '<tr><th class="num">#</th><th>Athlete</th><th class="wins-col">Wins</th></tr>',
   venue:  '<tr><th>Venue</th><th>Athlete</th><th class="wins-col">Wins</th></tr>',
   streak: '<tr><th class="num">#</th><th>Athlete</th><th>Season</th><th class="wins-col">Wins</th></tr>',
+  roty:   '<tr><th>Year</th><th>Rookie of the Year</th><th>Nation</th></tr>',
 };
 
 function _winAthLink(name) {
@@ -3206,6 +3233,7 @@ function renderWinners() {
   document.getElementById('venue-women-tbody').innerHTML   = venueRecordRowsHTML('women');
   document.getElementById('venue-men-tbody').innerHTML     = venueRecordRowsHTML('men');
   renderStreaks();
+  renderRookiesOfYear();
 
   if (document.getElementById('results-accordion').innerHTML === '')
     renderResultsAccordion();
@@ -3290,6 +3318,41 @@ function renderChampions() {
   document.getElementById('champs-men-tbody').innerHTML   = champsRowsHTML(CHAMPS_MEN);
 }
 
+// ── Rookies of the Year (CT only) ──
+// Straight from DATA.rookies (the "Rookies - Women/Men" sheet tabs). Every
+// season the tab lists is shown, newest first; a season with no ROTY recorded
+// on the sheet shows a dash rather than a guess. 1983–1987 keys are the split
+// seasons (1987 → 1987/88), matching World Champions.
+function buildRookiesOfYear(gender) {
+  const SPLIT_YEARS = {1983:'1983/84',1984:'1984/85',1985:'1985/86',1986:'1986/87',1987:'1987/88'};
+  const src = (DATA.rookies && DATA.rookies[gender]) || {};
+  return Object.keys(src).map(Number).filter(y => y).sort((a, b) => b - a).map(y => {
+    const name = (src[y] && src[y].roty) || '';
+    const ath = name && DATA.athletes ? DATA.athletes[name] : null;
+    return { y, year: SPLIT_YEARS[y] || String(y), name, nation: (ath && ath.nation) || '' };
+  });
+}
+function rotyRowsHTML(gender) {
+  const rows = buildRookiesOfYear(gender);
+  if (!rows.length) return _winEmpty(3, 'No rookie data for this tour');
+  return rows.map(r => `<tr>
+        <td style="font-weight:700;color:var(--navy)">${r.year}</td>
+        <td>${r.name ? _winAthLink(r.name) : '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td style="color:var(--text-dim);font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">${r.nation ? nationFlag(r.nation) + escHtml(r.nation) : ''}</td>
+      </tr>`).join('');
+}
+function renderRookiesOfYear() {
+  const layout = document.getElementById('roty-layout');
+  if (!layout) return;
+  const isCT = (typeof currentWSLTour === 'undefined') || currentWSLTour === 'ct';
+  layout.style.display = isCT ? '' : 'none';
+  if (!isCT) return;
+  ['women', 'men'].forEach(g => {
+    const tbody = document.getElementById('roty-' + g + '-tbody');
+    if (tbody) tbody.innerHTML = rotyRowsHTML(g);
+  });
+}
+
 // ── Full-list tab: #winlist/<tour>/<list-id> ──
 // Opened in a new browser tab from any Winners board header.
 let _winlistPrevTitle = null;
@@ -3330,6 +3393,7 @@ function renderWinList(param) {
   else if (def.kind === 'wins')   html = winsRowsHTML(WINNERS_DATA[def.g]);
   else if (def.kind === 'venue')  html = venueFullRowsHTML(def.g);
   else if (def.kind === 'streak') html = streakRowsHTML(def.g);
+  else if (def.kind === 'roty')   html = rotyRowsHTML(def.g);
   bodyEl.innerHTML = html || '';
   if (_winlistPrevTitle === null) _winlistPrevTitle = document.title;
   document.title = def.title + ' — ' + tourName;
