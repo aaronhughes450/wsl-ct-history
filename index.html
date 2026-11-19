@@ -1468,7 +1468,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261117205315"></script>
+<script src="data.js?v=20261118192020"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261117230417" onerror="this.remove()"></script>
 <script src="registry.js?v=20261117230417" onerror="this.remove()"></script>
@@ -2757,7 +2757,8 @@ function renderProfile(name, panelEl, reg) {
       ${winsHtml}
       <div class="section-title" style="margin-top:${(!isWildcardOnly && allWins.length) ? '14px' : '0'}">Event Record</div>
     </div>
-    <div class="event-accordion" style="padding:0 18px 18px">${eventsHtml}</div>`;
+    <div class="event-accordion" style="padding:0 18px 18px">${eventsHtml}</div>
+    ${_srcTour === 'ct' ? `<div class="heat-slot" data-heat-athlete="${escHtml(name)}"></div>` : ''}`;
 
   // Accordion for WSL overview (CT card). Built for all CT athletes, including
   // wildcard-only ones (whose card shows just their event record).
@@ -2818,6 +2819,7 @@ function renderProfile(name, panelEl, reg) {
   ).forEach(el => { if (!el.closest('.er-keep-open')) el.classList.remove('open'); });
   // Auto-resize any notes textareas that have existing content
   panel.querySelectorAll('textarea.notes-area').forEach(autoResizeNotes);
+  if (window.Heats) Heats.profile(name, panel);
   } finally {
     DATA = _pD; WINNERS_DATA = _pW; EVENTS_BY_YEAR = _pE;
   }
@@ -3467,6 +3469,7 @@ function renderResultsAccordion() {
     </div>`;
   }).join('');
 
+  if (window.Heats) Heats.results(acc);
   updateResultsCount();
 }
 
@@ -8492,6 +8495,243 @@ if ('serviceWorker' in navigator) {
     ref.on('child_added',   snap => applyRemote(snap.key, snap.val()));
 
   }).catch(() => setStatus('⚠ Offline', '#d97706'));
+})();
+</script>
+<!-- ── Heats: WSL heat data (heats/ct-*.js, built by heats_build.py) ─────────
+     Entirely additive: if heats/ct-index.js is not there, nothing below shows. -->
+<style>
+  .heat-slot { contain: inline-size; }
+  .heat-slot .er { margin: 0 18px 18px; }
+  @media (max-width: 620px) { .heat-slot .er { margin: 0 0 14px; } .heat-slot .er-body > div { padding: 12px 12px 14px !important; } .ht-opp-sub { display: none; } }
+  .ht-btn { display: inline-block; margin-top: 3px; background: none; border: 1px solid var(--border); border-radius: 3px; color: var(--text-dim); font-size: 0.56rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+  .ht-btn:hover, .ht-btn.open { color: var(--navy); border-color: var(--navy); }
+  .ht-draw { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .ht-note { font-size: 0.66rem; color: var(--text-dim); margin: 2px 0 8px; line-height: 1.4; }
+  .ht-round { font-size: 0.56rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin: 10px 0 4px; }
+  .ht-heats { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+  .ht-heat { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 5px 8px; font-size: 0.74rem; }
+  .ht-heat.has-waves { cursor: pointer; }
+  .ht-heat.has-waves:hover { border-color: #94a3b8; }
+  .ht-heat-no { font-size: 0.52rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #94a3b8; }
+  .ht-lane { display: flex; justify-content: space-between; gap: 8px; line-height: 1.5; }
+  .ht-lane .ht-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ht-lane.won .ht-nm, .ht-lane.won .ht-sc { font-weight: 800; }
+  .ht-lane a { color: inherit; text-decoration: none; }
+  .ht-lane a:hover { text-decoration: underline; }
+  .ht-sc { font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .ht-int { color: #b91c1c; font-size: 0.56rem; font-weight: 800; margin-left: 4px; }
+  .ht-waves { display: none; margin: 2px 0 4px; flex-wrap: wrap; gap: 3px; }
+  .ht-heat.open .ht-waves { display: flex; }
+  .ht-wave { font-size: 0.62rem; font-variant-numeric: tabular-nums; padding: 0 4px; border-radius: 2px; background: var(--surface2); color: var(--text-dim); }
+  .ht-wave.cnt { background: var(--navy); color: #fff; font-weight: 700; }
+  .ht-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; }
+  .ht-tile { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 9px 12px; }
+  .ht-tile-l { font-size: 0.5625rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.2em; font-weight: 700; }
+  .ht-tile-v { font-size: 1.7rem; font-weight: 900; font-style: italic; color: var(--navy); letter-spacing: -0.04em; line-height: 1.1; margin-top: 3px; }
+  .ht-tile-s { font-size: 0.6rem; color: #64748b; font-weight: 600; margin-top: 3px; line-height: 1.3; }
+  .ht-h2h-search { width: 100%; max-width: 320px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.8rem; font-family: inherit; margin-bottom: 8px; }
+  .ht-opp { border-bottom: 1px solid #eef1f7; }
+  .ht-opp-head { display: flex; align-items: center; gap: 10px; padding: 6px 2px; cursor: pointer; font-size: 0.82rem; }
+  .ht-opp-head:hover { background: #fafbfd; }
+  .ht-opp-nm { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ht-opp-rec { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .ht-opp-rec.up { color: var(--ru); } .ht-opp-rec.down { color: #b91c1c; }
+  .ht-opp-sub { font-size: 0.64rem; color: var(--text-dim); min-width: 74px; text-align: right; }
+  .ht-meets { display: none; padding: 2px 2px 10px; }
+  .ht-opp.open .ht-meets { display: block; }
+  .ht-meet { display: flex; gap: 8px; font-size: 0.72rem; line-height: 1.7; color: var(--text); }
+  .ht-meet-ev { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
+  .ht-meet-res { font-weight: 800; width: 14px; text-align: center; }
+  .ht-meet-res.w { color: var(--ru); } .ht-meet-res.l { color: #b91c1c; }
+  .ht-more { background: none; border: none; color: var(--sf); font-size: 0.72rem; font-weight: 700; cursor: pointer; padding: 8px 2px; font-family: inherit; }
+</style>
+<script>
+window.Heats = (function () {
+  var loading = {};
+  function load(src) {
+    if (!loading[src]) {
+      loading[src] = new Promise(function (res, rej) {
+        var s = document.createElement('script');
+        s.src = 'heats/' + src + '?v=' + ((window.HEATS_INDEX && HEATS_INDEX.built) || Date.now());
+        s.onload = res;
+        s.onerror = function () { delete loading[src]; s.remove(); rej(new Error(src)); };
+        document.head.appendChild(s);
+      });
+    }
+    return loading[src];
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function fmt(n) { return n == null ? '–' : Number(n).toFixed(2); }
+  function inArchive(name) { return typeof CT_DATA !== 'undefined' && CT_DATA.athletes && CT_DATA.athletes[name]; }
+  function who(name) {
+    return inArchive(name) ? '<a href="#athletes/' + encodeURIComponent(name) + '">' + esc(name) + '</a>' : esc(name);
+  }
+  function span() { return HEATS_INDEX.from === HEATS_INDEX.to ? HEATS_INDEX.from : HEATS_INDEX.from + '–' + HEATS_INDEX.to; }
+
+  // ── An event's heats (Results view) ───────────────────────────────────────
+  function drawHtml(ev) {
+    var rounds = ev.r.slice().reverse();
+    var anyWaves = false;
+    var html = rounds.map(function (r) {
+      return '<div class="ht-round">' + esc(r[0]) + '</div><div class="ht-heats">' + r[1].map(function (h) {
+        var lanes = h[2].slice().sort(function (a, b) { return (a[1] || 99) - (b[1] || 99); });
+        var hasWaves = lanes.some(function (l) { return l[3] && l[3].length; });
+        anyWaves = anyWaves || hasWaves;
+        return '<div class="ht-heat' + (hasWaves ? ' has-waves' : '') + '"' + (hasWaves ? ' onclick="Heats.toggleHeat(this, event)"' : '') + '>'
+          + (r[1].length > 1 ? '<div class="ht-heat-no">Heat ' + h[0] + '</div>' : '')
+          + lanes.map(function (l) {
+              var waves = (l[3] || []).map(function (w) { return '<span class="ht-wave' + (w[1] ? ' cnt' : '') + '">' + fmt(w[0]) + '</span>'; }).join('');
+              return '<div class="ht-lane' + (l[1] === 1 && l[2] != null ? ' won' : '') + '"><span class="ht-nm">' + who(l[0])
+                + (l[4] ? '<span class="ht-int" title="Interference">INT</span>' : '') + '</span><span class="ht-sc">' + fmt(l[2]) + '</span></div>'
+                + (waves ? '<div class="ht-waves">' + waves + '</div>' : '');
+            }).join('')
+          + '</div>';
+      }).join('') + '</div>';
+    }).join('');
+    return '<div class="ht-note">Heat totals' + (anyWaves ? ' and waves (tap a heat; the two counting waves are dark)' : '')
+      + ' from the WSL. Placings are the archive\'s own.</div>' + html;
+  }
+  function toggleHeat(el, e) {
+    if (e && e.target.closest('a')) return;
+    el.classList.toggle('open');
+  }
+  function toggleDraw(btn, key) {
+    var cell = btn.closest('td');
+    var box = cell.querySelector('.ht-draw');
+    if (box) { box.remove(); btn.classList.remove('open'); return; }
+    box = document.createElement('div');
+    box.className = 'ht-draw';
+    box.innerHTML = '<div class="ht-note">Loading heats…</div>';
+    cell.appendChild(box);
+    btn.classList.add('open');
+    var year = HEATS_INDEX.events[key][0];
+    load('ct-' + year + '.js').then(function () {
+      var ev = window.HEATS_CT && HEATS_CT[year] && HEATS_CT[year][key];
+      box.innerHTML = ev ? drawHtml(ev) : '<div class="ht-note">No heats for this event.</div>';
+    }).catch(function () { box.innerHTML = '<div class="ht-note">The heats could not be loaded.</div>'; });
+  }
+  function results(acc) {
+    if (!window.HEATS_INDEX || !acc) return;
+    acc.querySelectorAll('.yr-col').forEach(function (col) {
+      var g = /^\s*Women/.test(col.querySelector('.yr-col-hdr').textContent) ? 'w' : 'm';
+      col.querySelectorAll('.res-name-block').forEach(function (block) {
+        if (block.querySelector('.ht-btn')) return;
+        var a = block.querySelector('a[href*="worldsurfleague.com/events/"]');
+        var m = a && a.getAttribute('href').match(/\/events\/(\d{4})\/[a-z]+\/(\d+)\//);
+        var key = m && (m[1] + '/' + m[2] + '|' + g);
+        if (!key || !HEATS_INDEX.events[key]) return;
+        var b = document.createElement('button');
+        b.className = 'ht-btn';
+        b.type = 'button';
+        b.textContent = 'Heats';
+        b.onclick = function () { toggleDraw(b, key); };
+        block.appendChild(b);
+      });
+    });
+  }
+
+  // ── A surfer's heat stats and head-to-head (profile) ──────────────────────
+  function evLabel(i) { var e = HEATS_ATH.events[i]; return e ? e[1] : ''; }
+  function tile(label, value, sub) {
+    return '<div class="ht-tile"><div class="ht-tile-l">' + label + '</div><div class="ht-tile-v">' + value + '</div>'
+      + (sub ? '<div class="ht-tile-s">' + sub + '</div>' : '') + '</div>';
+  }
+  function meetingsOf(name) {
+    var me = HEATS_ATH.names.indexOf(name), by = {};
+    if (me < 0) return by;
+    HEATS_ATH.meetings.forEach(function (m) {
+      var mine, theirs, other;
+      if (m[2] === me) { other = m[3]; mine = [m[4], m[6]]; theirs = [m[5], m[7]]; }
+      else if (m[3] === me) { other = m[2]; mine = [m[5], m[7]]; theirs = [m[4], m[6]]; }
+      else return;
+      (by[other] = by[other] || []).push({ ev: m[0], round: m[1], my: mine[0], their: theirs[0], won: mine[1] < theirs[1], lanes: m[8] });
+    });
+    return by;
+  }
+  function oppHtml(name, list) {
+    var duel = list.filter(function (x) { return x.lanes === 2; }), multi = list.filter(function (x) { return x.lanes !== 2; });
+    var w = duel.filter(function (x) { return x.won; }).length, l = duel.length - w;
+    var mw = multi.filter(function (x) { return x.won; }).length;
+    var rows = list.slice().sort(function (a, b) { return b.ev - a.ev; }).map(function (x) {
+      return '<div class="ht-meet"><span class="ht-meet-res ' + (x.won ? 'w' : 'l') + '">' + (x.won ? 'W' : 'L') + '</span>'
+        + '<span class="ht-meet-ev">' + esc(evLabel(x.ev)) + ' · ' + esc(x.round) + (x.lanes !== 2 ? ' (' + x.lanes + '-surfer heat)' : '') + '</span>'
+        + '<span class="ht-sc">' + fmt(x.my) + ' – ' + fmt(x.their) + '</span></div>';
+    }).join('');
+    return '<div class="ht-opp" data-name="' + esc(name.toLowerCase()) + '">'
+      + '<div class="ht-opp-head" onclick="this.parentNode.classList.toggle(\'open\')">'
+      + '<span class="ht-opp-nm">' + esc(name) + '</span>'
+      + '<span class="ht-opp-rec ' + (w > l ? 'up' : w < l ? 'down' : '') + '">' + (duel.length ? w + '–' + l : '') + '</span>'
+      + '<span class="ht-opp-sub">' + (multi.length ? (duel.length ? '+ ' : '') + mw + '–' + (multi.length - mw) + ' in 3+ heats' : '') + '</span></div>'
+      + '<div class="ht-meets">' + rows + (inArchive(name) ? '<div class="ht-meet"><span class="ht-meet-res"></span><span class="ht-meet-ev">' + who(name) + '</span></div>' : '') + '</div></div>';
+  }
+  function cardHtml(name) {
+    var s = HEATS_ATH.stats[name];
+    if (!s) return '<div class="ht-note">No heat data for this surfer.</div>';
+    var pct = s[1] ? Math.round(100 * s[2] / s[1]) : 0;
+    var tiles = tile('Heats', s[1], s[9] === s[10] ? s[9] : s[9] + '–' + s[10])
+      + tile('Heat wins', s[2], pct + '% of heats')
+      + tile('Avg heat total', fmt(s[3]))
+      + (s[4] ? tile('Best heat total', fmt(s[4][0]), esc(evLabel(s[4][1])) + ' · ' + esc(s[4][2])) : '')
+      + (s[5] ? tile('Best wave', fmt(s[5][0]), esc(evLabel(s[5][1])) + ' · ' + esc(s[5][2])) : '')
+      + (s[6] ? tile('Excellent waves', s[7], '8.00 or better, of ' + s[6] + ' scored') : '')
+      + (s[8] ? tile('Perfect 10s', s[8]) : '');
+    var by = meetingsOf(name);
+    var opps = Object.keys(by).map(function (i) { return [HEATS_ATH.names[i], by[i]]; })
+      .sort(function (a, b) { return b[1].length - a[1].length || a[0].localeCompare(b[0]); });
+    var SHOW = 12;
+    var list = opps.map(function (o, i) { return i < SHOW ? oppHtml(o[0], o[1]) : ''; }).join('');
+    var id = 'ht-h2h-' + Math.random().toString(36).slice(2);
+    pending[id] = opps;
+    return '<div class="ht-note">From WSL heat data, ' + span() + ' Championship Tour events. Placings and rankings elsewhere on this page come from the archive.</div>'
+      + '<div class="ht-tiles">' + tiles + '</div>'
+      + (opps.length ? '<div class="section-title" style="margin-top:18px">Head-to-head (' + opps.length + ' opponents)</div>'
+          + '<div class="ht-note">Win–loss in two-surfer heats; heats of three or more are counted separately as finished ahead–behind.</div>'
+          + '<input class="ht-h2h-search" type="search" placeholder="Find an opponent…" oninput="Heats.filterH2H(\'' + id + '\', this.value)">'
+          + '<div id="' + id + '">' + list + '</div>'
+          + (opps.length > SHOW ? '<button class="ht-more" type="button" onclick="Heats.filterH2H(\'' + id + '\', \'\', true); this.remove()">Show all ' + opps.length + '</button>' : '')
+        : '');
+  }
+  var pending = {};
+  function filterH2H(id, q, all) {
+    var box = document.getElementById(id), opps = pending[id];
+    if (!box || !opps) return;
+    q = (q || '').trim().toLowerCase();
+    var rows = opps.filter(function (o) { return !q || o[0].toLowerCase().indexOf(q) >= 0; });
+    if (!q && !all) rows = rows.slice(0, 12);
+    box.innerHTML = rows.map(function (o) { return oppHtml(o[0], o[1]); }).join('') || '<div class="ht-note">No opponent by that name.</div>';
+    var more = box.parentNode.querySelector('.ht-more');
+    if (more && (q || all)) more.remove();
+  }
+  function openCard(head) {
+    var body = head.nextElementSibling, chev = head.querySelector('.er-chevron');
+    var open = body.classList.toggle('open');
+    if (chev) chev.classList.toggle('open', open);
+    if (!open || body.dataset.done) return;
+    body.dataset.done = '1';
+    var inner = body.firstElementChild;
+    load('ct-athletes.js').then(function () { inner.innerHTML = cardHtml(body.dataset.athlete); })
+      .catch(function () { delete body.dataset.done; inner.innerHTML = '<div class="ht-note">The heat data could not be loaded.</div>'; });
+  }
+  function profile(name, panel) {
+    if (!window.HEATS_INDEX || !panel) return;
+    var slot = panel.querySelector('.heat-slot');
+    if (!slot || HEATS_INDEX.athletes.indexOf(name) < 0) return;
+    slot.innerHTML = '<div class="er">'
+      + '<div class="er-head" onclick="Heats.openCard(this)"><span class="er-loc">Heats &amp; head-to-head</span>'
+      + '<svg class="er-chevron" width="12" height="12" viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" stroke="#475569" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'
+      + '<div class="er-body"><div style="padding:14px 18px 18px"><div class="ht-note">Loading…</div></div></div></div>';
+    slot.querySelector('.er-body').dataset.athlete = name;
+  }
+
+  // The index is small and optional: without it, none of the above ever shows.
+  load('ct-index.js').then(function () {
+    results(document.getElementById('results-accordion'));
+    document.querySelectorAll('.heat-slot').forEach(function (slot) {
+      if (slot.dataset.heatAthlete && !slot.firstChild) profile(slot.dataset.heatAthlete, slot.parentNode);
+    });
+  }).catch(function () {});
+
+  return { results: results, profile: profile, toggleHeat: toggleHeat, openCard: openCard, filterH2H: filterH2H };
 })();
 </script>
 </body>
