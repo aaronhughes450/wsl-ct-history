@@ -608,7 +608,8 @@
   /* The WSL org carries three nav groups (org + tour + sub), so it needs the
      smaller nav type ~150px earlier than the ISA one. Applied by width since
      CSS can't see which org is active. */
-  @media (min-width: 769px) and (max-width: 1150px) {
+  /* 1250, up from 1150, since the tour nav gained a sixth tab (LQS). */
+  @media (min-width: 769px) and (max-width: 1250px) {
     .topbar .nav-btn { padding: 6px 6px; font-size: 0.64rem; letter-spacing: 0.05em; }
     .topbar .org-btn { padding: 4px 8px; font-size: 0.64rem; letter-spacing: 0.05em; }
   }
@@ -786,6 +787,7 @@
     <button class="nav-btn active" id="wsl-tour-ct" onclick="setWSLTour('ct')">CT</button>
     <button class="nav-btn" id="wsl-tour-cs" onclick="setWSLTour('cs')">CS</button>
     <button class="nav-btn" id="wsl-tour-lt" onclick="setWSLTour('lt')">LT</button>
+    <button class="nav-btn" id="wsl-tour-lqs" onclick="setWSLTour('lqs')" title="Longboard Qualifying Series (WSL website data, 2011 on)">LQS</button>
     <button class="nav-btn" id="wsl-tour-qs" onclick="setWSLTour('qs')" title="Qualifying Series (WSL website data, 2010 on)">QS</button>
     <button class="nav-btn" id="wsl-tour-pj" onclick="setWSLTour('pj')" title="Pro Junior (WSL website data, 2010 on)">PJ</button>
   </nav>
@@ -853,6 +855,7 @@
   <button class="msn-btn active" id="m-wsl-tour-ct" onclick="setWSLTour('ct')">CT</button>
   <button class="msn-btn" id="m-wsl-tour-cs" onclick="setWSLTour('cs')">CS</button>
   <button class="msn-btn" id="m-wsl-tour-lt" onclick="setWSLTour('lt')">LT</button>
+  <button class="msn-btn" id="m-wsl-tour-lqs" onclick="setWSLTour('lqs')">LQS</button>
   <button class="msn-btn" id="m-wsl-tour-qs" onclick="setWSLTour('qs')">QS</button>
   <button class="msn-btn" id="m-wsl-tour-pj" onclick="setWSLTour('pj')">PJ</button>
 </div>
@@ -1472,10 +1475,10 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261123201047"></script>
+<script src="data.js?v=20261124085747"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
-<script src="registry-public.js?v=20261117230417" onerror="this.remove()"></script>
-<script src="registry.js?v=20261117230417" onerror="this.remove()"></script>
+<script src="registry-public.js?v=20261124084907" onerror="this.remove()"></script>
+<script src="registry.js?v=20261124084907" onerror="this.remove()"></script>
 <script>
 // DATA moved to data.js.
 // Live tour pointers — default to CT; setWSLTour() swaps them to CS/LT.
@@ -1526,7 +1529,7 @@ function _renderView(name) {
   if (!qpIsView(name) && qpActive() && ['athletes','events','season','seasons','winners'].indexOf(name) !== -1) qpLeave();
   if (qpIsView(name)) {
     resolvedName = 'qspj';
-    qpSyncTour(name.slice(0, 2));
+    qpSyncTour(qpTourOf(name));
     var qpNav = name === 'pjwin' ? 'winners' : name.slice(-2) === 'rk' ? 'season' : name.slice(-2) === 'ev' ? 'events' : 'athletes';
     document.querySelectorAll('.nav-btn[data-view], .msn-btn[data-view]').forEach(function (b) {
       b.classList.toggle('active', b.dataset.view === qpNav);
@@ -1608,7 +1611,7 @@ function _selectAthlete(name) {
 // (Olympic Games, Pan American Games, Asian Games) — via renderProfile(name, panel, reg),
 // with each tour's card looked up under the name that tour uses, from the
 // Athletes Registry (registry.js, written by build_registry.py).
-var REG_ORDER = ['CT', 'CS', 'LT', 'QS', 'PJ', 'WSG', 'WJSC', 'WLC', 'SUP', 'WPSC', 'Olympics', 'PanAm', 'AsianGames'];
+var REG_ORDER = ['CT', 'CS', 'LT', 'QS', 'PJ', 'LQS', 'WSG', 'WJSC', 'WLC', 'SUP', 'WPSC', 'Olympics', 'PanAm', 'AsianGames'];
 var _reg = null;
 function regData() {
   if (_reg) return _reg;
@@ -1640,6 +1643,14 @@ function regIdFor(name, srcs) {
     if (ids && ids.length === 1) return ids[0];
   }
   return null;
+}
+// does the loaded registry hold this source at all? (one built before a
+// source was added does not)
+function regKnows(src) {
+  var R = regData();
+  if (!R) return false;
+  if (R.knows === undefined) { R.knows = {}; Object.keys(R.bySrc).forEach(function (k) { R.knows[k.slice(0, k.indexOf('|'))] = 1; }); }
+  return !!R.knows[src];
 }
 // run fn for every name this athlete has in one source, join the HTML
 function regEach(reg, src, fn) {
@@ -1775,7 +1786,7 @@ function renderAthlete(id) {
 // knows. The per-tour renderers still run first (they keep list selection and
 // view state); the panel is then re-rendered from the registry. With no
 // registry loaded, or an athlete it doesn't know, nothing changes.
-var REG_PANEL_SRC = { 'profile-panel': null, 'qp-profile': ['QS', 'PJ'], 'isa-profile': ['WSG'], 'wj-profile': ['WJSC'],
+var REG_PANEL_SRC = { 'profile-panel': null, 'qp-profile': ['QS', 'PJ', 'LQS'], 'isa-profile': ['WSG'], 'wj-profile': ['WJSC'],
   'wlc-profile': ['WLC'], 'sup-profile': ['SUP'], 'wpsc-profile': ['WPSC'], 'oly-profile': ['Olympics'],
   'pan-profile': ['PanAm'], 'ag-profile': ['AsianGames'], 'ath-profile': null };
 var REG_PANEL_BACK = { 'profile-panel': 'athletes', 'isa-profile': 'isa', 'wj-profile': 'wj', 'wlc-profile': 'wlc',
@@ -1884,7 +1895,10 @@ renderProfile = function (name, panelEl, reg) {
   window.qpSelectAthlete = function (i) {
     var r = orig.apply(this, arguments);
     var a = (typeof QSPJ_DATA !== 'undefined' && QSPJ_DATA && QSPJ_DATA.athletes) ? QSPJ_DATA.athletes[i] : null;
-    if (a) regTakeOver('qp-profile', a[0], [qpTour === 'pj' ? 'PJ' : 'QS', qpTour === 'pj' ? 'QS' : 'PJ']);
+    // The tour being browsed first. A registry built before the LQS joined it
+    // knows no LQS names: the surfer's own LQS page stays as drawn, rather than
+    // a namesake's profile with no longboard results on it.
+    if (a && !(qpTour === 'lqs' && !regKnows('LQS'))) regTakeOver('qp-profile', a[0], qpTourOrder().map(function (t) { return QP_TAG[t]; }));
     return r;
   };
 })();
@@ -1901,7 +1915,7 @@ function _findRoute(rest) {
     location.replace(hit ? '#athletes/' + encodeURIComponent(hit) : '#athletes');
     return;
   }
-  if (src === 'qs' || src === 'pj') {
+  if (QP_TOURS.indexOf(src) !== -1) {
     if (!qpHasData()) { location.replace('#athletes'); return; }
     var Q = qpIndex(), ix = (Q.nameIdx[nm] || [])[0];
     if (ix == null) { for (var j = 0; j < Q.A.length; j++) { if (qpNorm(Q.A[j][0]) === key) { ix = j; break; } } }
@@ -2790,7 +2804,10 @@ function renderProfile(name, panelEl, reg) {
   const ltCard   = reg ? regEach(reg, 'LT', function (n) { return buildLTSection(n, true); }) : buildLTSection(name, true);   // '' if athlete isn't in LT_DATA
   const qsCard   = reg ? regEach(reg, 'QS', function (n) { return buildQPCard(n, 'qs'); }) : buildQPCard(name, 'qs');      // '' if no QS results (qspj.js)
   const pjCard   = reg ? regEach(reg, 'PJ', function (n) { return buildQPCard(n, 'pj'); }) : buildQPCard(name, 'pj');
-  const wslInner = (_srcTour === 'ct' ? (wslOverviewAccordion || '') : '') + csCard + ltCard + qsCard + pjCard;
+  // LQS: under the registry's LQS names; by this profile's own name while the
+  // loaded registry predates the LQS
+  const lqsCard  = (reg && regKnows('LQS')) ? regEach(reg, 'LQS', function (n) { return buildQPCard(n, 'lqs'); }) : buildQPCard(name, 'lqs');
+  const wslInner = (_srcTour === 'ct' ? (wslOverviewAccordion || '') : '') + csCard + ltCard + lqsCard + qsCard + pjCard;
   const wslResultsSection = wslInner
     ? '<div class="section-title">WSL Results</div>'
       + '<div class="event-accordion" style="margin-bottom:8px">'
@@ -4030,8 +4047,8 @@ function gsAllAthletes() {
   }
   if (qpHasData()) {
     var _Q = qpIndex();
-    ['qs', 'pj'].forEach(function (t) {
-      var tag = t === 'qs' ? 'QS' : 'PJ';
+    QP_TOURS.forEach(function (t) {
+      var tag = QP_TAG[t];
       _Q.list[t].forEach(function (i) {
         var n = _Q.A[i][0];
         if (!seen[n]) { seen[n] = { name: n, sources: [] }; results.push(seen[n]); }
@@ -4138,7 +4155,7 @@ function gsSelect(name, primarySource) {
     requestAnimationFrame(function() {
       setTimeout(function() { location.hash = '#sup/' + encodeURIComponent(name); }, 120);
     });
-  } else if (primarySource === 'QS' || primarySource === 'PJ') {
+  } else if (primarySource === 'QS' || primarySource === 'PJ' || primarySource === 'LQS') {
     var _t = primarySource.toLowerCase(), _ix = qpHasData() ? (qpIndex().nameIdx[name] || [])[0] : null;
     if (_ix == null) return;
     if (currentOrg !== 'wsl') setOrg('wsl');
@@ -4497,34 +4514,43 @@ document.addEventListener('DOMContentLoaded', () => {
 // on CT/CS/LT profiles. Views: #qs, #pj (athletes), #qs/<idx> (athlete),
 // #qsev, #pjev (events). Placings are as published by the WSL; surfers who
 // never surfed a heat (no-show / injury placings) are already left out.
-var QP_VIEWS = ['qs', 'pj', 'qsev', 'pjev', 'pjwin', 'qsrk', 'pjrk'];
-var QP_LABEL = { qs: 'Qualifying Series', pj: 'Pro Junior' };
+var QP_TOURS = ['qs', 'pj', 'lqs'];
+var QP_VIEWS = ['qs', 'pj', 'lqs', 'qsev', 'pjev', 'lqsev', 'pjwin', 'qsrk', 'pjrk', 'lqsrk'];
+var QP_LABEL = { qs: 'Qualifying Series', pj: 'Pro Junior', lqs: 'Longboard Qualifying Series' };
+var QP_TAG = { qs: 'QS', pj: 'PJ', lqs: 'LQS' };
+var QP_SHORT = { qs: 'QS', pj: 'Pro Junior', lqs: 'LQS' };
 var qpTour = 'qs', qpGender = 'women', qpIdx = null, qpYear = null, qpOpen = null;
 var QP = null;
 function qpIsView(v) { return QP_VIEWS.indexOf(v) !== -1; }
-function qpActive() { return currentWSLTour === 'qs' || currentWSLTour === 'pj'; }
+function qpActive() { return QP_TOURS.indexOf(currentWSLTour) !== -1; }
+// the tour a QS / PJ / LQS view name belongs to ('lqsev' -> 'lqs', 'qsrk' -> 'qs')
+function qpTourOf(view) { return String(view).indexOf('lqs') === 0 ? 'lqs' : String(view).slice(0, 2); }
+// the tour being browsed, then the others
+function qpTourOrder() { return [qpTour].concat(QP_TOURS.filter(function (t) { return t !== qpTour; })); }
+// a tour's events; none when the loaded qspj.js predates that tour
+function qpEvents(t) { return (qpHasData() && QSPJ_DATA.events[t]) || []; }
 function qpHasData() { return typeof QSPJ_DATA !== 'undefined' && QSPJ_DATA && QSPJ_DATA.athletes; }
 function qpNorm(s) { return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 
 function qpIndex() {
   if (QP) return QP;
-  var A = QSPJ_DATA.athletes, res = {}, nameIdx = {}, years = { qs: {}, pj: {} }, list = { qs: [], pj: [] };
-  ['qs', 'pj'].forEach(function (t) {
-    QSPJ_DATA.events[t].forEach(function (e, ei) {
+  var A = QSPJ_DATA.athletes, res = {}, nameIdx = {}, years = { qs: {}, pj: {}, lqs: {} }, list = { qs: [], pj: [], lqs: [] };
+  QP_TOURS.forEach(function (t) {
+    qpEvents(t).forEach(function (e, ei) {
       years[t][e[1]] = 1;
       var f = e[9];
       for (var i = 0; i < f.length; i += 3) {
-        var r = res[f[i]] || (res[f[i]] = { qs: [], pj: [] });
+        var r = res[f[i]] || (res[f[i]] = { qs: [], pj: [], lqs: [] });
         r[t].push([ei, f[i + 1], f[i + 2]]);
       }
     });
   });
   A.forEach(function (a, i) {
     (nameIdx[a[0]] || (nameIdx[a[0]] = [])).push(i);
-    ['qs', 'pj'].forEach(function (t) { if (res[i] && res[i][t].length) list[t].push(i); });
+    QP_TOURS.forEach(function (t) { if (res[i] && res[i][t].length) list[t].push(i); });
   });
   var norm = A.map(function (a) { return qpNorm(a[0] + ' ' + a[1]); });
-  ['qs', 'pj'].forEach(function (t) { list[t].sort(function (x, y) { return A[x][0].localeCompare(A[y][0]); }); });
+  QP_TOURS.forEach(function (t) { list[t].sort(function (x, y) { return A[x][0].localeCompare(A[y][0]); }); });
   QP = { A: A, res: res, nameIdx: nameIdx, years: years, list: list, norm: norm };
   return QP;
 }
@@ -4533,7 +4559,7 @@ function qpIndex() {
 function qpResults(name, tour) {
   var Q = qpIndex(), rows = [];
   (Q.nameIdx[name] || []).forEach(function (i) { if (Q.res[i]) rows = rows.concat(Q.res[i][tour]); });
-  var E = QSPJ_DATA.events[tour];
+  var E = qpEvents(tour);
   rows.sort(function (a, b) { return E[b[0]][2] - E[a[0]][2]; });
   return rows;
 }
@@ -4551,7 +4577,7 @@ function buildQPCard(name, tour, keepOpen) {
   if (!qpHasData()) return '';
   var rows = qpResults(name, tour);
   if (!rows.length) return '';
-  var E = QSPJ_DATA.events[tour];
+  var E = qpEvents(tour);
   var wins = rows.filter(function (r) { return r[1] === 1; });
   var finals = rows.filter(function (r) { return r[1] <= 2; }).length;
   var best = Math.min.apply(null, rows.map(function (r) { return r[1]; }));
@@ -4583,7 +4609,7 @@ function buildQPCard(name, tour, keepOpen) {
     + '</div></div>';
 
   var winsHtml = wins.length
-    ? '<div><div class="section-title" style="margin-top:0">' + (tour === 'qs' ? 'QS' : 'Pro Junior') + ' Wins (' + wins.length + ')</div>'
+    ? '<div><div class="section-title" style="margin-top:0">' + QP_SHORT[tour] + ' Wins (' + wins.length + ')</div>'
       + '<ul class="wins-list' + (wins.length > 10 ? ' two-col' : '') + '">'
       + wins.map(function (r) {
           var e = E[r[0]];
@@ -4651,9 +4677,9 @@ function qpEnterTour(t) {
   if (qpTour !== t) { qpIdx = null; qpOpen = null; qpYear = null; }
   qpSyncTour(t);
   var v = (location.hash.slice(1).split('/')[0]) || 'athletes';
-  var toEvents = v === 'events' || v === 'qsev' || v === 'pjev';
+  var toEvents = v === 'events' || (qpIsView(v) && v.slice(-2) === 'ev');
   var toWinners = (v === 'winners' || v === 'pjwin');
-  var toRank = (v === 'season' || v === 'seasons' || v === 'qsrk' || v === 'pjrk');
+  var toRank = (v === 'season' || v === 'seasons' || (qpIsView(v) && v.slice(-2) === 'rk'));
   showView(toWinners ? (t === 'pj' ? 'winners' : 'events') : toRank ? 'season' : toEvents ? 'events' : 'athletes');
 }
 
@@ -4706,7 +4732,7 @@ function qpRender(view) {
 function qpSetGender(g) {
   qpGender = g; qpOpen = null;
   var parts = location.hash.slice(1).split('/'), v = parts[0];
-  if ((v === 'qs' || v === 'pj') && parts.length > 1) {   // leave an open profile of the other gender
+  if (QP_TOURS.indexOf(v) !== -1 && parts.length > 1) {   // leave an open profile of the other gender
     qpIdx = null; location.hash = '#' + v; return;
   }
   qpIdx = null;
@@ -4757,18 +4783,18 @@ function qpSelectAthlete(i) {
   });
   var name = a[0], other = qpOtherTour(name);
   var tags = (a[1] ? '<div class="meta-tag">' + escHtml(a[1]) + '</div>' : '') + buildWJCBadges(name)
-    + ['qs', 'pj'].filter(function (t) { return qpResults(name, t).length; })
+    + QP_TOURS.filter(function (t) { return qpResults(name, t).length; })
         .map(function (t) { return '<div class="meta-tag">' + QP_LABEL[t] + '</div>'; }).join('')
     + (other ? '<button class="meta-tag" style="cursor:pointer;background:#001834;color:#fff;border-color:#001834" onclick="qpOpenFull(\'' + name.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')">'
         + { ct: 'CT', cs: 'CS', lt: 'LT' }[other] + ' profile →</button>' : '');
-  var first = qpTour, second = qpTour === 'qs' ? 'pj' : 'qs';
+  var order = qpTourOrder();
   var panel = document.getElementById('qp-profile');
   panel.innerHTML = '<button class="mobile-back-btn" onclick="location.hash=\'#' + qpTour + '\'">← Athletes</button>'
     + '<div class="profile-name">' + escHtml(name) + '</div>'
     + '<div class="profile-meta">' + tags + '</div>'
     + '<div class="section-title">WSL Results</div>'
     + '<div class="event-accordion" style="display:flex;flex-direction:column;gap:12px">'
-    + buildQPCard(name, first, true) + buildQPCard(name, second, false) + '</div>';
+    + order.map(function (t, k) { return buildQPCard(name, t, k === 0); }).join('') + '</div>';
   // second tour's card starts collapsed
   panel.querySelectorAll('.er:not(.er-keep-open) .er-body.open, .er:not(.er-keep-open) .er-chevron.open')
     .forEach(function (el) { el.classList.remove('open'); });
@@ -4777,16 +4803,16 @@ function qpSelectAthlete(i) {
 }
 
 function qpApplyHash(view, name) {
-  if ((view === 'qs' || view === 'pj') && name != null && name !== '') {
+  if (QP_TOURS.indexOf(view) !== -1 && name != null && name !== '') {
     setTimeout(function () { qpSelectAthlete(parseInt(name, 10)); }, 50);
-  } else if (view === 'qs' || view === 'pj') {
+  } else if (QP_TOURS.indexOf(view) !== -1) {
     qpIdx = null;
   }
 }
 
 // ── Events browser ──
 function qpRenderEvents() {
-  var Q = qpIndex(), E = QSPJ_DATA.events[qpTour], g = qpGender === 'women' ? 'w' : 'm';
+  var Q = qpIndex(), E = qpEvents(qpTour), g = qpGender === 'women' ? 'w' : 'm';
   var ySel = document.getElementById('qp-year'), tSel = document.getElementById('qp-tier');
   var years = Object.keys(Q.years[qpTour]).map(Number).sort(function (a, b) { return b - a; });
   if (qpYear == null || years.indexOf(qpYear) === -1) qpYear = years[0];
@@ -4901,7 +4927,7 @@ function qpRenderRankings() {
   sSel.innerHTML = seasons.map(function (t) { return '<option value="' + escHtml(t.l) + '">' + escHtml(t.l) + (t.c ? ' (current)' : '') + '</option>'; }).join('');
   if (qpRkLabel) sSel.value = qpRkLabel;
   var t = seasons.filter(function (x) { return x.l === qpRkLabel; })[0];
-  if (!t) { tb.innerHTML = '<tr><td colspan="4" class="no-data">No rankings for this region since 2021</td></tr>'; return; }
+  if (!t) { tb.innerHTML = '<tr><td colspan="4" class="no-data">No rankings for this region</td></tr>'; return; }
   document.getElementById('qp-rk-status').textContent = (t.f ? 'Final rankings' : 'Current rankings') + (t.a ? ' — as of ' + t.a : '') + ' · ' + t.rows.length + ' surfers';
   document.getElementById('qp-rk-link').innerHTML = '<a href="' + t.u + '" target="_blank" rel="noopener" style="color:#001834;font-weight:800;letter-spacing:0.12em;text-transform:uppercase">View on WSL ↗</a>';
   var Q = qpIndex();
@@ -4993,7 +5019,7 @@ function qpRenderWJC() {
 // ── Org switching ─────────────────────────────────────────────────────────────
 // ── WSL tour switch (CT / CS / LT) — swaps the live data pointers ────────────
 function setWSLTour(tour) {
-  if (tour === 'qs' || tour === 'pj') { qpEnterTour(tour); return; }
+  if (QP_TOURS.indexOf(tour) !== -1) { qpEnterTour(tour); return; }
   qpToggleSubnav(false);
   currentWSLTour = tour;
   if (tour === 'cs' && typeof CS_DATA !== 'undefined' && CS_DATA && CS_DATA.athletes) {
