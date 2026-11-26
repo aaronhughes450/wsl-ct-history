@@ -771,6 +771,128 @@
     .isaev-podium-grid { grid-template-columns: 1fr; }
     .isaev-section-head { margin-top: 20px; }
   }
+  /* ── Athlete profile (Prof) ─────────────────────────────────────────────── */
+  .pf { --pf-w: #b54708; --pf-ru: #1a7549; --pf-sf: #1f5fa8; --pf-qf: #6b3fd8; --pf-dim: #64748b; font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif; color: #0f172a; }
+  .pf-head { background: #001834; color: #fff; padding: 22px 24px 20px; border-radius: 10px 10px 0 0; }
+  .pf-eyebrow { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #f0b400; }
+  .pf-eyebrow.dark { color: #b54708; }
+  .pf .pf-name { color: #fff; font-weight: 900; margin: 6px 0 6px; }
+  .pf-sub { font-size: 0.9rem; color: #cbd5e1; }
+  .pf-sub.dark { color: var(--pf-dim); }
+  .pf-tags { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .pf-scopes { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 12px 16px; background: #fff; border: 1px solid #e2e8f0; border-top: none; }
+  .pf-group-l { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--pf-dim); margin-bottom: 5px; }
+  .pf-group-b { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pf-scope { width: 172px; height: 56px; box-sizing: border-box; padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #001834; text-align: left; cursor: pointer; font-family: inherit; overflow: hidden; }
+  .pf-scope:hover { border-color: #001834; }
+  .pf-scope.on { background: #001834; border-color: #001834; color: #fff; }
+  .pf-scope-n, .pf-scope-c { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pf-scope-n { font-size: 0.8rem; font-weight: 800; }
+  .pf-scope-c { font-size: 0.68rem; font-weight: 600; opacity: 0.8; }
+  .pf-tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 12px; background: #fff; border: 1px solid #e2e8f0; border-top: 1px solid #f1f5f9; }
+  .pf-tab { font-family: inherit; font-size: 0.85rem; font-weight: 700; padding: 13px 12px 11px; min-height: 46px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--pf-dim); cursor: pointer; }
+  .pf-tab.on { color: #001834; border-bottom-color: #f0b400; }
+  .pf-body { padding: 18px 0 8px; display: block; }
+  .pf-pane { display: flex; flex-direction: column; gap: 18px; }
+  .pf-pane[hidden] { display: none; }
+  .pf-boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); grid-auto-rows: 104px; gap: 1px; background: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .pf-box { background: #fff; padding: 14px 16px; box-sizing: border-box; overflow: hidden; }
+  .pf-box-l { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pf-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pf-box-v { font-size: 1.75rem; font-weight: 900; font-style: italic; color: #001834; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pf-box-v.gold { color: var(--pf-w); }
+  .pf-box-s { font-size: 0.72rem; color: var(--pf-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pf-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px; min-width: 0; }
+  .pf-h { display: block; margin: 0 0 12px; font-size: 0.64rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--pf-dim); }
+  .pf-row { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+  .pf-row > .pf-card { min-width: 0; }
+  .pf-note { font-size: 0.75rem; color: var(--pf-dim); margin-top: 10px; line-height: 1.45; }
+  .pf-note.top { margin: 0 0 10px; }
+  .pf-empty { color: var(--pf-dim); font-size: 0.85rem; padding: 6px 0; }
+  .pf-scroll { overflow-x: auto; }
+  .pf-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .pf-table th { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pf-dim); padding: 8px 6px; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+  .pf-table td { padding: 8px 6px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .pf-table .c { text-align: center; } .pf-table .r { text-align: right; } .pf-table .b { font-weight: 800; } .pf-table .g { font-weight: 800; color: var(--pf-w); } .pf-table .d { color: var(--pf-dim); }
+  .pf-table .sep { border-left: 2px solid #e2e8f0; }
+  .pf-table tr.me td { background: #fffbea; }
+  .pf-table a { color: #001834; font-weight: 700; text-decoration: none; }
+  .pf-table a:hover { text-decoration: underline; }
+  .pf-matrix td.v { white-space: nowrap; }
+  .pf-org { display: inline-block; width: 46px; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; color: var(--pf-dim); }
+  .pf-sm { font-size: 0.72rem; color: var(--pf-dim); }
+  .pf-org { text-transform: uppercase; }
+  .pf-also { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.82rem; }
+  .pf-also > span:nth-child(2) { flex: 1; }
+  .pf-cell { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 28px; padding: 0 4px; box-sizing: border-box; border-radius: 6px; font-weight: 800; background: #f1f5f9; color: #475569; }
+  .pf-cell sup { font-size: 0.55rem; margin-left: 1px; }
+  .pf-cell.w, .pf-tile.w { background: var(--pf-w); color: #fff; }
+  .pf-cell.ru, .pf-tile.ru { background: var(--pf-ru); color: #fff; }
+  .pf-cell.sf, .pf-tile.sf { background: var(--pf-sf); color: #fff; }
+  .pf-cell.qf, .pf-tile.qf { background: var(--pf-qf); color: #fff; }
+  .pf-cell.r16, .pf-tile.r16 { background: #e2e8f0; color: #001834; }
+  .pf-cell.out, .pf-tile.out { background: #f1f5f9; color: #475569; }
+  .pf-cell.none { background: transparent; color: #cbd5e1; }
+  .pf-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.72rem; font-weight: 600; color: #475569; margin-bottom: 10px; }
+  .pf-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; background: #cbd5e1; }
+  .pf-legend .w::before { background: var(--pf-w); } .pf-legend .ru::before { background: var(--pf-ru); } .pf-legend .sf::before { background: var(--pf-sf); } .pf-legend .qf::before { background: var(--pf-qf); }
+  .pf-vlink { font-family: inherit; font-size: 0.85rem; font-weight: 700; color: #001834; background: none; border: none; border-bottom: 1px dotted #94a3b8; padding: 4px 0; cursor: pointer; text-align: left; min-height: 32px; }
+  .pf-vlink:hover { color: var(--pf-sf); border-bottom-color: var(--pf-sf); }
+  .pf-open, .pf-back, .pf-level { font-family: inherit; font-size: 0.8rem; font-weight: 700; color: #001834; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 14px; min-height: 40px; cursor: pointer; }
+  .pf-open:hover, .pf-back:hover, .pf-level:hover { border-color: #001834; }
+  .pf-level { width: 150px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .pf-level.on { background: #001834; color: #fff; border-color: #001834; }
+  .pf-levels { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .pf-sheet-head { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 18px; }
+  .pf-sheet-head .pf-back { margin-bottom: 12px; }
+  .pf-sheet-name { margin: 4px 0; font-size: 2rem; line-height: 1.05; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.03em; color: #001834; }
+  .pf-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); grid-auto-rows: 84px; gap: 8px; }
+  .pf-tile { border-radius: 8px; padding: 9px 10px; box-sizing: border-box; overflow: hidden; background: #f1f5f9; color: #334155; }
+  .pf-tile-t, .pf-tile-s { font-size: 0.64rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pf-tile-t { letter-spacing: 0.04em; text-transform: uppercase; }
+  .pf-tile-s { opacity: 0.85; font-weight: 600; }
+  .pf-tile-p { font-size: 1.4rem; font-weight: 900; font-style: italic; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pf-chart { display: flex; align-items: flex-end; gap: 6px; height: 184px; overflow-x: auto; }
+  .pf-bar { flex: 1 0 34px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
+  .pf-bar-v { font-size: 0.75rem; font-weight: 800; color: #001834; }
+  .pf-bar-b { width: 100%; max-width: 40px; background: #475569; border-radius: 4px 4px 0 0; }
+  .pf-bar.top .pf-bar-b { background: #001834; } .pf-bar.wc .pf-bar-b { background: #cbd5e1; } .pf-bar.wc .pf-bar-v { color: var(--pf-dim); }
+  .pf-bar.live .pf-bar-b { background: repeating-linear-gradient(45deg, #001834 0 4px, #334a66 4px 8px); }
+  .pf-bar-b { border-bottom: 1px solid #e2e8f0; }
+  .pf-bar-y { font-size: 0.68rem; color: var(--pf-dim); font-weight: 600; height: 16px; flex: 0 0 auto; }
+  .pf-points { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  .pf-point { display: flex; gap: 14px; padding: 12px 14px; background: #f8fafc; border-radius: 10px; align-items: flex-start; }
+  .pf-point-big { font-size: 1.5rem; font-weight: 900; font-style: italic; color: #001834; min-width: 74px; line-height: 1.1; }
+  .pf-point-h { font-size: 0.9rem; font-weight: 700; line-height: 1.35; }
+  .pf-point-s { font-size: 0.76rem; color: var(--pf-dim); margin-top: 3px; line-height: 1.4; }
+  .pf-point-src { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pf-sf); margin-top: 6px; }
+  .pf-wins { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+  .pf-wins li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding: 9px 12px; border: 1px solid #f1e3c2; background: #fffbf0; border-radius: 8px; font-size: 0.85rem; }
+  .pf-wins .y { font-weight: 800; color: var(--pf-w); } .pf-wins a { color: #001834; font-weight: 700; text-decoration: none; } .pf-wins .d { width: 100%; font-size: 0.72rem; color: var(--pf-dim); }
+  .pf-medal { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #475569; }
+  .pf-medal.gold { background: #fff3cd; color: #8a5a00; } .pf-medal.silver { background: #eef1f4; color: #4a5866; } .pf-medal.bronze { background: #fbe9dd; color: #8a4b22; } .pf-medal.copper { background: #f6ede2; color: #7a5a35; }
+  .pf-rate { display: inline-block; width: 90px; height: 8px; background: #eef2f7; border-radius: 4px; overflow: hidden; vertical-align: middle; margin-right: 8px; }
+  .pf-rate span { display: block; height: 100%; background: var(--pf-sf); } .pf-rate .hi { background: var(--pf-ru); } .pf-rate .lo { background: #94a3b8; }
+  .pf-rounds { display: flex; flex-direction: column; gap: 8px; }
+  .pf-round { display: grid; grid-template-columns: 130px 1fr 44px 64px; gap: 8px; align-items: center; font-size: 0.8rem; }
+  .pf-round .pf-rate { width: 100%; margin: 0; } .pf-round .d { color: var(--pf-dim); font-size: 0.72rem; }
+  .pf-res { display: inline-block; min-width: 26px; text-align: center; padding: 3px 0; border-radius: 5px; font-size: 0.72rem; font-weight: 800; background: #f1f5f9; color: var(--pf-dim); }
+  .pf-res.w { background: #e8f5ee; color: var(--pf-ru); }
+  .pf-notes { width: 100%; box-sizing: border-box; min-height: 90px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; line-height: 1.5; color: #0f172a; margin-bottom: 14px; resize: vertical; }
+  .pf-notes:focus { outline: none; border-color: #001834; }
+  .pf-more { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 16px; }
+  .pf-more summary { cursor: pointer; font-size: 0.8rem; font-weight: 700; color: #001834; min-height: 28px; line-height: 28px; }
+  .pf-legacy { margin-top: 6px; }
+  @media (max-width: 768px) {
+    .pf-head { padding: 18px 16px; border-radius: 0; }
+    .pf-scopes { flex-wrap: nowrap; overflow-x: auto; padding: 10px 12px; }
+    .pf-group-b { flex-wrap: nowrap; }
+    .pf-scope { width: 150px; flex: 0 0 auto; }
+    .pf-tabs { flex-wrap: nowrap; overflow-x: auto; }
+    .pf-tab { flex: 0 0 auto; }
+    .pf-boxes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pf-points { grid-template-columns: 1fr; }
+    .pf-round { grid-template-columns: 100px 1fr 40px; } .pf-round .d { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -1524,7 +1646,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261125180354"></script>
+<script src="data.js?v=20261126035606"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261124084907" onerror="this.remove()"></script>
 <script src="registry.js?v=20261124084907" onerror="this.remove()"></script>
@@ -2798,6 +2920,7 @@ function renderProfile(name, panelEl, reg) {
     : qsWinsListHtml(qsWins);
 
   // ── Decide which overview panel opens by default ────────────────────────
+  const _profileOpenedFromISA0 = _profileOpenedFromISA;
   const openSection = _profileOpenedFromISA ? 'isa' : 'wsl';
   _profileOpenedFromISA = false;  // consume the flag
 
@@ -2872,6 +2995,23 @@ function renderProfile(name, panelEl, reg) {
       + '</div>'
     : (_stub ? '' : (winsHtml + '<div class="section-title">Event Record</div><div class="event-accordion">' + eventsHtml + '</div>'));
 
+  // Registry profiles: the new page (competition bar, tabs, venue sheets).
+  // Everything below is the layout for an athlete the registry doesn't know.
+  if (reg && window.Prof) {
+    const _qpPref = panel.id === 'qp-profile' && typeof qpTour !== 'undefined' ? QP_TAG[qpTour] : null;
+    const _pref = _qpPref || ((REG_PANEL_SRC[panel.id] || [])[0]) || (_profileOpenedFromISA0 ? 'WSG' : null);
+    const _ctN = (reg.sources && reg.sources.CT && reg.sources.CT[0]) || null;
+    panel.innerHTML = Prof.render({
+      reg: reg, name: name, ctName: _ctN, pref: _pref, tags: tags, bioHtml: bioFields,
+      nationLine: (reg.flags && reg.flags.length ? reg.flags.map(f => nationFlag(f[0]) + escHtml(f[0])).join(' / ') : escHtml(a.nation || reg.nation || '')),
+      stance: escHtml(bioGet('stance') || reg.stance || ''), age: age, resides: escHtml(bioGet('location') || ''),
+      ctRankChips: _srcTour === 'ct' ? '<div class="rankings-row">' + (rankingChips || '<span style="color:var(--text-dim);font-size:0.85rem">No ranking data</span>') + '</div>' : '',
+      ctSeasonProg: _srcTour === 'ct' ? buildSeasonProgression(name, gender) : '',
+      ctRookieHtml: _srcTour === 'ct' ? rookieClassHtml : ''
+    });
+    Prof.mount(panel);
+    return;
+  }
   panel.innerHTML = `
     <div class="profile-name">${reg ? escHtml(reg.name) : name}</div>
     <div class="profile-meta">${tags}</div>
@@ -8805,7 +8945,8 @@ window.Heats = (function () {
       + '<span class="ht-opp-rec ' + (w > l ? 'up' : w < l ? 'down' : '') + '">' + w + '–' + l + '</span></div>'
       + '<div class="ht-meets">' + rows + (inArchive(name) ? '<div class="ht-meet"><span class="ht-meet-res"></span><span class="ht-meet-ev">' + who(name) + '</span></div>' : '') + '</div></div>';
   }
-  function cardHtml(name) {
+  // part: 'tiles' (the stat tiles only), 'h2h' (head-to-head only), or both
+  function cardHtml(name, part) {
     var s = HEATS_ATH.stats[name];
     if (!s) return '<div class="ht-note">No heat data for this surfer.</div>';
     var pct = s[1] ? Math.round(100 * s[2] / s[1]) : 0;
@@ -8823,9 +8964,11 @@ window.Heats = (function () {
     var list = opps.map(function (o, i) { return i < SHOW ? oppHtml(o[0], o[1]) : ''; }).join('');
     var id = 'ht-h2h-' + Math.random().toString(36).slice(2);
     pending[id] = opps;
-    return '<div class="ht-note">From WSL heat data, ' + span() + ' Championship Tour events. Placings and rankings elsewhere on this page come from the archive.</div>'
-      + '<div class="ht-tiles">' + tiles + '</div>'
-      + (opps.length ? '<div class="section-title" style="margin-top:18px">Head-to-head (' + opps.length + ' opponents)</div>'
+    var note = '<div class="ht-note">From WSL heat data, ' + span() + ' Championship Tour events. Placings and rankings elsewhere on this page come from the archive.</div>';
+    if (part === 'tiles') return note + '<div class="ht-tiles">' + tiles + '</div>';
+    if (part === 'h2h' && !opps.length) return '<div class="ht-note">No two-surfer heats in the WSL heat data.</div>';
+    return (part === 'h2h' ? '' : note + '<div class="ht-tiles">' + tiles + '</div>')
+      + (opps.length ? '<div class="section-title" style="margin-top:' + (part === 'h2h' ? '0' : '18px') + '">Head-to-head (' + opps.length + ' opponents)</div>'
           + '<div class="ht-note">Two-surfer heats only. Heats of three or more surfers and wave-pool sessions are not counted.</div>'
           + '<input class="ht-h2h-search" type="search" placeholder="Find an opponent…" oninput="Heats.filterH2H(\'' + id + '\', this.value)">'
           + '<div id="' + id + '">' + list + '</div>'
@@ -9070,7 +9213,890 @@ window.Heats = (function () {
   }).catch(function () {});
 
   return { results: results, profile: profile, toggleHeat: toggleHeat, openCard: openCard, filterH2H: filterH2H,
-           records: records, setRecord: setRecord, venueHeats: venueHeats, h2h: h2h, season: season, sortSeason: sortSeason };
+           records: records, setRecord: setRecord, venueHeats: venueHeats, h2h: h2h, season: season, sortSeason: sortSeason,
+           load: load, heatsOf: heatsOf, duelsOf: duelsOf, cardHtml: cardHtml };
+})();
+</script>
+<script>
+// ── Athlete profile (registry profiles) ──────────────────────────────────────
+// One page per athlete: a header, a competition bar (every tour and
+// organisation the athlete has results in, from the Athletes Registry), tabs
+// for the competition picked, and a venue sheet for every venue. Built from the
+// data the app already holds; renderProfile hands in the pieces that need the
+// CT data pointer (season progression, rankings chips, wins list, bio fields).
+window.Prof = (function () {
+  'use strict';
+  var GROUPS = [['', ['ALL']], ['WSL', ['CT', 'CS', 'LT', 'QS', 'PJ', 'LQS']],
+                ['ISA', ['WSG', 'WJSC', 'WLC', 'SUP', 'WPSC']], ['Games', ['Olympics', 'PanAm', 'AsianGames']]];
+  var NAME = { ALL: 'All', CT: 'CT', CS: 'Challenger', LT: 'Longboard Tour', QS: 'QS', PJ: 'Pro Junior', LQS: 'Longboard QS',
+               WSG: 'World Surfing Games', WJSC: 'World Juniors', WLC: 'World Longboard', SUP: 'SUP & Paddleboard',
+               WPSC: 'Para Surfing', Olympics: 'Olympics', PanAm: 'Pan Am Games', AsianGames: 'Asian Games' };
+  var LONG = { CT: 'Championship Tour', CS: 'Challenger Series', LT: 'Longboard Tour', QS: 'Qualifying Series', PJ: 'Pro Junior',
+               LQS: 'Longboard Qualifying Series', WSG: 'ISA World Surfing Games', WJSC: 'ISA World Junior Championships',
+               WLC: 'ISA World Longboard Championship', SUP: 'ISA World SUP & Paddleboard', WPSC: 'ISA World Para Surfing',
+               Olympics: 'Olympic Games', PanAm: 'Pan American Games', AsianGames: 'Asian Games' };
+  var ORG = {};
+  GROUPS.forEach(function (g) { g[1].forEach(function (s) { ORG[s] = g[0] || 'ALL'; }); });
+  var TOURS = { CT: 1, CS: 1, LT: 1 }, QPT = { QS: 'qs', PJ: 'pj', LQS: 'lqs' };
+  var ISA = { WSG: 1, WJSC: 1, WLC: 1, SUP: 1, WPSC: 1 }, GAMES = { Olympics: 1, PanAm: 1, AsianGames: 1 };
+
+  function ds(src) {
+    switch (src) {
+      case 'CT': return typeof CT_DATA !== 'undefined' ? CT_DATA : null;
+      case 'CS': return typeof CS_DATA !== 'undefined' ? CS_DATA : null;
+      case 'LT': return typeof LT_DATA !== 'undefined' ? LT_DATA : null;
+      case 'WSG': return typeof ISA_WSG_DATA !== 'undefined' ? ISA_WSG_DATA : null;
+      case 'WJSC': return typeof ISA_WJ_DATA !== 'undefined' ? ISA_WJ_DATA : null;
+      case 'WLC': return typeof ISA_WLC_DATA !== 'undefined' ? ISA_WLC_DATA : null;
+      case 'SUP': return typeof ISA_SUP_DATA !== 'undefined' ? ISA_SUP_DATA : null;
+      case 'WPSC': return typeof ISA_WPSC_DATA !== 'undefined' ? ISA_WPSC_DATA : null;
+      case 'Olympics': return typeof OLYMPIC_DATA !== 'undefined' ? OLYMPIC_DATA : null;
+      case 'PanAm': return typeof PANAM_DATA !== 'undefined' ? PANAM_DATA : null;
+      case 'AsianGames': return typeof ASIANGAMES_DATA !== 'undefined' ? ASIANGAMES_DATA : null;
+    }
+    return null;
+  }
+  function esc(s) { return escHtml(String(s == null ? '' : s)); }
+  function ord(n) { return n == null ? '—' : csOrdinal(n); }
+  function f2(n) { return n == null || isNaN(n) ? '—' : Number(n).toFixed(2); }
+  function pct(a, b) { return b ? Math.round(100 * a / b) : 0; }
+  function span(ys) {
+    if (!ys.length) return '';
+    var a = Math.min.apply(null, ys), b = Math.max.apply(null, ys);
+    return a === b ? String(a) : a + '–' + b;
+  }
+  function uniq(a) { var s = {}; return a.filter(function (x) { return s[x] ? false : (s[x] = 1); }); }
+  function q(s) { return "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'"; }
+
+  // ── Venues: one key per place, whatever the tour calls it ──────────────────
+  // The seed is location_canon.json (place name -> venue slug, used by the
+  // Python side); the second list adds the names the tours' tabs and the QS
+  // event pages use. tests/test_venue_canon.py keeps the seed in step.
+  var VENUE_CANON_SEED = /*VENUE_CANON_SEED*/{"ala moana":"ala-moana","anglet":"anglet","arica":"chile","bells beach":"bells","biarritz":"biarritz","bondi beach":"bondi","burleigh heads":"burleigh","cabana beach":"umhlunga","cape town":"cape-town","chiba":"chiba","cornwall":"cornwall","cronulla":"cronulla","deerfield beach":"deerfield-beach","duranbah beach":"d-bah","durban":"durban","east london":"east-london","ericeira":"ericeira","figueira da foz":"figueira","fistral beach":"cornwall","gold coast":"gold-coast","gradjagan":"g-land","grajagan":"g-land","haleiwa":"haleiwa","honolua bay":"honolua-bay","hossegor":"hossegor","huatulco":"mexico","huntington beach":"huntington","itacare":"itacare","izu":"wavepool","jeffreys bay":"j-bay","jensen beach":"jensen-beach","lacanau":"lacanau","lennox head":"lennox-head","makaha":"makaha","malibu":"malibu","mancora":"peru","manhattan beach":"manhattan-beach","manly beach":"manly","margaret river":"margaret-river","maroubra beach":"maroubra","maryland":"maryland","miyazaki":"miyazaki","mundaka":"mundaka","myrtle beach":"myrtle-beach","nanbari beach":"nanbari-beach","neptune beach":"neptune-beach","new jersey":"new-jersey","new smyrna beach":"new-smyrna-beach","new york":"new-york","newcastle":"newcastle","newquay":"newquay","niijima island":"niijima-island","north carolina":"north-carolina","north narrabeen":"north-narrabeen","north shore":"north-shore","north stradbroke island":"straddie","oceanside":"oceanside","pennsylvania":"pennsylvania","phillip island":"phillip-island","piha":"nz","pipeline":"pipeline","puerto rico":"puerto-rico","rio de janeiro":"rio","saint-leu":"saint-leu","san diego":"san-diego","sandy beach":"sandy-beach","santa catarina":"santa-catarina","santa cruz":"santa-cruz","santander":"santander","sao paulo":"sao-paulo","sebastian inlet":"sebastian-inlet","shonan":"shonan","sintra":"sintra","sopelana":"sopelana","sunset beach":"sunset-beach","surfers paradise":"surfers-paradise","sydney":"sydney","tavarua":"fiji","teahupo'o":"tahiti","tokushima":"tokushima","trestles":"trestles","trigg point":"trigg-point","turtle bay":"turtle-bay","uluwatu":"uluwatu","umhlunga rocks":"umhlunga-rocks","virginia beach":"virginia-beach","wollongong":"wollongong","zarautz":"zarautz"}/*END*/;
+  var VENUE_CANON_EXTRA = {
+    'pipe': 'pipeline', 'banzai pipeline': 'pipeline', 'pipeline': 'pipeline', 'sunset': 'sunset-beach', 'bells': 'bells',
+    'teahupoo': 'tahiti', 'tahiti': 'tahiti', 'cloudbreak': 'fiji', 'tavarua': 'fiji', 'fiji': 'fiji', 'snapper rocks': 'gold-coast',
+    'kirra': 'gold-coast', 'coolangatta': 'gold-coast', 'duranbah': 'd-bah', 'peniche': 'portugal', 'supertubos': 'portugal',
+    'punta roca': 'el-salvador', 'el sal': 'el-salvador', 'el salvador': 'el-salvador', 'barra de la cruz': 'mexico',
+    'hb': 'huntington', 'us open': 'huntington', 'huntington': 'huntington', 'ny': 'new-york', 'j-bay': 'j-bay', 'jbay': 'j-bay',
+    'jeffreys bay': 'j-bay', 'surf ranch': 'kswc', 'lemoore': 'kswc', 'kswc': 'kswc', 'grajagan': 'g-land', 'g-land': 'g-land',
+    'merewether': 'newcastle', 'north narrabeen': 'sydney', 'manly': 'manly', 'manly beach': 'manly', 'keramas': 'keramas',
+    'lower trestles': 'trestles', 'san clemente': 'trestles', 'haleiwa': 'haleiwa', 'haleiwa aliʻi beach park': 'haleiwa',
+    'surfers point': 'margaret-river', 'main break': 'margaret-river', 'margaret river': 'margaret-river', 'rottnest island': 'rottnest'
+  };
+  var CANON = null;
+  function norm(s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+      .replace(/[’ʻ'`]/g, '').replace(/\s+qs$/, '').replace(/\s+/g, ' ').trim();
+  }
+  function vkey(s) {
+    if (!CANON) {
+      CANON = {};
+      [VENUE_CANON_SEED, VENUE_CANON_EXTRA].forEach(function (m) { Object.keys(m).forEach(function (k) { CANON[norm(k)] = m[k]; }); });
+    }
+    var n = norm(String(s || '').split(',')[0]);
+    if (!n) return '';
+    return CANON[n] || n.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+  function first(s) { return String(s || '').split(',')[0].trim(); }
+  // A QS page often names only the island or coast ("Oahu, Hawaii"): the
+  // event's name says which break (Volcom Pipe Pro, Vans World Cup at Sunset).
+  var GENERIC = { 'oahu': 1, 'north-shore': 1, 'hawaii': 1, 'maui': 0 };
+  var QS_NAMED = [[/pipe/i, 'pipeline', 'Pipeline'], [/sunset|world cup/i, 'sunset-beach', 'Sunset Beach'], [/haleiwa|hawaiian pro/i, 'haleiwa', 'Haleiwa'],
+                  [/triple crown/i, 'north-shore', 'North Shore']];
+  function qpVenue(e) {
+    var k = vkey(e[6]);
+    if (GENERIC[k]) for (var i = 0; i < QS_NAMED.length; i++) if (QS_NAMED[i][0].test(e[4])) return [QS_NAMED[i][1], QS_NAMED[i][2]];
+    return [k, first(e[6]) || 'Venue not recorded'];
+  }
+
+  // ── Every result an athlete has in one source, in one shape ────────────────
+  // {src, name, g, year, place, vkey, venue, loc, event, url, tier, tab?, eid?, div?, nation?}
+  var _tourIdx = {};
+  function tourIndex(src, g) {
+    var k = src + g;
+    if (_tourIdx[k]) return _tourIdx[k];
+    var D = ds(src), m = {};
+    ((D && D.event_results && D.event_results[g]) || []).forEach(function (e) {
+      var key = e.tab + '|' + e.year;
+      if (!m[key] || (m[key].tier === 'QS 6000' && e.tier !== 'QS 6000')) m[key] = e;
+    });
+    return (_tourIdx[k] = m);
+  }
+  function gOf(reg) { return reg.gender === 'm' ? 'men' : 'women'; }
+  var _ent = {};
+  function entries(reg, src) {
+    var ck = reg.id + '|' + src;
+    if (_ent[ck]) return _ent[ck];
+    var names = ((reg.sources || {})[src]) || [], out = [];
+    try {
+      if (TOURS[src]) {
+        var D = ds(src);
+        if (D && D.events) names.forEach(function (n) {
+          var a = D.athletes && D.athletes[n], g = (a && a.gender) || gOf(reg), idx = tourIndex(src, g);
+          Object.keys(D.events).forEach(function (tab) {
+            var d = ((D.events[tab] || {})[g] || {})[n];
+            if (!d) return;
+            Object.keys(d.years || {}).forEach(function (y) {
+              var p = Number(d.years[y]);
+              if (!p) return;
+              var er = idx[tab + '|' + y] || {};
+              var lk = er.location && vkey(er.location) === vkey(tab);
+              out.push({ src: src, name: n, g: g, year: +y, place: p, tab: tab, vkey: vkey(tab),
+                         venue: lk ? first(er.location) : tab.replace(/\s+QS$/, ''), loc: er.location || '',
+                         event: er.name || (y + ' ' + tab), url: er.url || '', tier: er.tier === 'QS 6000' ? 'QS 6,000' : src, winner: er.winner || '' });
+            });
+          });
+        });
+      } else if (QPT[src]) {
+        if (typeof qpHasData === 'function' && qpHasData()) {
+          var t = QPT[src], E = qpEvents(t);
+          names.forEach(function (n) {
+            qpResults(n, t).forEach(function (r) {
+              var e = E[r[0]];
+              if (!e) return;
+              var qv = qpVenue(e);
+              out.push({ src: src, name: n, g: e[3] === 'w' ? 'women' : 'men', year: e[1], place: r[1], ei: r[0], vkey: qv[0],
+                         venue: qv[1], loc: e[6] || '', event: e[1] + ' ' + e[4], url: e[8] || '', tier: e[5] || src });
+            });
+          });
+        }
+      } else if (ISA[src] || GAMES[src]) {
+        var DI = ds(src);
+        if (DI && DI.athletes) {
+          var byId = {};
+          (DI.events || []).forEach(function (ev) { byId[ev.id] = ev; });
+          names.forEach(function (n) {
+            DI.athletes.filter(function (a) { return a.name === n; }).forEach(function (row) {
+              Object.keys(row.results || {}).forEach(function (eid) {
+                var ev = byId[eid], p = Number(row.results[eid]);
+                if (!ev || !p) return;
+                var where = ev.location || ev.venue || '';
+                out.push({ src: src, name: n, g: row.gender || gOf(reg), year: ev.year, place: p, eid: eid, vkey: vkey(where),
+                           venue: first(where) || 'Venue not recorded', loc: where,
+                           event: GAMES[src] ? (ev.fullName || ev.name) : ev.year + ' ' + (ev.name || LONG[src]),
+                           url: ev.resultUrl || '', tier: src, div: row.div_label || row.disc_label || '', nation: row.country || '', row: row });
+              });
+            });
+          });
+        }
+      }
+    } catch (e) { console.warn('[profile]', src, e); }
+    out.sort(function (a, b) { return b.year - a.year || a.place - b.place; });
+    return (_ent[ck] = out);
+  }
+  function medal(src, p) {
+    if (ISA[src]) return p === 1 ? 'Gold' : p === 2 ? 'Silver' : p === 3 ? 'Bronze' : p === 4 ? 'Copper' : '';
+    if (GAMES[src]) return p === 1 ? 'Gold' : p === 2 ? 'Silver' : p === 3 ? 'Bronze' : '';
+    return '';
+  }
+  // seasons on a ranked tour: [{yr, rank, wc, live}] newest first; live = the
+  // season in progress (in the season tabs, not yet in the final rankings)
+  function seasons(reg, src) {
+    var D = ds(src), out = [], seen = {};
+    if (!D || !D.athletes) return out;
+    ((reg.sources || {})[src] || []).forEach(function (n) {
+      var a = D.athletes[n];
+      if (!a) return;
+      Object.keys(a.rankings || {}).forEach(function (y) {
+        var r = a.rankings[y], rank = typeof r === 'object' ? r.rank : r;
+        if (rank && !seen[y]) { seen[y] = 1; out.push({ yr: +y, rank: rank, wc: !!(r && r.wc), live: false }); }
+      });
+      var ts = D.tour_seasons || {}, g = a.gender || gOf(reg);
+      var yrs = Object.keys(ts).filter(function (k) { return k.slice(5) === g; }).map(function (k) { return +k.slice(0, 4); });
+      var last = yrs.length ? Math.max.apply(null, yrs) : null;
+      if (last && !seen[last]) {
+        var row = (ts[last + '-' + g].athletes || []).find(function (x) { return x.name === n; });
+        var rk = row && (row.season_rank || row.rank);
+        // a season counts once the athlete has surfed three of its events (one
+        // CS start by a CT surfer is not a CS season)
+        if (rk && Object.keys(row.placings || {}).length >= 3) { seen[last] = 1; out.push({ yr: last, rank: rk, wc: false, live: true, row: row, season: ts[last + '-' + g] }); }
+      }
+    });
+    return out.sort(function (a, b) { return b.yr - a.yr; });
+  }
+  function latestSeason(reg, src) {
+    var D = ds(src);
+    if (!D || !D.tour_seasons) return null;
+    var n = ((reg.sources || {})[src] || [])[0], a = D.athletes && D.athletes[n];
+    if (!a) return null;
+    var g = a.gender || gOf(reg);
+    var yrs = Object.keys(D.tour_seasons).filter(function (k) { return k.slice(5) === g; }).map(function (k) { return +k.slice(0, 4); })
+      .sort(function (x, y) { return y - x; });
+    for (var i = 0; i < yrs.length; i++) {
+      var s = D.tour_seasons[yrs[i] + '-' + g], row = (s.athletes || []).find(function (x) { return x.name === n; });
+      if (row && Object.keys(row.placings || {}).length) return { yr: yrs[i], season: s, row: row };
+    }
+    return null;
+  }
+  function stats(E) {
+    var places = E.map(function (e) { return e.place; });
+    var events = uniq(E.map(function (e) { return e.eid || e.event; }));
+    return {
+      n: E.length, events: events.length, years: uniq(E.map(function (e) { return e.year; })),
+      best: places.length ? Math.min.apply(null, places) : null,
+      wins: E.filter(function (e) { return e.place === 1; }), finals: E.filter(function (e) { return e.place <= 2; }).length,
+      avg: places.length ? places.reduce(function (a, b) { return a + b; }, 0) / places.length : null
+    };
+  }
+  function has(reg, src) {
+    if (TOURS[src]) { var D = ds(src); return ((reg.sources || {})[src] || []).some(function (n) { return D && D.athletes && D.athletes[n]; }); }
+    return entries(reg, src).length > 0;
+  }
+  function primary(reg) {
+    var full = function (src) { return seasons(reg, src).some(function (s) { return !s.wc; }); };
+    if (full('CT')) return 'CT';
+    if (full('CS')) return 'CS';
+    if (full('LT')) return 'LT';
+    var best = null;
+    [['WSG', 'WJSC', 'WLC', 'SUP', 'WPSC'], ['QS', 'PJ', 'LQS'], ['Olympics', 'PanAm', 'AsianGames'], ['CT', 'CS', 'LT']].some(function (grp) {
+      grp.forEach(function (s) { var n = has(reg, s) ? (TOURS[s] ? 1 : stats(entries(reg, s)).events) : 0; if (n && (!best || n > best[1])) best = [s, n]; });
+      return !!best;
+    });
+    return best ? best[0] : null;
+  }
+
+  // ── Shared pieces ───────────────────────────────────────────────────────────
+  function pcls(p) { return p === 1 ? 'w' : p === 2 ? 'ru' : p <= 4 ? 'sf' : p <= 8 ? 'qf' : p <= 16 ? 'r16' : 'out'; }
+  function boxes(list) {
+    return '<div class="pf-boxes">' + list.slice(0, 6).map(function (b) {
+      return '<div class="pf-box"' + (b.id ? ' data-box="' + b.id + '"' : '') + '><div class="pf-box-l">' + esc(b.l) + '</div>'
+        + '<div class="pf-box-v' + (b.c ? ' ' + b.c : '') + '">' + esc(b.v) + '</div><div class="pf-box-s" title="' + esc(b.s || '') + '">' + esc(b.s || '') + '</div></div>';
+    }).join('') + '</div>';
+  }
+  function card(title, body, extra) {
+    return '<section class="pf-card"' + (extra || '') + '>' + (title ? '<h3 class="pf-h">' + title + '</h3>' : '') + body + '</section>';
+  }
+  function tiles(E, opts) {
+    opts = opts || {};
+    return '<div class="pf-tiles">' + E.map(function (e) {
+      var m = medal(e.src, e.place);
+      return '<div class="pf-tile ' + pcls(e.place) + '" title="' + esc(e.event) + '"><div class="pf-tile-t">' + esc(opts.top ? opts.top(e) : e.year)
+        + '</div><div class="pf-tile-p">' + esc(m && opts.medals !== false ? m : ord(e.place)) + '</div><div class="pf-tile-s">' + esc(opts.sub ? opts.sub(e) : e.venue) + '</div></div>';
+    }).join('') + '</div>';
+  }
+  function rankChart(S) {
+    if (!S.length) return '<div class="pf-empty">No ranking data.</div>';
+    var list = S.slice().reverse(), max = Math.max.apply(null, list.map(function (s) { return s.rank; })) + 4;
+    return '<div class="pf-chart">' + list.map(function (s) {
+      var h = Math.max(6, Math.round(120 * (1 - Math.log(s.rank) / Math.log(Math.max(max, 12)))));
+      return '<div class="pf-bar' + (s.wc ? ' wc' : s.rank <= 5 ? ' top' : '') + (s.live ? ' live' : '') + '" title="' + s.yr + ': ' + ord(s.rank)
+        + (s.wc ? ' (wildcard)' : '') + (s.live ? ' (season in progress)' : '') + '"><span class="pf-bar-v">' + s.rank + (s.wc ? '*' : '') + (s.live ? '…' : '')
+        + '</span><span class="pf-bar-b" style="height:' + h + 'px"></span><span class="pf-bar-y">' + s.yr + '</span></div>';
+    }).join('') + '</div><div class="pf-note">Taller bar = higher finish. * wildcard start · … season in progress.</div>';
+  }
+  function legacy(html) { return html ? '<div class="pf-legacy">' + html + '</div>' : ''; }
+  function vbtn(uid, sc, e, label) {
+    return '<button type="button" class="pf-vlink" onclick="Prof.sheet(' + q(uid) + ',' + q(sc) + ',' + q(e.vkey) + ')">' + esc(label || e.venue) + '</button>';
+  }
+
+  // ── Pages ───────────────────────────────────────────────────────────────────
+  var CTX = {}, STATE = {}, _uid = 0;
+  function tabsFor(ctx, sc) {
+    if (sc === 'ALL') return ['Overview', 'Bio & notes'];
+    if (sc === 'CT') {
+      var t = ['Overview', 'Seasons', 'Venues'];
+      if (!window.HEATS_INDEX || HEATS_INDEX.athletes.indexOf(ctx.ctName) >= 0) t.push('Heats', 'Head-to-head');
+      return t;
+    }
+    if (TOURS[sc]) return ['Overview', 'Seasons', 'Venues'];
+    if (QPT[sc]) return ['Overview', 'Events', 'Venues'];
+    if (sc === 'WSG') return ['Overview', 'Events', 'Venues', 'Team'];
+    if (ISA[sc]) return ['Overview', 'Events', 'Venues'];
+    return ['Overview', 'Events'];
+  }
+  function scopeCount(reg, sc) {
+    if (TOURS[sc]) { var S = seasons(reg, sc), full = S.filter(function (s) { return !s.wc; }).length; return full ? full + ' season' + (full !== 1 ? 's' : '') : S.length ? 'Wildcard' : entries(reg, sc).length + ' events'; }
+    var st = stats(entries(reg, sc)), m = GAMES[sc] && st.best <= 3 ? medal(sc, st.best) : '';
+    return m || st.events + ' event' + (st.events !== 1 ? 's' : '');
+  }
+  function render(ctx) {
+    var uid = 'pf' + (++_uid), reg = ctx.reg;
+    ctx.uid = uid;
+    ctx.scopes = [];
+    GROUPS.forEach(function (g) { g[1].forEach(function (s) { if (s === 'ALL' || has(reg, s)) ctx.scopes.push(s); }); });
+    ctx.primary = primary(reg);
+    CTX[uid] = ctx;
+    var st = STATE[reg.id], start = st && ctx.scopes.indexOf(st.sc) >= 0 ? st : null;
+    if (!start && ctx.pref && ctx.scopes.indexOf(ctx.pref) >= 0) start = { sc: ctx.pref, tab: 'Overview' };
+    ctx.start = start || { sc: 'ALL', tab: 'Overview' };
+    var g = gOf(reg), sub = [ctx.nationLine, ctx.stance, ctx.age != null ? 'Age ' + ctx.age : '', ctx.resides].filter(Boolean).join(' · ');
+    var groups = GROUPS.map(function (gr) {
+      var items = gr[1].filter(function (s) { return ctx.scopes.indexOf(s) >= 0; });
+      if (!items.length) return '';
+      return '<div class="pf-group"><div class="pf-group-l">' + (gr[0] || '&nbsp;') + '</div><div class="pf-group-b">'
+        + items.map(function (s) {
+            return '<button type="button" class="pf-scope" data-sc="' + s + '" onclick="Prof.go(' + q(uid) + ',' + q(s) + ')" title="' + esc(s === 'ALL' ? 'All competitions' : LONG[s]) + '">'
+              + '<span class="pf-scope-n">' + esc(NAME[s]) + '</span><span class="pf-scope-c">' + esc(s === 'ALL' ? 'Overview' : scopeCount(reg, s)) + '</span></button>';
+          }).join('') + '</div></div>';
+    }).join('');
+    return '<div class="pf" id="' + uid + '">'
+      + '<header class="pf-head">'
+      +   (ctx.primary ? '<div class="pf-eyebrow">Primary: ' + esc(LONG[ctx.primary]) + ' · ' + (g === 'men' ? 'Men' : 'Women') + '</div>' : '')
+      +   '<div class="profile-name pf-name">' + esc(reg.name) + '</div>'
+      +   (sub ? '<div class="pf-sub">' + sub + '</div>' : '')
+      +   (ctx.tags ? '<div class="profile-meta pf-tags">' + ctx.tags + '</div>' : '')
+      + '</header>'
+      + '<nav class="pf-scopes" aria-label="Competition">' + groups + '</nav>'
+      + '<nav class="pf-tabs" aria-label="Section"></nav>'
+      + '<div class="pf-body"></div></div>';
+  }
+  function mount(panel) {
+    var root = panel.querySelector('.pf');
+    if (!root) return;
+    var ctx = CTX[root.id];
+    go(root.id, ctx.start.sc, ctx.start.tab);
+  }
+  function go(uid, sc, tab) {
+    var ctx = CTX[uid], root = document.getElementById(uid);
+    if (!ctx || !root) return;
+    var tabs = tabsFor(ctx, sc);
+    if (!tab || tabs.indexOf(tab) < 0) tab = 'Overview';
+    STATE[ctx.reg.id] = { sc: sc, tab: tab };
+    root.querySelectorAll('.pf-scope').forEach(function (b) { b.classList.toggle('on', b.dataset.sc === sc); b.setAttribute('aria-pressed', b.dataset.sc === sc); });
+    root.querySelector('.pf-tabs').innerHTML = tabs.map(function (t) {
+      return '<button type="button" class="pf-tab' + (t === tab ? ' on' : '') + '" aria-pressed="' + (t === tab) + '" onclick="Prof.go(' + q(uid) + ',' + q(sc) + ',' + q(t) + ')">' + esc(t) + '</button>';
+    }).join('');
+    show(uid, sc + ':' + tab, function () { return pane(ctx, sc, tab); });
+  }
+  function show(uid, key, build) {
+    var root = document.getElementById(uid), body = root.querySelector('.pf-body'), el = null;
+    body.querySelectorAll(':scope > .pf-pane').forEach(function (p) { if (p.dataset.pane === key) el = p; p.hidden = true; });
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'pf-pane';
+      el.dataset.pane = key;
+      var html = '';
+      try { html = build(); } catch (e) { console.error('[profile]', key, e); html = '<div class="pf-empty">This section could not be drawn.</div>'; }
+      el.innerHTML = html;
+      body.appendChild(el);
+      el.querySelectorAll('.pf-legacy > .er > .er-body, .pf-legacy > .er > .er-head .er-chevron').forEach(function (x) { x.classList.add('open'); });
+      el.querySelectorAll('textarea.notes-area, textarea.pf-notes').forEach(function (t) { if (typeof autoResizeNotes === 'function') autoResizeNotes(t); });
+      after(CTX[uid], el, key);
+    }
+    el.hidden = false;
+    return el;
+  }
+  function pane(ctx, sc, tab) {
+    if (sc === 'ALL') return tab === 'Bio & notes' ? ctx.bioHtml || '' : allOverview(ctx);
+    if (tab === 'Overview') return overview(ctx, sc);
+    if (tab === 'Seasons') return seasonsPane(ctx, sc);
+    if (tab === 'Venues') return venuesPane(ctx, sc);
+    if (tab === 'Events') return eventsPane(ctx, sc);
+    if (tab === 'Team') return teamPane(ctx, sc);
+    if (tab === 'Heats') return '<div class="pf-async" data-heats="tiles"><div class="pf-empty">Loading heat data…</div></div>';
+    if (tab === 'Head-to-head') return '<div class="pf-async" data-heats="h2h"><div class="pf-empty">Loading heat data…</div></div>';
+    return '';
+  }
+
+  // ── "All" overview ──────────────────────────────────────────────────────────
+  function headlineAll(ctx) {
+    var reg = ctx.reg, out = [], add = function (b) { if (b && out.length < 6) out.push(b); };
+    var ct = ds('CT'), ctA = ct && ct.athletes && ct.athletes[ctx.ctName], wc = ctA && ctA.stats && ctA.stats.wc;
+    if (wc) add({ l: 'World titles', v: wc, s: 'Championship Tour', c: 'gold' });
+    ['CT', 'CS', 'LT'].forEach(function (s) {
+      if (!has(reg, s)) return;
+      var w = stats(entries(reg, s)).wins.filter(function (e) { return e.tier === s; });
+      if (w.length) add({ l: NAME[s] + ' wins', v: w.length, s: span(w.map(function (e) { return e.year; })), c: 'gold' });
+    });
+    ['Olympics', 'PanAm', 'AsianGames'].forEach(function (s) {
+      var E = entries(reg, s), b = stats(E).best;
+      if (b && b <= 3) { var e = E.filter(function (x) { return x.place === b; })[0]; add({ l: NAME[s], v: medal(s, b), s: e.event, c: b === 1 ? 'gold' : '' }); }
+    });
+    ['CT', 'CS', 'LT'].forEach(function (s) {
+      var S = seasons(reg, s).filter(function (x) { return !x.wc && !x.live; });
+      if (!S.length) return;
+      var b = Math.min.apply(null, S.map(function (x) { return x.rank; }));
+      add({ l: 'Best ' + NAME[s] + ' rank', v: ord(b), s: S.filter(function (x) { return x.rank === b; }).map(function (x) { return x.yr; }).sort().join(', ') });
+    });
+    if (ctx.heatStats) add({ l: 'CT heat win rate', v: pct(ctx.heatStats[2], ctx.heatStats[1]) + '%', s: ctx.heatStats[2] + ' of ' + ctx.heatStats[1] + ' heats', id: 'hrate' });
+    ['QS', 'PJ', 'LQS'].forEach(function (s) {
+      var w = stats(entries(reg, s)).wins;
+      if (w.length) add({ l: NAME[s] + ' wins', v: w.length, s: span(w.map(function (e) { return e.year; })) });
+    });
+    ['WSG', 'WJSC', 'WLC', 'SUP', 'WPSC'].forEach(function (s) {
+      var st = stats(entries(reg, s));
+      if (st.n) add({ l: NAME[s], v: st.best <= 4 ? medal(s, st.best) : ord(st.best), s: 'best of ' + st.events + ' event' + (st.events !== 1 ? 's' : '') });
+    });
+    ['Olympics', 'PanAm', 'AsianGames'].forEach(function (s) {
+      var st = stats(entries(reg, s));
+      if (st.n && st.best > 3) add({ l: NAME[s], v: ord(st.best), s: st.events + ' Games' });
+    });
+    return out;
+  }
+  function allOverview(ctx) {
+    var reg = ctx.reg;
+    var rows = ctx.scopes.filter(function (s) { return s !== 'ALL'; }).map(function (s) {
+      var E = entries(reg, s), st = stats(E), S = TOURS[s] ? seasons(reg, s) : [];
+      var full = S.filter(function (x) { return !x.wc; }), wcs = S.length - full.length;
+      var bestRank = full.filter(function (x) { return !x.live; }).reduce(function (m, x) { return m == null || x.rank < m.rank ? x : m; }, null);
+      var starts = TOURS[s] ? (full.length ? full.length + ' season' + (full.length !== 1 ? 's' : '') : '') + (wcs ? (full.length ? ' + ' : '') + wcs + ' wildcard' : '') || st.events + ' events'
+        : st.events + ' event' + (st.events !== 1 ? 's' : '');
+      var best = TOURS[s] && bestRank ? ord(bestRank.rank) + ' (' + bestRank.yr + ')' : st.best ? (medal(s, st.best) || ord(st.best)) : '—';
+      var meds = {};
+      if (ISA[s] || GAMES[s]) E.forEach(function (e) { var m = medal(s, e.place); if (m) meds[m] = (meds[m] || 0) + 1; });
+      var w = st.wins.length, wtxt = ISA[s] || GAMES[s] ? Object.keys(meds).map(function (m) { return meds[m] + ' ' + m.toLowerCase(); }).join(', ') : w ? w + ' win' + (w !== 1 ? 's' : '') : '';
+      var yrs = st.years.concat(S.map(function (x) { return x.yr; }));
+      return '<tr><td><span class="pf-org">' + esc(ORG[s]) + '</span><b>' + esc(LONG[s]) + '</b></td><td>' + esc(span(yrs)) + '</td><td>' + esc(starts)
+        + '</td><td class="b">' + esc(best) + '</td><td class="' + (w || wtxt ? 'g' : 'd') + '">' + esc(wtxt || '—')
+        + '</td><td class="r"><button type="button" class="pf-open" onclick="Prof.go(' + q(ctx.uid) + ',' + q(s) + ')">Open →</button></td></tr>';
+    }).join('');
+    return boxes(headlineAll(ctx))
+      + card('Talking points', '<div class="pf-points" data-points="1">' + pointsHtml(points(ctx)) + '</div>', '')
+      + card('Across competitions', '<div class="pf-scroll"><table class="pf-table"><thead><tr><th>Competition</th><th>Years</th><th>Starts</th><th>Best</th><th>Wins / medals</th><th></th></tr></thead><tbody>'
+        + rows + '</tbody></table></div>');
+  }
+
+  // ── Talking points: each rule speaks only when its numbers hold ─────────────
+  function points(ctx) {
+    var reg = ctx.reg, P = [], add = function (score, big, head, sub, src) { P.push({ score: score, big: String(big), head: head, sub: sub, src: src }); };
+    var ct = ds('CT'), ctA = ct && ct.athletes && ct.athletes[ctx.ctName], wc = ctA && ctA.stats && ctA.stats.wc;
+    if (wc) add(100, wc + '×', 'World champion' + (wc > 1 ? ' ' + wc + ' times' : '') + '.', 'Championship Tour titles.', 'CT');
+    ['Olympics', 'PanAm', 'AsianGames'].forEach(function (s) {
+      entries(reg, s).filter(function (e) { return e.place <= 3; }).forEach(function (e) {
+        add(s === 'Olympics' ? 95 : 78, medal(s, e.place), medal(s, e.place) + ' at ' + e.event + (e.div && e.div !== 'Shortboard' ? ' (' + e.div + ')' : '') + '.', e.loc, LONG[s]);
+      });
+    });
+    ['CT', 'CS', 'LT'].forEach(function (s) {
+      var w = entries(reg, s).filter(function (e) { return e.place === 1 && e.tier === s; });
+      if (!w.length) return;
+      var byV = {};
+      w.forEach(function (e) { (byV[e.vkey] = byV[e.vkey] || []).push(e); });
+      var multi = Object.keys(byV).filter(function (k) { return byV[k].length >= 2; }).sort(function (a, b) { return byV[b].length - byV[a].length; });
+      add(s === 'CT' ? 90 : 70, w.length, w.length + ' ' + LONG[s] + ' event win' + (w.length !== 1 ? 's' : '') + '.',
+          multi.length ? multi.slice(0, 2).map(function (k) { return byV[k].length + ' at ' + byV[k][0].venue + ' (' + byV[k].map(function (e) { return e.year; }).sort().join(', ') + ')'; }).join('; ') + '.'
+                       : 'First in ' + w[w.length - 1].year + ' (' + w[w.length - 1].venue + ').', s);
+    });
+    ['CT', 'CS'].forEach(function (s) {
+      var live = seasons(reg, s).filter(function (x) { return x.live; })[0];
+      if (live) add(s === 'CT' ? 58 : 48, ord(live.rank), ord(live.rank) + ' in the ' + live.yr + ' ' + LONG[s] + ' so far.', 'Season still in progress.', s);
+    });
+    ['QS', 'PJ', 'LQS'].forEach(function (s) {
+      var E = entries(reg, s), w = E.filter(function (e) { return e.place === 1; });
+      if (w.length < 2) return;
+      var big = w.filter(function (e) { var m = String(e.tier).match(/([\d,]+)/); return m && Number(m[1].replace(/,/g, '')) >= 4000; });
+      add(has(reg, 'CT') ? 52 : 74, w.length, w.length + ' ' + LONG[s] + ' wins' + (big.length ? ', ' + big.length + ' of them at QS 4,000 or higher' : '') + '.',
+          span(w.map(function (e) { return e.year; })) + '; ' + E.filter(function (e) { return e.place <= 2; }).length + ' finals in ' + uniq(E.map(function (e) { return e.event; })).length + ' events.', s);
+    });
+    ['WSG', 'WJSC', 'WLC', 'SUP', 'WPSC'].forEach(function (s) {
+      var E = entries(reg, s);
+      if (!E.length) return;
+      var st = stats(E), bestE = E.filter(function (e) { return e.place === st.best; });
+      if (st.best <= 4) add(66 - st.best, medal(s, st.best), (st.best === 1 ? 'Gold' : 'Best finish ' + ord(st.best) + ' (' + medal(s, st.best).toLowerCase() + ')') + ' at the ' + LONG[s].replace('ISA ', 'ISA ') + '.',
+                          bestE.map(function (e) { return e.year + (e.div ? ' ' + e.div : ''); }).join(', ') + '.', LONG[s]);
+      else if (st.events >= 3) add(40, st.events, st.events + ' ' + LONG[s] + ' appearances.', 'Best finish ' + ord(st.best) + ' (' + bestE.map(function (e) { return e.year; }).join(', ') + ').', LONG[s]);
+      var D = ds(s);
+      if (D && D.teams) {
+        var titles = E.filter(function (e) { var t = D.teams.find(function (x) { return x.nation === e.nation; }); return t && t.results && t.results[e.eid] === 1; });
+        if (titles.length) add(62, 'Team', 'Part of ' + titles[0].nation + "'s team title at the " + LONG[s] + '.', uniq(titles.map(function (e) { return e.year; })).join(', ') + '.', LONG[s]);
+      }
+    });
+    if (ctx.heats) {
+      var H = ctx.heats, fin = H.filter(function (h) { return h.round === 'Final'; }), fw = fin.filter(function (h) { return h.place === 1; }).length;
+      var they = ctx.reg.gender === 'w' ? 'she' : 'he';
+      if (fin.length >= 3) add(88, fw + '/' + fin.length, 'Wins ' + pct(fw, fin.length) + '% of the CT finals ' + they + ' makes.', fin.length - fw + ' final' + (fin.length - fw !== 1 ? 's' : '') + ' lost.', 'CT heats');
+      var byV = {};
+      H.forEach(function (h) { var v = h.tab; (byV[v] = byV[v] || []).push(h); });
+      var career = H.reduce(function (a, h) { return a + (h.my || 0); }, 0) / (H.length || 1);
+      var bestV = Object.keys(byV).filter(function (v) { return byV[v].length >= 6 && v !== 'WSL Finals'; })
+        .map(function (v) { var L = byV[v]; return [v, L.reduce(function (a, h) { return a + (h.my || 0); }, 0) / L.length, L]; })
+        .sort(function (a, b) { return b[1] - a[1]; })[0];
+      if (bestV && bestV[1] > career + 0.5) add(76, f2(bestV[1]), 'Highest CT heat average anywhere is at ' + venueName(ctx, bestV[0]) + '.',
+          bestV[2].filter(function (h) { return h.place === 1; }).length + ' wins from ' + bestV[2].length + ' heats; career average ' + f2(career) + '.', 'CT heats');
+      Object.keys(byV).forEach(function (v) {
+        var L = byV[v];
+        if (L.length >= 4 && L.every(function (h) { return h.place === 1; })) add(73, L.length + '–0', 'Unbeaten in CT heats at ' + venueName(ctx, v) + '.', L.length + ' heats, ' + L.length + ' wins.', 'CT heats');
+      });
+      if (ctx.duels) {
+        var top = Object.keys(ctx.duels).map(function (i) { return [HEATS_ATH.names[i], ctx.duels[i]]; }).sort(function (a, b) { return b[1].length - a[1].length; })[0];
+        if (top && top[1].length >= 5) {
+          var ww = top[1].filter(function (x) { return x.won; }).length, ll = top[1].length - ww;
+          add(50, ww + '–' + ll, top[0] + ' is the rival met most' + (ww > ll ? ', and ' + (ctx.reg.gender === 'w' ? 'she' : 'he') + ' leads.' : ww < ll ? ', and ' + (ctx.reg.gender === 'w' ? 'she' : 'he') + ' trails.' : ', dead level.'),
+              top[1].length + ' two-surfer CT heats.', 'CT head-to-head');
+        }
+      }
+    }
+    return P.sort(function (a, b) { return b.score - a.score; }).slice(0, 6);
+  }
+  function pointsHtml(P) {
+    if (!P.length) return '<div class="pf-empty">Not enough results yet for talking points.</div>';
+    return P.map(function (p) {
+      return '<div class="pf-point"><div class="pf-point-big">' + esc(p.big) + '</div><div><div class="pf-point-h">' + esc(p.head) + '</div>'
+        + (p.sub ? '<div class="pf-point-s">' + esc(p.sub) + '</div>' : '') + '<div class="pf-point-src">' + esc(p.src) + '</div></div></div>';
+    }).join('');
+  }
+  function venueName(ctx, tab) {
+    var e = entries(ctx.reg, 'CT').filter(function (x) { return x.tab === tab; })[0];
+    return e ? e.venue : tab;
+  }
+
+  // ── One competition: overview ───────────────────────────────────────────────
+  function overview(ctx, sc) {
+    var reg = ctx.reg, E = entries(reg, sc), st = stats(E), html = '';
+    if (TOURS[sc]) {
+      var S = seasons(reg, sc), full = S.filter(function (x) { return !x.wc && !x.live; });
+      var D = ds(sc), a = D.athletes[((reg.sources || {})[sc] || [])[0]] || {}, wc = (a.stats || {}).wc;
+      var best = full.length ? Math.min.apply(null, full.map(function (x) { return x.rank; })) : null;
+      var own = E.filter(function (e) { return e.tier === sc; }), ow = own.filter(function (e) { return e.place === 1; });
+      var b = [];
+      if (wc) b.push({ l: sc === 'LT' ? 'World longboard titles' : 'World titles', v: wc, s: S.filter(function (x) { return x.rank === 1 && !x.live; }).map(function (x) { return x.yr; }).join(', '), c: 'gold' });
+      else b.push({ l: 'Seasons', v: S.filter(function (x) { return !x.wc; }).length, s: span(S.filter(function (x) { return !x.wc; }).map(function (x) { return x.yr; })) + (S.length && S[0].live ? ' (to date)' : '') });
+      b.push({ l: 'Event wins', v: ow.length || '—', s: ow.length ? span(ow.map(function (e) { return e.year; })) : 'best ' + ord(stats(own).best), c: ow.length ? 'gold' : '' });
+      b.push({ l: 'Best rank', v: best ? ord(best) : '—', s: full.filter(function (x) { return x.rank === best; }).map(function (x) { return x.yr; }).join(', ') });
+      b.push({ l: 'Avg rank', v: full.length ? (full.reduce(function (t, x) { return t + x.rank; }, 0) / full.length).toFixed(1) : '—', s: full.length + ' full season' + (full.length !== 1 ? 's' : '') });
+      if (sc === 'CT') {
+        b.push({ l: 'Heat win rate', v: '…', s: 'from WSL heat data', id: 'hrate' });
+        b.push({ l: 'Avg heat total', v: '…', s: '', id: 'havg' });
+      } else {
+        b.push({ l: 'Finals', v: own.filter(function (e) { return e.place <= 2; }).length, s: '1st or 2nd' });
+        b.push({ l: 'Events', v: own.length, s: span(own.map(function (e) { return e.year; })) });
+      }
+      html += boxes(b);
+      var L = latestSeason(reg, sc);
+      var strip = L ? card(L.yr + ' season, event by event', tiles(L.season.events.filter(function (k) { return L.row.placings[k] != null; }).map(function (k) {
+        return { src: sc, place: Number(L.row.placings[k]), year: k, venue: '', event: k };
+      }), { top: function (e) { return e.year; }, sub: function () { return ''; } }) + '<div class="pf-note">' + (S[0] && S[0].live && S[0].yr === L.yr ? 'Ranked ' + ord(S[0].rank) + ', season in progress.' : 'Finished ' + ord((S.filter(function (x) { return x.yr === L.yr; })[0] || {}).rank) + '.') + '</div>') : '';
+      html += '<div class="pf-row">' + card(LONG[sc] + ' ranking by season', rankChart(S), ' style="flex:1 1 420px"') + (strip ? '<div style="flex:1 1 420px;min-width:0">' + strip + '</div>' : '') + '</div>';
+      if (ow.length) html += card(NAME[sc] + ' wins (' + ow.length + ')', winsList(ctx, sc, ow));
+      return html;
+    }
+    var meds = {};
+    E.forEach(function (e) { var m = medal(sc, e.place); if (m) meds[m] = (meds[m] || 0) + 1; });
+    var bl = [];
+    if (QPT[sc]) {
+      bl.push({ l: 'Wins', v: st.wins.length || '—', s: st.wins.length ? span(st.wins.map(function (e) { return e.year; })) : '', c: st.wins.length ? 'gold' : '' });
+      bl.push({ l: 'Finals', v: st.finals, s: '1st or 2nd' });
+      bl.push({ l: 'Best result', v: ord(st.best), s: E.filter(function (e) { return e.place === st.best; }).length + '×' });
+      bl.push({ l: 'Events', v: st.events, s: span(st.years) });
+      bl.push({ l: 'Seasons', v: st.years.length, s: '' });
+      bl.push({ l: 'Avg finish', v: st.avg ? st.avg.toFixed(1) : '—', s: 'all events' });
+    } else {
+      bl.push({ l: 'Appearances', v: st.events, s: span(st.years) });
+      bl.push({ l: 'Best finish', v: medal(sc, st.best) || ord(st.best), s: E.filter(function (e) { return e.place === st.best; }).map(function (e) { return e.year; }).join(', '), c: st.best === 1 ? 'gold' : '' });
+      bl.push({ l: 'Medals', v: Object.keys(meds).reduce(function (t, k) { return t + meds[k]; }, 0) || '—', s: Object.keys(meds).map(function (k) { return meds[k] + ' ' + k.toLowerCase(); }).join(', ') });
+      bl.push({ l: 'Avg finish', v: st.avg ? st.avg.toFixed(1) : '—', s: E.length + ' result' + (E.length !== 1 ? 's' : '') });
+      var divs = uniq(E.map(function (e) { return e.div; }).filter(Boolean));
+      if (divs.length) bl.push({ l: divs.length > 1 ? 'Divisions' : 'Division', v: divs.length > 1 ? divs.length : divs[0], s: divs.length > 1 ? divs.join(', ') : '' });
+      var D = ds(sc);
+      if (D && D.teams) {
+        var tr = E.map(function (e) { var t = D.teams.find(function (x) { return x.nation === e.nation; }); return t && t.results ? t.results[e.eid] : null; }).filter(Boolean);
+        if (tr.length) bl.push({ l: 'Team best', v: ord(Math.min.apply(null, tr)), s: 'nation ranking', c: Math.min.apply(null, tr) === 1 ? 'gold' : '' });
+      }
+      if (bl.length < 6) bl.push({ l: 'Years', v: span(st.years), s: st.years.length + ' season' + (st.years.length !== 1 ? 's' : '') });
+    }
+    html += boxes(bl);
+    html += card('Results, newest first', tiles(E.slice(0, 18), { top: function (e) { return e.year + (e.div && !QPT[sc] ? ' · ' + e.div : ''); }, sub: function (e) { return QPT[sc] ? e.tier + ' · ' + e.venue : e.venue; } }));
+    if (st.wins.length && QPT[sc]) html += card('Wins (' + st.wins.length + ')', winsList(ctx, sc, st.wins));
+    return html;
+  }
+  function winsList(ctx, sc, W) {
+    return '<ul class="pf-wins">' + W.map(function (e) {
+      return '<li><span class="y">' + e.year + '</span>' + (e.url ? '<a href="' + esc(e.url) + '" target="_blank" rel="noopener">' + esc(e.event) + '</a>' : '<span>' + esc(e.event) + '</span>')
+        + '<span class="d">' + esc([QPT[sc] ? e.tier : '', e.venue].filter(Boolean).join(' · ')) + '</span></li>';
+    }).join('') + '</ul>';
+  }
+  function seasonsPane(ctx, sc) {
+    if (sc === 'CT') return card('Year-by-year rankings', ctx.ctRankChips || '') + (ctx.ctSeasonProg || '') + (ctx.ctRookieHtml ? card('', ctx.ctRookieHtml) : '');
+    var reg = ctx.reg, fn = sc === 'CS' ? buildCSSection : buildLTSection;
+    return legacy(regEach(reg, sc, function (n) { return fn(n, true); }));
+  }
+
+  // ── Venues: one row per venue, a column per season ──────────────────────────
+  function venuesPane(ctx, sc) {
+    var E = entries(ctx.reg, sc);
+    if (!E.length) return '<div class="pf-empty">No results with a venue.</div>';
+    var years = uniq(E.map(function (e) { return e.year; })).sort(function (a, b) { return b - a; }).slice(0, 8).reverse();
+    var rows = {};
+    E.forEach(function (e) { if (!e.vkey) return; (rows[e.vkey] = rows[e.vkey] || []).push(e); });
+    var keys = Object.keys(rows).sort(function (a, b) {
+      return Math.max.apply(null, rows[b].map(function (e) { return e.year; })) - Math.max.apply(null, rows[a].map(function (e) { return e.year; })) || rows[b].length - rows[a].length;
+    });
+    var ct = sc === 'CT';
+    var head = '<tr><th>Venue</th>' + years.map(function (y) { return '<th class="c">' + y + '</th>'; }).join('')
+      + '<th class="c sep">Starts</th><th class="c">Wins</th><th class="c">Best</th><th class="c">Avg</th>'
+      + (ct ? '<th class="c sep">Heats</th><th class="c">Won</th><th>Heat win rate</th><th class="c">Avg total</th>' : '') + '</tr>';
+    var body = keys.map(function (k) {
+      var L = rows[k], st = stats(L), lab = L[0];
+      var cells = years.map(function (y) {
+        var here = L.filter(function (e) { return e.year === y; });
+        if (!here.length) return '<td class="c"><span class="pf-cell none">·</span></td>';
+        var b = Math.min.apply(null, here.map(function (e) { return e.place; }));
+        return '<td class="c"><span class="pf-cell ' + pcls(b) + '" title="' + esc(here.map(function (e) { return e.event + ': ' + ord(e.place); }).join('\n')) + '">' + b + (here.length > 1 ? '<sup>' + here.length + '</sup>' : '') + '</span></td>';
+      }).join('');
+      return '<tr data-vkey="' + esc(k) + '"' + (ct ? ' data-tab="' + esc(lab.tab) + '"' : '') + '><td class="v">' + vbtn(ctx.uid, sc, lab) + '</td>' + cells
+        + '<td class="c sep">' + L.length + '</td><td class="c' + (st.wins.length ? ' g' : '') + '">' + (st.wins.length || '—') + '</td><td class="c b">' + ord(st.best) + '</td><td class="c">' + st.avg.toFixed(1) + '</td>'
+        + (ct ? '<td class="c sep" data-h="n">…</td><td class="c" data-h="w"></td><td data-h="r"></td><td class="c" data-h="a"></td>' : '') + '</tr>';
+    }).join('');
+    return card('Every venue' + (years.length ? ', last ' + years.length + ' seasons' : ''),
+      '<div class="pf-legend"><span class="w">Win</span><span class="ru">Runner-up</span><span class="sf">Semi</span><span class="qf">Quarter</span><span class="out">Earlier</span></div>'
+      + '<div class="pf-scroll"><table class="pf-table pf-matrix"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>'
+      + '<div class="pf-note">Tap a venue for its sheet: every result there, ' + (ct ? 'every heat, ' : '') + 'who has won there, and your notes. '
+      + (ct ? 'Heat columns from WSL heat data, every CT start including wildcards.' : '') + ' A small number is how many events that season.</div>');
+  }
+
+  // ── Events list (QS, Pro Junior, ISA, Games) ────────────────────────────────
+  function eventsPane(ctx, sc) {
+    var reg = ctx.reg, E = entries(reg, sc), D = ds(sc), team = D && D.teams;
+    var rows = E.map(function (e) {
+      var m = medal(sc, e.place), t = team ? (team.find(function (x) { return x.nation === e.nation; }) || {}).results : null;
+      return '<tr><td class="b">' + e.year + '</td><td>' + (e.url ? '<a href="' + esc(e.url) + '" target="_blank" rel="noopener">' + esc(e.event) + '</a>' : esc(e.event))
+        + (QPT[sc] ? '<div class="pf-sm">' + esc(e.tier) + '</div>' : '') + '</td><td>' + (e.vkey ? vbtn(ctx.uid, sc, e) : esc(e.venue)) + '</td>'
+        + (QPT[sc] ? '' : '<td>' + esc(e.div || '') + '</td>')
+        + '<td><span class="pf-cell ' + pcls(e.place) + '">' + e.place + '</span>' + (m ? ' <span class="pf-medal ' + m.toLowerCase() + '">' + m + '</span>' : '') + '</td>'
+        + (team ? '<td class="c">' + (t && t[e.eid] ? ord(t[e.eid]) : '—') + '</td>' : '') + '</tr>';
+    }).join('');
+    var old = '';
+    try {
+      if (QPT[sc]) old = regEach(reg, sc, function (n) { return buildQPCard(n, QPT[sc]); });
+      else if (sc === 'WJSC') old = regEach(reg, sc, function (n) { return buildISAWjSection(n, true, true); });
+      else if (sc === 'WLC') old = regEach(reg, sc, function (n) { return buildISAWlcSection(n, true, true); });
+      else if (sc === 'SUP') old = regEach(reg, sc, function (n) { return buildISASUPSection(n, true, true); });
+      else if (sc === 'WPSC') old = regEach(reg, sc, function (n) { return buildISAWpscSection(n, true, true); });
+      else if (sc === 'Olympics') old = regEach(reg, sc, function (n) { return regStripTitle(buildOlympicsSection(n)); });
+      else if (sc === 'PanAm') old = regEach(reg, sc, buildRegPanAmCard);
+      else if (sc === 'AsianGames') old = regEach(reg, sc, buildRegAgCard);
+    } catch (e) { console.warn('[profile] full record', sc, e); }
+    return card('Every event', '<div class="pf-scroll"><table class="pf-table"><thead><tr><th>Year</th><th>Event</th><th>Venue</th>' + (QPT[sc] ? '' : '<th>Division</th>')
+      + '<th>Finish</th>' + (team ? '<th class="c">Team</th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+      + (team ? '<div class="pf-note">Team = the nation\'s overall ranking at that event.</div>' : ''))
+      + (old ? '<details class="pf-more"><summary>Full record (previous layout)</summary>' + legacy(old) + '</details>' : '');
+  }
+  function teamPane(ctx, sc) {
+    var D = ds(sc), E = entries(ctx.reg, sc);
+    if (!D || !D.teams) return '<div class="pf-empty">No team results.</div>';
+    var seen = {};
+    return E.filter(function (e) { var k = e.eid + e.nation; return seen[k] ? false : (seen[k] = 1); }).map(function (e) {
+      var t = D.teams.find(function (x) { return x.nation === e.nation; }), rk = t && t.results ? t.results[e.eid] : null;
+      var mates = D.athletes.filter(function (a) { return a.country === e.nation && a.results && a.results[e.eid] != null; })
+        .map(function (a) { return [a.name, Number(a.results[e.eid]), a.div_label || (a.gender === 'women' ? 'Women' : a.gender === 'men' ? 'Men' : '')]; })
+        .sort(function (a, b) { return a[1] - b[1]; });
+      return card(esc(e.year + ' · ' + e.venue + ' · ' + e.nation) + (rk ? ' <span class="pf-medal ' + (medal(sc, rk) || 'none').toLowerCase() + '">Team ' + ord(rk) + '</span>' : ''),
+        '<table class="pf-table"><tbody>' + mates.map(function (m) {
+          var me = ((ctx.reg.sources || {})[sc] || []).indexOf(m[0]) >= 0;
+          return '<tr' + (me ? ' class="me"' : '') + '><td class="b">' + esc(m[0]) + '</td><td>' + esc(m[2]) + '</td><td class="c"><span class="pf-cell ' + pcls(m[1]) + '">' + m[1] + '</span></td></tr>';
+        }).join('') + '</tbody></table>');
+    }).join('') || '<div class="pf-empty">No team results.</div>';
+  }
+
+  // ── Venue sheet ─────────────────────────────────────────────────────────────
+  function sheet(uid, sc, key, level) {
+    var ctx = CTX[uid];
+    if (!ctx) return;
+    var grp = ORG[sc];
+    show(uid, 'sheet:' + grp + ':' + key + ':' + (level || ''), function () { return sheetHtml(ctx, sc, key, level); });
+    var root = document.getElementById(uid);
+    root.querySelectorAll('.pf-tab').forEach(function (b) { b.classList.toggle('on', b.textContent === 'Venues'); });
+    root.scrollIntoView && root.querySelector('.pf-tabs').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+  function sheetHtml(ctx, sc, key, level) {
+    var reg = ctx.reg, grp = ORG[sc], srcs = GROUPS.filter(function (g) { return g[0] === grp; })[0][1];
+    var all = [];
+    srcs.forEach(function (s) { entries(reg, s).forEach(function (e) { if (e.vkey === key) all.push(e); }); });
+    // a Challenger event run as a QS 6,000 is in both the CS sheet and the QS
+    // pages: count it once, as the Challenger result
+    var csQs = {};
+    all.forEach(function (e) { if (e.src === 'CS' && /QS/.test(e.tier)) csQs[e.year + '|' + e.place] = 1; });
+    all = all.filter(function (e) { return !(e.src === 'QS' && /6,000/.test(e.tier) && csQs[e.year + '|' + e.place]); })
+      .sort(function (a, b) { return b.year - a.year || a.place - b.place; });
+    var levels = uniq(all.map(function (e) { return e.src; }));
+    var E = level ? all.filter(function (e) { return e.src === level; }) : all;
+    var st = stats(E), lab = (all[0] || {}).venue || key, loc = (all.filter(function (e) { return e.loc; })[0] || {}).loc || '';
+    var hasCT = E.some(function (e) { return e.src === 'CT'; });
+    var b = [{ l: 'Starts here', v: E.length, s: span(st.years) },
+             { l: 'Wins', v: st.wins.length || '—', s: st.wins.map(function (e) { return e.year; }).join(', '), c: st.wins.length ? 'gold' : '' },
+             { l: 'Best', v: ord(st.best), s: E.filter(function (e) { return e.place === st.best; }).map(function (e) { return e.year; }).join(', ') }];
+    if (hasCT) b.push({ l: 'CT heats', v: '…', s: '', id: 'vh' }, { l: 'Heat win rate', v: '…', s: '', id: 'vr' }, { l: 'Avg heat total', v: '…', s: '', id: 'va' });
+    else b.push({ l: 'Finals', v: st.finals, s: '1st or 2nd' }, { l: 'Avg finish', v: st.avg ? st.avg.toFixed(1) : '—', s: E.length + ' results' },
+                { l: 'Levels', v: uniq(E.map(function (e) { return e.src; })).length, s: uniq(E.map(function (e) { return NAME[e.src]; })).join(', ') });
+    var lv = levels.length > 1 ? '<div class="pf-levels" role="group" aria-label="Level">' + [''].concat(levels).map(function (s) {
+      return '<button type="button" class="pf-level' + ((level || '') === s ? ' on' : '') + '" aria-pressed="' + ((level || '') === s) + '" onclick="Prof.sheet(' + q(ctx.uid) + ',' + q(sc) + ',' + q(key) + ',' + q(s) + ')">' + esc(s ? NAME[s] : 'All levels') + '</button>';
+    }).join('') + '</div>' : '';
+    var html = '<div class="pf-sheet-head"><button type="button" class="pf-back" onclick="Prof.go(' + q(ctx.uid) + ',' + q(sc) + ',\'Venues\')">← Back to ' + esc(NAME[sc]) + ' venues</button>'
+      + '<div class="pf-eyebrow dark">Venue sheet · ' + esc(grp) + '</div><h2 class="pf-sheet-name">' + esc(lab) + '</h2>'
+      + (loc ? '<div class="pf-sub dark">' + esc(loc) + '</div>' : '') + lv + '</div>';
+    html += boxes(b);
+    html += card('Finish by year', tiles(E, { top: function (e) { return e.year + ' · ' + (e.tier === e.src ? NAME[e.src] : e.tier) + (e.div ? ' · ' + e.div : ''); }, sub: function (e) { return e.event.replace(/^\d{4}\s+/, ''); } }));
+    if (hasCT) html += card('Every CT heat here', '<div class="pf-async" data-vheats="' + esc((E.filter(function (e) { return e.src === 'CT'; })[0] || {}).tab) + '"><div class="pf-empty">Loading heat data…</div></div>');
+    html += '<div class="pf-row">' + '<div style="flex:999 1 520px;min-width:0">' + history(ctx, E, key) + '</div>'
+      + '<div style="flex:1 1 320px;min-width:0">' + (hasCT ? card('Venue records (CT)', '<div class="pf-async" data-vrec="' + esc((E.filter(function (e) { return e.src === 'CT'; })[0] || {}).tab) + '"><div class="pf-empty">Loading…</div></div>') : '')
+      + elsewhere(ctx, grp, key) + notesCard(ctx, all, key, lab) + '</div></div>';
+    return html;
+  }
+  // the athlete's results at the same place in the other organisations
+  // (Teahupo'o: CT on the WSL sheet, the Olympics on the Games sheet)
+  function elsewhere(ctx, grp, key) {
+    var rows = [];
+    GROUPS.forEach(function (g) {
+      if (!g[0] || g[0] === grp) return;
+      g[1].forEach(function (s) {
+        if (!ctx.scopes || ctx.scopes.indexOf(s) < 0) return;
+        entries(ctx.reg, s).forEach(function (e) { if (e.vkey === key) rows.push(e); });
+      });
+    });
+    if (!rows.length) return '';
+    return card('Also here', rows.map(function (e) {
+      var m = medal(e.src, e.place);
+      return '<div class="pf-also"><span class="pf-cell ' + pcls(e.place) + '">' + e.place + '</span><span><b>' + esc(e.event) + '</b>'
+        + (m ? ' <span class="pf-medal ' + m.toLowerCase() + '">' + m + '</span>' : '') + '<span class="pf-sm"> · ' + esc(LONG[e.src]) + '</span></span>'
+        + '<button type="button" class="pf-vlink" onclick="Prof.sheet(' + q(ctx.uid) + ',' + q(e.src) + ',' + q(key) + ')">Sheet →</button></div>';
+    }).join(''));
+  }
+  // who has won here, level by level, with the athlete's own result alongside
+  function history(ctx, E, key) {
+    var reg = ctx.reg, out = '';
+    uniq(E.map(function (e) { return e.src; })).forEach(function (s) {
+      var g = E.filter(function (e) { return e.src === s; })[0].g, rows = [];
+      if (TOURS[s]) {
+        var D = ds(s);
+        ((D.event_results || {})[g] || []).forEach(function (er) { if (vkey(er.tab) === key && er.winner) rows.push([er.year, er.winner, er.name]); });
+      } else if (QPT[s]) {
+        var Ev = qpEvents(QPT[s]), A = QSPJ_DATA.athletes;
+        Ev.forEach(function (ev) {
+          if (qpVenue(ev)[0] !== key || (ev[3] === 'w') !== (g === 'women')) return;
+          var f = ev[9] || [];
+          for (var i = 0; i < f.length; i += 3) if (f[i + 1] === 1) { rows.push([ev[1], A[f[i]] ? A[f[i]][0] : '', ev[4] + ' · ' + ev[5]]); break; }
+        });
+      } else {
+        var DI = ds(s), divs = uniq(E.filter(function (e) { return e.src === s; }).map(function (e) { return e.div; }));
+        (DI.events || []).forEach(function (ev) {
+          if (vkey(ev.location || ev.venue) !== key) return;
+          divs.forEach(function (dv) {
+            var w = DI.athletes.filter(function (a) { return a.results && Number(a.results[ev.id]) === 1 && (a.div_label || a.disc_label || '') === dv && (!dv ? a.gender === g : true); });
+            var t = DI.teams ? DI.teams.filter(function (x) { return x.results && x.results[ev.id] === 1; })[0] : null;
+            if (w.length) rows.push([ev.year, w.map(function (a) { return a.name + ' (' + a.country + ')'; }).join(', '), (dv ? dv : '') + (t ? (dv ? ' · ' : '') + 'team title: ' + t.nation : '')]);
+          });
+        });
+      }
+      if (!rows.length) return;
+      rows.sort(function (a, b) { return b[0] - a[0]; });
+      var mine = {}, counts = {};
+      E.filter(function (e) { return e.src === s; }).forEach(function (e) { mine[e.year] = (mine[e.year] ? mine[e.year] + ', ' : '') + ord(e.place); });
+      rows.forEach(function (r) { r[1].split(', ').forEach(function (n) { counts[n] = (counts[n] || 0) + 1; }); });
+      var most = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; })[0];
+      var names = (reg.sources || {})[s] || [];
+      out += card('Who has won here · ' + esc(LONG[s]) + ' (' + (g === 'men' ? 'men' : 'women') + ')',
+        (counts[most] > 1 ? '<div class="pf-note top">Most wins: <b>' + esc(most) + '</b>, ' + counts[most] + ' · ' + rows.length + ' events in the archive, ' + esc(span(rows.map(function (r) { return r[0]; }))) + '</div>'
+                          : '<div class="pf-note top">' + rows.length + ' events in the archive, ' + esc(span(rows.map(function (r) { return r[0]; }))) + '</div>')
+        + '<div class="pf-scroll"><table class="pf-table"><thead><tr><th>Year</th><th>Winner</th><th>Event</th><th>' + esc(reg.name.split(' ')[0]) + '</th></tr></thead><tbody>'
+        + rows.slice(0, 30).map(function (r) {
+            var me = names.some(function (n) { return r[1].indexOf(n) === 0; });
+            return '<tr' + (me ? ' class="me"' : '') + '><td class="b">' + r[0] + '</td><td class="b">' + esc(r[1]) + '</td><td class="pf-sm">' + esc(r[2]) + '</td><td class="b">' + esc(mine[r[0]] || '') + '</td></tr>';
+          }).join('') + '</tbody></table></div>' + (rows.length > 30 ? '<div class="pf-note">The latest 30 shown.</div>' : ''));
+    });
+    return out;
+  }
+  // notes: CT, CS and LT keep the keys their event notes always used, so
+  // notes written on the old layout show here; other levels get one per venue
+  function notesCard(ctx, all, key, lab) {
+    var base = ctx.reg.name, out = '';
+    var get = function (k) { var v = localStorage.getItem(k); return v !== null ? v : ((typeof APP_DATA !== 'undefined' && APP_DATA[k]) || ''); };
+    var boxesN = [], seen = {};
+    all.forEach(function (e) {
+      if (!TOURS[e.src]) return;
+      var pre = e.src === 'CT' ? '' : e.src === 'CS' ? 'cs_' : 'lt_', k = pre + 'evnotes__' + e.name + '__' + e.tab;
+      if (!seen[k]) { seen[k] = 1; boxesN.push([k, NAME[e.src] + ' · ' + e.tab.replace(/\s+QS$/, '') + (/\sQS$/.test(e.tab) ? ' (QS)' : '')]); }
+    });
+    var vk = 'evnotes__' + base + '__@' + key;
+    if (!boxesN.length || all.some(function (e) { return !TOURS[e.src]; })) boxesN.push([vk, 'This venue']);
+    out = boxesN.map(function (b, i) {
+      var id = ctx.uid + '-n-' + i;
+      return '<label class="pf-h" for="' + id + '">' + esc(boxesN.length > 1 ? 'Notes · ' + b[1] : 'Notes for ' + lab) + '</label>'
+        + '<textarea class="pf-notes" id="' + id + '" placeholder="Notes for ' + esc(lab) + '…" oninput="Prof.saveNote(' + q(b[0]) + ',this.value);autoResizeNotes(this)">' + esc(get(b[0])) + '</textarea>';
+    }).join('');
+    return card('', out);
+  }
+  function saveNote(k, v) {
+    localStorage.setItem(k, v);
+    if (typeof _fbSet === 'function') _fbSet(k, v);
+  }
+
+  // ── Heat data, when it arrives ──────────────────────────────────────────────
+  function after(ctx, el, key) {
+    if (!ctx || !window.Heats || !Heats.load) return;
+    var needs = el.querySelector('[data-box="hrate"],[data-box="havg"],[data-heats],[data-vheats],[data-vrec],[data-h],[data-points],[data-box="vh"]');
+    if (!needs || !ctx.ctName) return;
+    var name = ctx.ctName;
+    Heats.load('ct-athletes.js').then(function () {
+      var s = HEATS_ATH.stats[name];
+      if (!ctx.heats) { ctx.heats = Heats.heatsOf(name).map(function (h) { var e = HEATS_ATH.events[h.ev] || []; h.tab = e[3]; h.year = e[0]; h.evName = e[1]; return h; }); ctx.duels = Heats.duelsOf(name); ctx.heatStats = s; }
+      fillHeats(ctx, el, s);
+    }).catch(function () {
+      el.querySelectorAll('[data-heats],[data-vheats]').forEach(function (x) { x.innerHTML = '<div class="pf-empty">The heat data could not be loaded.</div>'; });
+    });
+    if (el.querySelector('[data-vrec]')) Heats.load('ct-records.js').then(function () { fillRecords(ctx, el); }).catch(function () {});
+  }
+  function setBox(el, id, v, s) {
+    var b = el.querySelector('[data-box="' + id + '"]');
+    if (!b) return;
+    b.querySelector('.pf-box-v').textContent = v;
+    b.querySelector('.pf-box-s').textContent = s || '';
+    b.querySelector('.pf-box-s').title = s || '';
+  }
+  function fillHeats(ctx, el, s) {
+    var H = ctx.heats || [];
+    if (s) { setBox(el, 'hrate', pct(s[2], s[1]) + '%', s[2] + ' of ' + s[1] + ' heats'); setBox(el, 'havg', f2(s[3]), s[9] === s[10] ? s[9] : s[9] + '–' + s[10]); }
+    else { setBox(el, 'hrate', '—', 'no heat data'); setBox(el, 'havg', '—', ''); }
+    var pts = el.querySelector('[data-points]');
+    if (pts) pts.innerHTML = pointsHtml(points(ctx));
+    el.querySelectorAll('tr[data-tab]').forEach(function (tr) {
+      var L = H.filter(function (h) { return h.tab === tr.dataset.tab; }), w = L.filter(function (h) { return h.place === 1; }).length;
+      var c = function (k) { return tr.querySelector('[data-h="' + k + '"]'); };
+      if (!c('n')) return;
+      if (!L.length) { c('n').textContent = '—'; return; }
+      var r = pct(w, L.length), avg = L.reduce(function (t, h) { return t + (h.my || 0); }, 0) / L.length;
+      c('n').textContent = L.length; c('w').textContent = w;
+      c('r').innerHTML = '<span class="pf-rate"><span style="width:' + r + '%" class="' + (r >= 70 ? 'hi' : r >= 50 ? 'mid' : 'lo') + '"></span></span><b>' + r + '%</b>';
+      c('a').textContent = f2(avg);
+    });
+    var vh = el.querySelector('[data-vheats]');
+    if (vh) {
+      var tab = vh.dataset.vheats, L = H.filter(function (h) { return h.tab === tab; }).sort(function (a, b) { return b.ev - a.ev; });
+      var w = L.filter(function (h) { return h.place === 1; }).length, best = L.reduce(function (m, h) { return !m || h.my > m.my ? h : m; }, null);
+      setBox(el, 'vh', L.length || '—', w + ' won');
+      setBox(el, 'vr', L.length ? pct(w, L.length) + '%' : '—', s ? 'career ' + pct(s[2], s[1]) + '%' : '');
+      setBox(el, 'va', L.length ? f2(L.reduce(function (t, h) { return t + (h.my || 0); }, 0) / L.length) : '—', best ? 'best ' + f2(best.my) + ', ' + best.year + ' ' + best.round : '');
+      vh.innerHTML = L.length ? '<div class="pf-scroll"><table class="pf-table"><tbody>' + L.map(function (h) {
+        return '<tr><td class="b d">' + h.year + '</td><td>' + esc(h.round) + '</td><td><span class="pf-res ' + (h.place === 1 ? 'w' : '') + '">' + (h.place === 1 ? 'W' : h.place) + '</span></td>'
+          + '<td class="b">' + f2(h.my) + '</td><td class="pf-sm">' + h.others.map(function (o) { return esc(o[0]) + ' ' + f2(o[1]); }).join(' · ') + '</td></tr>';
+      }).join('') + '</tbody></table></div><div class="pf-note">From WSL heat data. A heat with no scoring opponent is not listed.</div>'
+        : '<div class="pf-empty">No WSL heat data at this venue.</div>';
+    }
+    var hp = el.querySelector('[data-heats]');
+    if (hp) {
+      if (!s) { hp.innerHTML = '<div class="pf-empty">No heat data for this surfer.</div>'; return; }
+      if (hp.dataset.heats === 'h2h') { hp.innerHTML = Heats.cardHtml(ctx.ctName, 'h2h'); return; }
+      var order = ['Seeding Round', 'Opening Round', 'Round 1', 'Elimination Round', 'Round 2', 'Round 3', 'Round of 32', 'Round 4', 'Round 5', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
+      var byR = {};
+      H.forEach(function (h) { (byR[h.round] = byR[h.round] || []).push(h); });
+      var rounds = Object.keys(byR).filter(function (r) { return byR[r].length >= 3; }).sort(function (a, b) { return (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99); });
+      var byY = {};
+      H.forEach(function (h) { (byY[h.year] = byY[h.year] || []).push(h); });
+      hp.innerHTML = Heats.cardHtml(ctx.ctName, 'tiles')
+        + '<div class="pf-row">' + card('Heat win rate by round', '<div class="pf-rounds">' + rounds.map(function (r) {
+            var L = byR[r], w = L.filter(function (h) { return h.place === 1; }).length, p = pct(w, L.length);
+            return '<div class="pf-round"><span class="n">' + esc(r) + '</span><span class="pf-rate"><span style="width:' + p + '%" class="mid"></span></span><b>' + p + '%</b><span class="d">' + w + ' of ' + L.length + '</span></div>';
+          }).join('') + '</div><div class="pf-note">Rounds with at least three heats.</div>', ' style="flex:1 1 420px"')
+        + card('Season by season', '<table class="pf-table"><thead><tr><th>Season</th><th class="c">Heats</th><th class="c">Won</th><th class="c">Rate</th><th class="c">Avg total</th></tr></thead><tbody>'
+            + Object.keys(byY).sort(function (a, b) { return b - a; }).map(function (y) {
+                var L = byY[y], w = L.filter(function (h) { return h.place === 1; }).length;
+                return '<tr><td class="b">' + y + '</td><td class="c">' + L.length + '</td><td class="c">' + w + '</td><td class="c b">' + pct(w, L.length) + '%</td><td class="c">' + f2(L.reduce(function (t, h) { return t + (h.my || 0); }, 0) / L.length) + '</td></tr>';
+              }).join('') + '</tbody></table>', ' style="flex:1 1 420px"') + '</div>';
+    }
+  }
+  function fillRecords(ctx, el) {
+    var box = el.querySelector('[data-vrec]');
+    if (!box || !window.HEATS_REC) return;
+    var v = (HEATS_REC.venues || {})[box.dataset.vrec], g = ctx.reg.gender === 'm' ? 'm' : 'w';
+    if (!v) { box.innerHTML = '<div class="pf-empty">No heat records for this venue.</div>'; return; }
+    var ev = function (r) { var e = HEATS_REC.events[r[2]]; return e ? e[0] : ''; };
+    var t = ((v.totals || {})[g] || []).slice(0, 5), w = ((v.waves || {})[g] || []).filter(function (r) { return r[0] === 10; });
+    box.innerHTML = '<table class="pf-table"><thead><tr><th>Best heat totals</th><th></th><th></th></tr></thead><tbody>' + t.map(function (r) {
+      return '<tr' + (r[1] === ctx.ctName ? ' class="me"' : '') + '><td class="b">' + f2(r[0]) + '</td><td>' + esc(r[1]) + '</td><td class="pf-sm">' + ev(r) + ' · ' + esc(r[3]) + '</td></tr>';
+    }).join('') + '</tbody></table>' + (w.length ? '<div class="pf-note">Perfect 10s here: ' + w.length + (w.length >= 60 ? '+' : '') + '.</div>' : '');
+  }
+
+  return { render: render, mount: mount, go: go, sheet: sheet, saveNote: saveNote, vkey: vkey, entries: entries, primary: primary, points: points,
+           _ctx: CTX };
 })();
 </script>
 </body>
