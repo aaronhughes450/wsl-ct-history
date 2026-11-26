@@ -150,7 +150,7 @@
   .athlete-list-section-header { padding: 6px 14px 5px; font-size: 0.5rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #94a3b8; background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
 
   /* ── Profile panel ── */
-  .profile-panel { background: var(--surface); border: 1px solid #e2e8f0; border-radius: 2px; padding: 28px 32px; min-height: 400px; }
+  .profile-panel { background: var(--surface); border: 1px solid #e2e8f0; border-radius: 2px; padding: 28px 32px; min-height: 400px; min-width: 0; }
   .ath-solo { max-width: 1100px; margin: 0 auto; }
   .reg-preview-note { font-size: 0.55rem; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; color: #b54708; margin-bottom: 10px; }
   .reg-link { display: inline-block; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #1f5fa8; text-decoration: none; margin: 2px 0 6px; }
@@ -780,6 +780,11 @@
   .pf-sub { font-size: 0.9rem; color: #cbd5e1; }
   .pf-sub.dark { color: var(--pf-dim); }
   .pf-tags { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .pf-ranks { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+  .pf-ranks-l { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #94a3b8; margin-right: 4px; }
+  .pf-rank { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.22); border-radius: 999px; background: rgba(255,255,255,0.06); white-space: nowrap; }
+  .pf-rank-t { font-size: 0.72rem; color: #cbd5e1; }
+  .pf-rank-n { font-size: 0.92rem; font-weight: 800; color: #fff; }
   .pf-scopes { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; padding: 12px 16px; background: #fff; border: 1px solid #e2e8f0; border-top: none; }
   .pf-group-l { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--pf-dim); margin-bottom: 5px; }
   .pf-group-b { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1650,7 +1655,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261126062754"></script>
+<script src="data.js?v=20261126073024"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261126133548" onerror="this.remove()"></script>
 <script src="registry.js?v=20261126133548" onerror="this.remove()"></script>
@@ -9433,6 +9438,46 @@ window.Prof = (function () {
     }
     return null;
   }
+  // where the surfer stands now on each WSL tour: the newest season on the
+  // season tabs for the CT, Challenger Series and Longboard Tour, and the
+  // WSL's current regional tables for the QS, Pro Junior and Longboard QS
+  function currentRanks(reg) {
+    var out = [], haveCT = false;
+    ['CT', 'CS', 'LT'].forEach(function (src) {
+      var D = ds(src);
+      if (!D || !D.tour_seasons || !D.athletes) return;
+      ((reg.sources || {})[src] || []).some(function (n) {
+        var a = D.athletes[n];
+        if (!a) return false;
+        var g = a.gender || gOf(reg);
+        var yrs = Object.keys(D.tour_seasons).filter(function (k) { return k.slice(5) === g; }).map(function (k) { return +k.slice(0, 4); });
+        if (!yrs.length) return false;
+        var yr = Math.max.apply(null, yrs), row = (D.tour_seasons[yr + '-' + g].athletes || []).find(function (x) { return x.name === n; });
+        var rk = row && (row.season_rank || row.rank), n_ev = row ? Object.keys(row.placings || {}).length : 0;
+        // one Challenger start by a surfer ranked on the CT is not a Challenger season
+        if (!rk || !n_ev || (src === 'CS' && haveCT && n_ev < 3)) return false;
+        if (src === 'CT') haveCT = true;
+        out.push({ s: src, label: yr + ' ' + NAME[src], rank: rk, title: yr + ' ' + LONG[src] + ' rankings, after ' + n_ev + ' event' + (n_ev !== 1 ? 's' : '') });
+        return true;
+      });
+    });
+    try {
+      if (typeof qpHasData === 'function' && qpHasData()) {
+        var Q = qpIndex(), I = qpRkIndex();
+        ['QS', 'PJ', 'LQS'].forEach(function (src) {
+          var best = null, t = src.toLowerCase();
+          ((reg.sources || {})[src] || []).forEach(function (n) {
+            (Q.nameIdx[n] || []).forEach(function (i) {
+              (I[i] || []).forEach(function (x) { if (x.t === t && x.c && (!best || x.y > best.y || (x.y === best.y && x.n > best.n))) best = x; });
+            });
+          });
+          if (best) out.push({ s: src, label: NAME[src] + ' ' + qpRegionName(best.r), rank: best.rank,
+                               title: qpShortLabel(best.l) + ' ' + LONG[src] + ', ' + qpRegionName(best.r) + ' — as of ' + (best.a || '?') });
+        });
+      }
+    } catch (e) { console.warn('[profile] current ranks', e); }
+    return out;
+  }
   function stats(E) {
     var places = E.map(function (e) { return e.place; });
     var events = uniq(E.map(function (e) { return e.eid || e.event; }));
@@ -9539,6 +9584,12 @@ window.Prof = (function () {
       +   (ctx.primary ? '<div class="pf-eyebrow">Primary: ' + esc(LONG[ctx.primary]) + ' · ' + (g === 'men' ? 'Men' : 'Women') + '</div>' : '')
       +   '<div class="profile-name pf-name">' + esc(reg.name) + '</div>'
       +   (sub ? '<div class="pf-sub">' + sub + '</div>' : '')
+      +   (function () {
+            var R = currentRanks(reg);
+            return R.length ? '<div class="pf-ranks" aria-label="Current rankings"><span class="pf-ranks-l">Current rankings</span>'
+              + R.map(function (r) { return '<span class="pf-rank" data-sc="' + r.s + '" title="' + esc(r.title) + '"><span class="pf-rank-t">' + esc(r.label) + '</span><span class="pf-rank-n">' + esc(ord(r.rank)) + '</span></span>'; }).join('')
+              + '</div>' : '';
+          })()
       +   (ctx.tags ? '<div class="profile-meta pf-tags">' + ctx.tags + '</div>' : '')
       + '</header>'
       + '<nav class="pf-scopes" aria-label="Competition">' + groups + '</nav>'
