@@ -1667,7 +1667,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261126121102"></script>
+<script src="data.js?v=20261126132559"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261126133548" onerror="this.remove()"></script>
 <script src="registry.js?v=20261126133548" onerror="this.remove()"></script>
@@ -9028,6 +9028,12 @@ window.Heats = (function () {
     if (more && (q || all)) more.remove();
   }
   // the same card for another tour's heats ('cs' or 'lt'); its athletes file must be loaded
+  // run fn with another tour's heats in view (heatsOf, duelsOf, cardHtml then read that tour)
+  function forTour(t, fn) {
+    cur = t;
+    try { return fn(); }
+    finally { cur = 'ct'; }
+  }
   function cardFor(t, name, part) {
     cur = t;
     try { return A() ? cardHtml(name, part) : '<div class="ht-note">No heat data for this surfer.</div>'; }
@@ -9060,12 +9066,12 @@ window.Heats = (function () {
   }
   // every heat a surfer scored in, rebuilt from the meetings: {ev, round, my, place, others: [[name, total, place]]}
   function heatsOf(name) {
-    var me = HEATS_ATH.names.indexOf(name), by = {}, out = [];
+    var me = A().names.indexOf(name), by = {}, out = [];
     if (me < 0) return out;
-    HEATS_ATH.meetings.forEach(function (m) {
+    A().meetings.forEach(function (m) {
       var mine, other;
-      if (m[2] === me) { mine = [m[4], m[6]]; other = [HEATS_ATH.names[m[3]], m[5], m[7]]; }
-      else if (m[3] === me) { mine = [m[5], m[7]]; other = [HEATS_ATH.names[m[2]], m[4], m[6]]; }
+      if (m[2] === me) { mine = [m[4], m[6]]; other = [A().names[m[3]], m[5], m[7]]; }
+      else if (m[3] === me) { mine = [m[5], m[7]]; other = [A().names[m[2]], m[4], m[6]]; }
       else return;
       var k = m[0] + '|' + m[1] + '|' + mine[0];
       if (!by[k]) { by[k] = { ev: m[0], round: m[1], my: mine[0], place: mine[1], others: [] }; out.push(by[k]); }
@@ -9262,7 +9268,7 @@ window.Heats = (function () {
 
   return { results: results, profile: profile, toggleHeat: toggleHeat, openCard: openCard, filterH2H: filterH2H,
            records: records, setRecord: setRecord, venueHeats: venueHeats, h2h: h2h, season: season, sortSeason: sortSeason,
-           load: load, db: db, loadFor: loadFor, cardFor: cardFor, heatsOf: heatsOf, duelsOf: duelsOf, cardHtml: cardHtml };
+           load: load, db: db, loadFor: loadFor, cardFor: cardFor, forTour: forTour, heatsOf: heatsOf, duelsOf: duelsOf, cardHtml: cardHtml };
 })();
 </script>
 <script>
@@ -9798,31 +9804,37 @@ window.Prof = (function () {
         if (titles.length) add(62, 'Team', 'Part of ' + titles[0].nation + "'s team title at the " + LONG[s] + '.', uniq(titles.map(function (e) { return e.year; })).join(', ') + '.', LONG[s]);
       }
     });
-    if (ctx.heats) {
-      var H = ctx.heats, fin = H.filter(function (h) { return h.round === 'Final'; }), fw = fin.filter(function (h) { return h.place === 1; }).length;
-      var they = ctx.reg.gender === 'w' ? 'she' : 'he';
-      if (fin.length >= 3) add(88, fw + '/' + fin.length, 'Wins ' + pct(fw, fin.length) + '% of the CT finals ' + they + ' makes.', fin.length - fw + ' final' + (fin.length - fw !== 1 ? 's' : '') + ' lost.', 'CT heats');
+    var they = ctx.reg.gender === 'w' ? 'she' : 'he';
+    // T: the tour as it reads in a sentence; less: how far below the Championship Tour's a point is ranked
+    function heatPoints(H, duels, names, T, less, vname) {
+      var fin = H.filter(function (h) { return h.round === 'Final'; }), fw = fin.filter(function (h) { return h.place === 1; }).length;
+      if (fin.length >= 3) add(88 - less, fw + '/' + fin.length, 'Wins ' + pct(fw, fin.length) + '% of the ' + T + ' finals ' + they + ' makes.', fin.length - fw + ' final' + (fin.length - fw !== 1 ? 's' : '') + ' lost.', T + ' heats');
       var byV = {};
       H.forEach(function (h) { var v = h.tab; (byV[v] = byV[v] || []).push(h); });
       var career = H.reduce(function (a, h) { return a + (h.my || 0); }, 0) / (H.length || 1);
-      var bestV = Object.keys(byV).filter(function (v) { return byV[v].length >= 6 && v !== 'WSL Finals'; })
+      var bestV = Object.keys(byV).filter(function (v) { return byV[v].length >= 6 && v !== 'WSL Finals' && v !== 'Finals'; })
         .map(function (v) { var L = byV[v]; return [v, L.reduce(function (a, h) { return a + (h.my || 0); }, 0) / L.length, L]; })
         .sort(function (a, b) { return b[1] - a[1]; })[0];
-      if (bestV && bestV[1] > career + 0.5) add(76, f2(bestV[1]), 'Highest CT heat average anywhere is at ' + venueName(ctx, bestV[0]) + '.',
-          bestV[2].filter(function (h) { return h.place === 1; }).length + ' wins from ' + bestV[2].length + ' heats; career average ' + f2(career) + '.', 'CT heats');
+      if (bestV && bestV[1] > career + 0.5) add(76 - less, f2(bestV[1]), 'Highest ' + T + ' heat average anywhere is at ' + vname(bestV[0]) + '.',
+          bestV[2].filter(function (h) { return h.place === 1; }).length + ' wins from ' + bestV[2].length + ' heats; career average ' + f2(career) + '.', T + ' heats');
       Object.keys(byV).forEach(function (v) {
         var L = byV[v];
-        if (L.length >= 4 && L.every(function (h) { return h.place === 1; })) add(73, L.length + '–0', 'Unbeaten in CT heats at ' + venueName(ctx, v) + '.', L.length + ' heats, ' + L.length + ' wins.', 'CT heats');
+        if (L.length >= 4 && L.every(function (h) { return h.place === 1; })) add(73 - less, L.length + '–0', 'Unbeaten in ' + T + ' heats at ' + vname(v) + '.', L.length + ' heats, ' + L.length + ' wins.', T + ' heats');
       });
-      if (ctx.duels) {
-        var top = Object.keys(ctx.duels).map(function (i) { return [HEATS_ATH.names[i], ctx.duels[i]]; }).sort(function (a, b) { return b[1].length - a[1].length; })[0];
+      if (duels) {
+        var top = Object.keys(duels).map(function (i) { return [names[i], duels[i]]; }).sort(function (a, b) { return b[1].length - a[1].length; })[0];
         if (top && top[1].length >= 5) {
           var ww = top[1].filter(function (x) { return x.won; }).length, ll = top[1].length - ww;
-          add(50, ww + '–' + ll, top[0] + ' is the rival met most' + (ww > ll ? ', and ' + (ctx.reg.gender === 'w' ? 'she' : 'he') + ' leads.' : ww < ll ? ', and ' + (ctx.reg.gender === 'w' ? 'she' : 'he') + ' trails.' : ', dead level.'),
-              top[1].length + ' two-surfer CT heats.', 'CT head-to-head');
+          add(50 - less, ww + '–' + ll, top[0] + ' is the rival met most' + (ww > ll ? ', and ' + they + ' leads.' : ww < ll ? ', and ' + they + ' trails.' : ', dead level.'),
+              top[1].length + ' two-surfer ' + T + ' heats.', T + ' head-to-head');
         }
       }
     }
+    if (ctx.heats) heatPoints(ctx.heats, ctx.duels, window.HEATS_ATH ? HEATS_ATH.names : [], 'CT', 0, function (v) { return venueName(ctx, v); });
+    Object.keys(ctx.th || {}).forEach(function (t) {        // Challenger Series and Longboard Tour heats, once loaded
+      var X = ctx.th[t];
+      if (X && X.heats.length) heatPoints(X.heats, X.duels, X.names, t === 'cs' ? 'Challenger Series' : 'Longboard Tour', t === 'cs' ? 12 : 0, function (v) { return v; });
+    });
     return P.sort(function (a, b) { return b.score - a.score; }).slice(0, 6);
   }
   function pointsHtml(P) {
@@ -10120,12 +10132,27 @@ window.Prof = (function () {
   // ── Heat data, when it arrives ──────────────────────────────────────────────
   function after(ctx, el, key) {
     if (!ctx || !window.Heats || !Heats.load) return;
-    el.querySelectorAll('[data-theats]').forEach(function (x) {      // Challenger Series / Longboard Tour heats
-      if (x.dataset.done) return;
-      x.dataset.done = '1';
-      var t = x.dataset.tour, nm = x.dataset.name, part = x.dataset.theats;
-      Heats.loadFor(t, 'athletes').then(function () { x.innerHTML = Heats.cardFor(t, nm, part); })
-        .catch(function () { x.innerHTML = '<div class="pf-empty">The heat data could not be loaded.</div>'; });
+    ['CS', 'LT'].forEach(function (sc) {                              // Challenger Series / Longboard Tour heats
+      var t = sc.toLowerCase(), nm = heatName(ctx, sc);
+      var panes = [].slice.call(el.querySelectorAll('[data-theats][data-tour="' + t + '"]')), pts = el.querySelector('[data-points]');
+      if (!nm || (!panes.length && !pts)) return;
+      Heats.loadFor(t, 'athletes').then(function () {
+        ctx.th = ctx.th || {};
+        if (!ctx.th[t]) {
+          ctx.th[t] = Heats.forTour(t, function () {
+            var A = Heats.db(t).ATH;
+            return { names: A.names, duels: Heats.duelsOf(nm),
+                     heats: Heats.heatsOf(nm).map(function (h) { var e = A.events[h.ev] || []; h.tab = e[3]; h.year = e[0]; h.evName = e[1]; return h; }) };
+          });
+          var p2 = el.querySelector('[data-points]');
+          if (p2) p2.innerHTML = pointsHtml(points(ctx));
+        }
+        panes.forEach(function (x) {
+          if (x.dataset.done) return;
+          x.dataset.done = '1';
+          x.innerHTML = Heats.cardFor(t, nm, x.dataset.theats) + (x.dataset.theats === 'tiles' && ctx.th[t].heats.length ? heatExtras(ctx.th[t].heats) : '');
+        });
+      }).catch(function () { panes.forEach(function (x) { x.innerHTML = '<div class="pf-empty">The heat data could not be loaded.</div>'; }); });
     });
     var needs = el.querySelector('[data-box="hrate"],[data-box="havg"],[data-heats],[data-vheats],[data-vrec],[data-h],[data-points],[data-box="vh"]');
     if (!needs || !ctx.ctName) return;
@@ -10179,14 +10206,18 @@ window.Prof = (function () {
     if (hp) {
       if (!s) { hp.innerHTML = '<div class="pf-empty">No heat data for this surfer.</div>'; return; }
       if (hp.dataset.heats === 'h2h') { hp.innerHTML = Heats.cardHtml(ctx.ctName, 'h2h'); return; }
+      hp.innerHTML = Heats.cardHtml(ctx.ctName, 'tiles') + heatExtras(H);
+    }
+  }
+  // heat win rate by round, and season by season, from one tour's heats
+  function heatExtras(H) {
       var order = ['Seeding Round', 'Opening Round', 'Round 1', 'Elimination Round', 'Round 2', 'Round 3', 'Round of 32', 'Round 4', 'Round 5', 'Round of 16', 'Quarterfinals', 'Semifinals', 'Final'];
       var byR = {};
       H.forEach(function (h) { (byR[h.round] = byR[h.round] || []).push(h); });
       var rounds = Object.keys(byR).filter(function (r) { return byR[r].length >= 3; }).sort(function (a, b) { return (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99); });
       var byY = {};
       H.forEach(function (h) { (byY[h.year] = byY[h.year] || []).push(h); });
-      hp.innerHTML = Heats.cardHtml(ctx.ctName, 'tiles')
-        + '<div class="pf-row">' + card('Heat win rate by round', '<div class="pf-rounds">' + rounds.map(function (r) {
+      return '<div class="pf-row">' + card('Heat win rate by round', '<div class="pf-rounds">' + rounds.map(function (r) {
             var L = byR[r], w = L.filter(function (h) { return h.place === 1; }).length, p = pct(w, L.length);
             return '<div class="pf-round"><span class="n">' + esc(r) + '</span><span class="pf-rate"><span style="width:' + p + '%" class="mid"></span></span><b>' + p + '%</b><span class="d">' + w + ' of ' + L.length + '</span></div>';
           }).join('') + '</div><div class="pf-note">Rounds with at least three heats.</div>', ' style="flex:1 1 420px"')
@@ -10195,7 +10226,6 @@ window.Prof = (function () {
                 var L = byY[y], w = L.filter(function (h) { return h.place === 1; }).length;
                 return '<tr><td class="b">' + y + '</td><td class="c">' + L.length + '</td><td class="c">' + w + '</td><td class="c b">' + pct(w, L.length) + '%</td><td class="c">' + f2(L.reduce(function (t, h) { return t + (h.my || 0); }, 0) / L.length) + '</td></tr>';
               }).join('') + '</tbody></table>', ' style="flex:1 1 420px"') + '</div>';
-    }
   }
   function fillRecords(ctx, el) {
     var box = el.querySelector('[data-vrec]');
