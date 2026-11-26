@@ -1019,6 +1019,9 @@
 
 <!-- Winners view -->
 <div class="view" id="view-winners">
+  <div id="wx-root"></div>
+  <!-- the earlier Winners boards: kept, hidden, for the code that still reads them -->
+  <div id="win-legacy" hidden style="display:none">
   <div class="winners-layout">
     <div class="winners-board">
       <div class="winners-board-header winlist-link" role="link" tabindex="0" title="Open full list in a new tab" onclick="openWinList('champs-women')" onkeydown="if(event.key==='Enter')openWinList('champs-women')">
@@ -1149,6 +1152,7 @@
     </div>
     <div class="accordion-wrap" id="results-accordion"></div>
   </div>
+  </div>
 </div>
 
 <!-- Winners full-list view (opened in a new tab from a Winners board header) -->
@@ -1167,6 +1171,9 @@
 
 <!-- Season Tour view -->
 <div class="view" id="view-season">
+  <div id="sx-root"></div>
+  <!-- the earlier Seasons controls: kept, hidden, for the code that still reads them -->
+  <div id="st-legacy" hidden style="display:none">
   <div class="season-controls">
     <div class="gender-tabs">
       <button class="gender-tab active" id="st-women" onclick="setSTGender('women')">Women</button>
@@ -1202,6 +1209,7 @@
   </div>
   <!-- Heat stats for the season (filled by Heats.season when the heat files are there; CT only) -->
   <div id="heat-season"></div>
+  </div>
 </div>
 
 <!-- Athletes view -->
@@ -1224,6 +1232,9 @@
 
 <!-- Events view -->
 <div class="view" id="view-events">
+  <div id="ex-root"></div>
+  <!-- the earlier Events controls: kept, hidden, for the code that still reads them -->
+  <div id="ev-legacy" hidden style="display:none">
   <div class="events-controls">
     <select id="event-select" onchange="renderEventTable()">
 <option value="Bells">Bells</option>
@@ -1345,6 +1356,7 @@
       <thead id="event-thead"></thead>
       <tbody id="event-tbody"></tbody>
     </table>
+  </div>
   </div>
 </div>
 
@@ -1655,7 +1667,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261126073024"></script>
+<script src="data.js?v=20261126121102"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261126133548" onerror="this.remove()"></script>
 <script src="registry.js?v=20261126133548" onerror="this.remove()"></script>
@@ -1752,10 +1764,10 @@ function _renderView(name) {
   // before JS blocks the thread — fixes the freeze on iPhone.
   requestAnimationFrame(function() {
     setTimeout(function() {
-      if (name === 'events')    renderEventTable();
+      if (name === 'events')    Ex.show();
       if (name === 'seasons')   renderSeasonsTable();
-      if (name === 'season')    renderSeasonTour();
-      if (name === 'winners')   renderWinners();
+      if (name === 'season')    Sx.show();
+      if (name === 'winners')   Wx.show();
       if (name === 'olympics')  renderOlympics();
       if (name === 'panam')     renderPanAm();
       if (name === 'asiangames') renderAsianGames();
@@ -2117,6 +2129,8 @@ function applyHash() {
   const name = sep === -1 ? null : decodeURIComponent(raw.slice(sep + 1));
   if (view === 'find') { if (name) _findRoute(name); return; }
 
+  if (view === 'events') Ex.pending = name || '';
+  if (view === 'season') Sx.pending = name || '';
   _renderView(view);
 
   if (view === 'athlete') {
@@ -8815,13 +8829,28 @@ window.Heats = (function () {
     }
     return loading[src];
   }
+  // One tour's heat data: {INDEX, ATH, REC, Y: {year: events}}. The Championship
+  // Tour's sits in the globals this file has always read; the Challenger Series
+  // and Longboard Tour file theirs under HEATS_DB.
+  function db(t) {
+    if (t === 'ct') return { INDEX: window.HEATS_INDEX, ATH: window.HEATS_ATH, REC: window.HEATS_REC, Y: window.HEATS_CT || {} };
+    var d = (window.HEATS_DB || {})[t] || {};
+    return { INDEX: d.INDEX, ATH: d.ATH, REC: d.REC, Y: d.Y || {} };
+  }
+  function loadFor(t, what) { return load(t + '-' + what + '.js'); }
+  // the tour the athlete card below is being drawn for; 'ct' except inside cardFor
+  var cur = 'ct', TOUR_NAME = { ct: 'Championship Tour', cs: 'Challenger Series', lt: 'Longboard Tour' };
+  function A() { return db(cur).ATH; }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
   function fmt(n) { return n == null ? '–' : Number(n).toFixed(2); }
-  function inArchive(name) { return typeof CT_DATA !== 'undefined' && CT_DATA.athletes && CT_DATA.athletes[name]; }
+  function inArchive(name) {
+    var d = cur === 'cs' ? (typeof CS_DATA !== 'undefined' && CS_DATA) : cur === 'lt' ? (typeof LT_DATA !== 'undefined' && LT_DATA) : (typeof CT_DATA !== 'undefined' && CT_DATA);
+    return d && d.athletes && d.athletes[name];
+  }
   function who(name) {
     return inArchive(name) ? '<a href="#athletes/' + encodeURIComponent(name) + '">' + esc(name) + '</a>' : esc(name);
   }
-  function span() { return HEATS_INDEX.from === HEATS_INDEX.to ? HEATS_INDEX.from : HEATS_INDEX.from + '–' + HEATS_INDEX.to; }
+  function span() { var I = db(cur).INDEX; return I.from === I.to ? I.from : I.from + '–' + I.to; }
 
   // ── An event's heats (Results view) ───────────────────────────────────────
   function boardHtml(ev) {
@@ -8908,15 +8937,15 @@ window.Heats = (function () {
   }
 
   // ── A surfer's heat stats and head-to-head (profile) ──────────────────────
-  function evLabel(i) { var e = HEATS_ATH.events[i]; return e ? e[1] : ''; }
+  function evLabel(i) { var e = A().events[i]; return e ? e[1] : ''; }
   function tile(label, value, sub) {
     return '<div class="ht-tile"><div class="ht-tile-l">' + label + '</div><div class="ht-tile-v">' + value + '</div>'
       + (sub ? '<div class="ht-tile-s">' + sub + '</div>' : '') + '</div>';
   }
   function meetingsOf(name) {
-    var me = HEATS_ATH.names.indexOf(name), by = {};
+    var me = A().names.indexOf(name), by = {};
     if (me < 0) return by;
-    HEATS_ATH.meetings.forEach(function (m) {
+    A().meetings.forEach(function (m) {
       var mine, theirs, other;
       if (m[2] === me) { other = m[3]; mine = [m[4], m[6]]; theirs = [m[5], m[7]]; }
       else if (m[3] === me) { other = m[2]; mine = [m[5], m[7]]; theirs = [m[4], m[6]]; }
@@ -8928,7 +8957,7 @@ window.Heats = (function () {
   // the round as the WSL shows it: its results page at that round (a new tab).
   // Heat files built before the links were added have no address: plain text then.
   function wslRound(ev, round, text) {
-    var e = HEATS_ATH.events[ev];
+    var e = A().events[ev];
     return wslLink(e && e.slice(4), round, text);
   }
   // head-to-head is two-surfer heats only: three-surfer rounds and wave-pool
@@ -8956,7 +8985,7 @@ window.Heats = (function () {
   }
   // part: 'tiles' (the stat tiles only), 'h2h' (head-to-head only), or both
   function cardHtml(name, part) {
-    var s = HEATS_ATH.stats[name];
+    var s = A().stats[name];
     if (!s) return '<div class="ht-note">No heat data for this surfer.</div>';
     var pct = s[1] ? Math.round(100 * s[2] / s[1]) : 0;
     var tiles = tile('Heats', s[1], s[9] === s[10] ? s[9] : s[9] + '–' + s[10])
@@ -8967,13 +8996,14 @@ window.Heats = (function () {
       + (s[6] ? tile('Excellent waves', s[7], '8.00 or better, of ' + s[6] + ' scored') : '')
       + (s[8] ? tile('Perfect 10s', s[8]) : '');
     var by = duelsOf(name);
-    var opps = Object.keys(by).map(function (i) { return [HEATS_ATH.names[i], by[i]]; })
+    var opps = Object.keys(by).map(function (i) { return [A().names[i], by[i]]; })
       .sort(function (a, b) { return b[1].length - a[1].length || a[0].localeCompare(b[0]); });
     var SHOW = 12;
     var list = opps.map(function (o, i) { return i < SHOW ? oppHtml(o[0], o[1]) : ''; }).join('');
     var id = 'ht-h2h-' + Math.random().toString(36).slice(2);
+    opps.t = cur;
     pending[id] = opps;
-    var note = '<div class="ht-note">From WSL heat data, ' + span() + ' Championship Tour events. Placings and rankings elsewhere on this page come from the archive.</div>';
+    var note = '<div class="ht-note">From WSL heat data, ' + span() + ' ' + TOUR_NAME[cur] + ' events. Placings and rankings elsewhere on this page come from the archive.</div>';
     if (part === 'tiles') return note + '<div class="ht-tiles">' + tiles + '</div>';
     if (part === 'h2h' && !opps.length) return '<div class="ht-note">No two-surfer heats in the WSL heat data.</div>';
     return (part === 'h2h' ? '' : note + '<div class="ht-tiles">' + tiles + '</div>')
@@ -8991,9 +9021,17 @@ window.Heats = (function () {
     q = (q || '').trim().toLowerCase();
     var rows = opps.filter(function (o) { return !q || o[0].toLowerCase().indexOf(q) >= 0; });
     if (!q && !all) rows = rows.slice(0, 12);
-    box.innerHTML = rows.map(function (o) { return oppHtml(o[0], o[1]); }).join('') || '<div class="ht-note">No opponent by that name.</div>';
+    cur = opps.t || 'ct';
+    try { box.innerHTML = rows.map(function (o) { return oppHtml(o[0], o[1]); }).join('') || '<div class="ht-note">No opponent by that name.</div>'; }
+    finally { cur = 'ct'; }
     var more = box.parentNode.querySelector('.ht-more');
     if (more && (q || all)) more.remove();
+  }
+  // the same card for another tour's heats ('cs' or 'lt'); its athletes file must be loaded
+  function cardFor(t, name, part) {
+    cur = t;
+    try { return A() ? cardHtml(name, part) : '<div class="ht-note">No heat data for this surfer.</div>'; }
+    finally { cur = 'ct'; }
   }
   function openCard(head) {
     var body = head.nextElementSibling, chev = head.querySelector('.er-chevron');
@@ -9211,6 +9249,7 @@ window.Heats = (function () {
   }
 
   // The index is small and optional: without it, none of the above ever shows.
+  ['cs', 'lt'].forEach(function (t) { loadFor(t, 'index').catch(function () {}); });
   load('ct-index.js').then(function () {
     results(document.getElementById('results-accordion'));
     if (document.getElementById('results-accordion') && document.getElementById('results-accordion').innerHTML) records();
@@ -9223,7 +9262,7 @@ window.Heats = (function () {
 
   return { results: results, profile: profile, toggleHeat: toggleHeat, openCard: openCard, filterH2H: filterH2H,
            records: records, setRecord: setRecord, venueHeats: venueHeats, h2h: h2h, season: season, sortSeason: sortSeason,
-           load: load, heatsOf: heatsOf, duelsOf: duelsOf, cardHtml: cardHtml };
+           load: load, db: db, loadFor: loadFor, cardFor: cardFor, heatsOf: heatsOf, duelsOf: duelsOf, cardHtml: cardHtml };
 })();
 </script>
 <script>
@@ -9541,6 +9580,12 @@ window.Prof = (function () {
 
   // ── Pages ───────────────────────────────────────────────────────────────────
   var CTX = {}, STATE = {}, _uid = 0;
+  // the name a surfer's Challenger Series or Longboard Tour heats are filed under, if they have any
+  function heatName(ctx, sc) {
+    var t = sc.toLowerCase(), I = window.Heats && Heats.db && Heats.db(t).INDEX;
+    if (!I || sc === 'CT') return null;
+    return (((ctx.reg || {}).sources || {})[sc] || []).filter(function (n) { return I.athletes.indexOf(n) >= 0; })[0] || null;
+  }
   function tabsFor(ctx, sc) {
     if (sc === 'ALL') return ['Overview', 'Bio & notes'];
     if (sc === 'CT') {
@@ -9548,7 +9593,11 @@ window.Prof = (function () {
       if (!window.HEATS_INDEX || HEATS_INDEX.athletes.indexOf(ctx.ctName) >= 0) t.push('Heats', 'Head-to-head');
       return t;
     }
-    if (TOURS[sc]) return ['Overview', 'Seasons', 'Venues'];
+    if (TOURS[sc]) {
+      var tt = ['Overview', 'Seasons', 'Venues'], hn = heatName(ctx, sc);
+      if (hn) tt.push('Heats', 'Head-to-head');
+      return tt;
+    }
     if (QPT[sc]) return ['Overview', 'Events', 'Venues'];
     if (sc === 'WSG') return ['Overview', 'Events', 'Venues', 'Team'];
     if (ISA[sc]) return ['Overview', 'Events', 'Venues'];
@@ -9639,6 +9688,9 @@ window.Prof = (function () {
     if (tab === 'Venues') return venuesPane(ctx, sc);
     if (tab === 'Events') return eventsPane(ctx, sc);
     if (tab === 'Team') return teamPane(ctx, sc);
+    if ((tab === 'Heats' || tab === 'Head-to-head') && sc !== 'CT') {
+      return '<div class="pf-async" data-theats="' + (tab === 'Heats' ? 'tiles' : 'h2h') + '" data-tour="' + sc.toLowerCase() + '" data-name="' + esc(heatName(ctx, sc) || '') + '"><div class="pf-empty">Loading heat data…</div></div>';
+    }
     if (tab === 'Heats') return '<div class="pf-async" data-heats="tiles"><div class="pf-empty">Loading heat data…</div></div>';
     if (tab === 'Head-to-head') return '<div class="pf-async" data-heats="h2h"><div class="pf-empty">Loading heat data…</div></div>';
     return '';
@@ -10068,6 +10120,13 @@ window.Prof = (function () {
   // ── Heat data, when it arrives ──────────────────────────────────────────────
   function after(ctx, el, key) {
     if (!ctx || !window.Heats || !Heats.load) return;
+    el.querySelectorAll('[data-theats]').forEach(function (x) {      // Challenger Series / Longboard Tour heats
+      if (x.dataset.done) return;
+      x.dataset.done = '1';
+      var t = x.dataset.tour, nm = x.dataset.name, part = x.dataset.theats;
+      Heats.loadFor(t, 'athletes').then(function () { x.innerHTML = Heats.cardFor(t, nm, part); })
+        .catch(function () { x.innerHTML = '<div class="pf-empty">The heat data could not be loaded.</div>'; });
+    });
     var needs = el.querySelector('[data-box="hrate"],[data-box="havg"],[data-heats],[data-vheats],[data-vrec],[data-h],[data-points],[data-box="vh"]');
     if (!needs || !ctx.ctName) return;
     var name = ctx.ctName;
@@ -10152,6 +10211,1170 @@ window.Prof = (function () {
 
   return { render: render, mount: mount, go: go, sheet: sheet, saveNote: saveNote, vkey: vkey, entries: entries, primary: primary, points: points,
            _ctx: CTX };
+})();
+</script>
+<!-- ── Events section (redesign, Nov 2026) ─────────────────────────────────── -->
+<style>
+  .sf-strip { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; margin-bottom: 12px; }
+  .sf-l { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #64748b; }
+  .sf-g { display: flex; align-items: center; gap: 10px; }
+  .sf-seg { display: inline-flex; gap: 2px; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 2px; }
+  .sf-seg button { border: none; background: none; border-radius: 6px; padding: 0 12px; min-height: 40px; font-family: inherit; font-size: 0.75rem; font-weight: 700; color: #475569; cursor: pointer; white-space: nowrap; }
+  .sf-seg button.on { background: #001834; color: #fff; }
+  #ex-root { max-width: 1240px; margin: 0 auto; min-width: 0; }
+  #ex-root a { color: #001834; font-weight: 700; text-decoration: none; }
+  #ex-root a:hover { color: #1f5fa8; text-decoration: underline; }
+  .ex-crumb { font-size: 0.75rem; color: #64748b; margin-bottom: 10px; display: flex; gap: 6px; align-items: center; }
+  .ex-head { background: #001834; color: #fff; padding: 22px 24px 20px; border-radius: 10px 10px 0 0; }
+  .ex-eyebrow { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #f0b400; }
+  .ex-h1 { margin: 6px 0; font-size: 2.4rem; font-weight: 900; font-style: italic; letter-spacing: -0.04em; text-transform: uppercase; line-height: 1; }
+  .ex-sub { font-size: 0.82rem; color: #cbd5e1; }
+  .ex-latest { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .ex-latest-l { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #94a3b8; margin-right: 4px; }
+  #ex-root a.ex-pill { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.22); border-radius: 999px; background: rgba(255,255,255,0.06); color: #fff; white-space: nowrap; }
+  .ex-pill span:first-child { font-size: 0.62rem; color: #cbd5e1; font-weight: 400; }
+  .ex-pill span:last-child { font-size: 0.82rem; font-weight: 800; }
+  .ex-bar { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: flex-end; padding: 12px 16px; background: #fff; border: 1px solid #e2e8f0; border-top: none; }
+  .ex-bar label { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 5px; }
+  .ex-bar input[type=search], .ex-bar select { box-sizing: border-box; min-height: 44px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 8px; font: inherit; font-size: 0.85rem; background: #fff; color: #001834; }
+  .ex-list { background: #fff; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 10px 10px; }
+  .ex-row { display: grid; grid-template-columns: minmax(150px,1.1fr) minmax(170px,1.3fr) 108px 74px minmax(180px,1.2fr) minmax(180px,1.2fr); gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid #f1f5f9; font-size: 0.82rem; }
+  .ex-row.one { grid-template-columns: minmax(150px,1.1fr) minmax(170px,1.3fr) 108px 74px minmax(180px,1.4fr); }
+  .ex-row.hdr { padding-top: 0; padding-bottom: 0; border-bottom: 1px solid #e2e8f0; }
+  .ex-th { border: none; background: none; padding: 0; min-height: 44px; font-family: inherit; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; cursor: pointer; text-align: left; white-space: nowrap; }
+  .ex-th.on { color: #001834; }
+  #ex-root a.ex-ev { font-size: 0.95rem; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.03em; }
+  .ex-dim { color: #64748b; }
+  .ex-lab { display: none; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; width: 56px; }
+  .ex-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 1px; background: #e2e8f0; border: 1px solid #e2e8f0; border-top: none; }
+  .ex-card { background: #fff; padding: 14px 14px 16px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .ex-card-h { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-height: 36px; }
+  .ex-bl { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #64748b; }
+  .ex-since { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #1f5fa8; background: #d8e6f7; padding: 2px 6px; border-radius: 4px; white-space: nowrap; }
+  .ex-bv { font-size: 1.6rem; font-weight: 900; font-style: italic; color: #001834; letter-spacing: -0.03em; line-height: 1.1; }
+  .ex-bv.sm { font-size: 1.15rem; }
+  .ex-tag { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; color: #64748b; margin-right: 6px; }
+  .ex-people { list-style: none; margin: 3px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.75rem; line-height: 1.35; color: #334155; }
+  .ex-tabs { display: flex; gap: 2px; padding: 0 12px; background: #fff; border: 1px solid #e2e8f0; border-top: 1px solid #f1f5f9; border-radius: 0 0 10px 10px; overflow-x: auto; }
+  .ex-tab { font-family: inherit; font-size: 0.75rem; font-weight: 700; padding: 13px 12px 11px; min-height: 46px; background: none; border: none; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; white-space: nowrap; }
+  .ex-tab.on { color: #001834; border-bottom-color: #f0b400; }
+  .ex-body { margin-top: 14px; }
+  .ex-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 14px; min-width: 0; }
+  .ex-h { display: block; margin: 0 0 12px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #64748b; }
+  .ex-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ex-t { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .ex-t th { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap; background: #fff; }
+  .ex-t td { padding: 9px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  .ex-t .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .ex-t .sep { border-left: 2px solid #e2e8f0; }
+  .ex-t th.grp { color: #001834; border-bottom: none; padding-bottom: 0; }
+  .ex-t .stick { position: sticky; left: 0; background: #fff; z-index: 1; }
+  .ex-t th button { border: none; background: none; padding: 0; font: inherit; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; cursor: pointer; min-height: 32px; white-space: nowrap; }
+  .ex-t th button.on { color: #001834; }
+  .ex-subl { display: block; font-size: 0.7rem; color: #64748b; font-weight: 400; margin-top: 2px; }
+  .ex-note { font-size: 0.78rem; color: #64748b; padding: 10px 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; margin-bottom: 12px; }
+  .ex-empty { padding: 36px 16px; text-align: center; color: #64748b; font-size: 0.85rem; }
+  .ex-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 14px; }
+  .ex-heat { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 0.8rem; }
+  .ex-heat-row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; }
+  .ex-heat-row.win { font-weight: 800; }
+  .ex-waves { color: #64748b; font-size: 0.72rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ex-rounds { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; }
+  .ex-places { display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; }
+  .ex-places b { display: inline-block; min-width: 44px; color: #001834; }
+  .ex-ghost { min-height: 44px; padding: 0 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-family: inherit; font-size: 0.82rem; font-weight: 700; color: #001834; cursor: pointer; }
+  @media (max-width: 720px) {
+    .ex-head { padding: 18px 16px; border-radius: 0; }
+    .ex-h1 { font-size: 1.8rem; }
+    .ex-row, .ex-row.one { grid-template-columns: 1fr auto; gap: 4px 12px; padding: 12px; }
+    .ex-row.hdr { display: none; }
+    .ex-c-loc { grid-column: 1 / 2; }
+    .ex-c-ed { grid-column: 2 / 3; grid-row: 1 / 2; text-align: right; }
+    .ex-c-yr { grid-column: 2 / 3; grid-row: 2 / 3; text-align: right; }
+    .ex-c-w, .ex-c-m { grid-column: 1 / 3; }
+    .ex-lab { display: inline-block; }
+    .ex-panel { padding: 12px; border-radius: 0; border-left: none; border-right: none; }
+    .ex-tabs { border-radius: 0; }
+  }
+</style>
+<script>
+// The Division and Era choice shared by Events, Seasons and Winners.
+window.SecF = (function () {
+  var KEY = 'sca.sectionFilters', st = { div: 'both', era: 'all' };
+  try { var s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s && s.div && s.era) st = s; } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  var DIVS = [['women', 'Women'], ['men', 'Men'], ['both', 'Both']], ERAS = [['all', 'All time'], ['2008', 'Since 2008'], ['10', 'Last 10 years']];
+  function seg(kind, list, cur, cb) {
+    return '<div class="sf-seg">' + list.map(function (x) {
+      return '<button type="button" class="' + (x[0] === cur ? 'on' : '') + '" aria-pressed="' + (x[0] === cur) + '" onclick="SecF.set(\'' + kind + '\',\'' + x[0] + '\',\'' + cb + '\')">' + x[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  return {
+    get div() { return st.div; }, get era() { return st.era; },
+    // the division for a section that shows one division at a time
+    one: function () { return st.div === 'both' ? 'women' : st.div; },
+    set: function (kind, v, cb) { st[kind] = v; save(); var f = cb.split('.').reduce(function (o, k) { return o && o[k]; }, window); if (typeof f === 'function') f(); },
+    // minYear for the era, given the newest year in the data
+    from: function (maxYear) { return st.era === '2008' ? 2008 : st.era === '10' ? maxYear - 9 : 0; },
+    html: function (cb, both) {
+      var divs = both ? DIVS : DIVS.slice(0, 2), cur = (!both && st.div === 'both') ? 'women' : st.div;
+      return '<div class="sf-strip" role="group" aria-label="Filters for Events, Seasons and Winners">'
+        + '<div class="sf-g"><span class="sf-l">Division</span>' + seg('div', divs, cur, cb) + '</div>'
+        + '<div class="sf-g"><span class="sf-l">Era</span>' + seg('era', ERAS, st.era, cb) + '</div></div>';
+    }
+  };
+})();
+
+window.Ex = (function () {
+  var st = { q: '', scope: 'tour', sort: 'name', dir: 1, tab: null, sub: 'honour', ss: 'wins', sd: -1, edY: null, edG: null, one: 'women' };
+  var cache = {}, recTried = {};
+  var G = { women: 'Women', men: 'Men' }, GK = { women: 'w', men: 'm' };
+  var TOUR = { ct: 'Championship Tour', cs: 'Challenger Series', lt: 'Longboard Tour' };
+  function tour() { return (typeof currentWSLTour !== 'undefined' && TOUR[currentWSLTour]) ? currentWSLTour : 'ct'; }
+  function D() { return (typeof DATA !== 'undefined' && DATA) || { athletes: {}, events: {}, event_results: { women: [], men: [] } }; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function isPh(n) { return /^event (not completed|incomplete|cancell?ed)$/i.test(String(n || '').trim()); }
+  function who(n) { return D().athletes[n] ? '<a href="#athletes/' + encodeURIComponent(n) + '">' + esc(n) + '</a>' : esc(n); }
+  function evHref(tab, y, g) { return '#events/' + encodeURIComponent(tab) + (y ? '/' + y + '/' + GK[g] : ''); }
+  function divs() { return SecF.div === 'both' ? ['women', 'men'] : [SecF.div]; }
+  function HD() { return (window.Heats && Heats.db) ? Heats.db(tour()) : {}; }      // this tour's heat data
+  function hFrom() { var d = HD(); return d.INDEX ? d.INDEX.from : null; }           // first year with heat scores
+  function rec(tab) { var d = HD(); return (d.REC && d.REC.venues && d.REC.venues[tab]) || null; }
+  function recYear(i) { var e = (HD().REC || {}).events || []; return e[i] ? e[i][0] : null; }
+
+  // every event lineage of the tour in view: its index rows and the years each division ran
+  function idx() {
+    var t = tour();
+    if (cache[t]) return cache[t];
+    var d = D(), tabs = {}, maxY = 0;
+    ['women', 'men'].forEach(function (g) {
+      (d.event_results[g] || []).forEach(function (r) {
+        var y = +r.year; if (y > maxY) maxY = y;
+        if (!r.tab || !d.events[r.tab]) return;
+        var T = tabs[r.tab] || (tabs[r.tab] = { tab: r.tab, rows: { women: {}, men: {} }, loc: '', locY: 0 });
+        T.rows[g][y] = r;
+        if (y >= T.locY && r.location) { T.loc = r.location; T.locY = y; }
+      });
+    });
+    Object.keys(d.events).forEach(function (tab) {
+      var T = tabs[tab] || (tabs[tab] = { tab: tab, rows: { women: {}, men: {} }, loc: '', locY: 0 });
+      T.years = { women: {}, men: {} };
+      ['women', 'men'].forEach(function (g) {
+        Object.keys(d.events[tab][g] || {}).forEach(function (n) { Object.keys(d.events[tab][g][n].years || {}).forEach(function (y) { T.years[g][y] = 1; }); });
+        Object.keys(T.rows[g]).forEach(function (y) { T.years[g][y] = 1; });
+      });
+      Object.keys(T.years.women).concat(Object.keys(T.years.men)).forEach(function (y) { if (+y > maxY) maxY = +y; });
+    });
+    Object.keys(tabs).forEach(function (k) { var T = tabs[k]; if (T.years) T.current = !!(T.years.women[maxY] || T.years.men[maxY]); });
+    return (cache[t] = { tabs: tabs, maxY: maxY });
+  }
+  function yearsOf(T, gs) {
+    var from = SecF.from(idx().maxY), o = {};
+    gs.forEach(function (g) { Object.keys(T.years[g]).forEach(function (y) { if (+y >= from) o[y] = 1; }); });
+    return Object.keys(o).map(Number).sort(function (a, b) { return b - a; });
+  }
+  function latest(T, g) {
+    var ys = Object.keys(T.years[g]).map(Number).sort(function (a, b) { return b - a; });
+    for (var i = 0; i < ys.length; i++) { var w = winnerOf(T, g, ys[i]); if (w && !isPh(w)) return { y: ys[i], w: w }; }
+    return null;
+  }
+  function placed(tab, g, y, p) {
+    var m = D().events[tab][g] || {}, out = [];
+    Object.keys(m).forEach(function (n) { if (m[n].years && m[n].years[y] === p) out.push(n); });
+    return out.sort();
+  }
+  function winnerOf(T, g, y) {
+    var r = T.rows[g][y]; if (r && r.winner) return r.winner;
+    var p = placed(T.tab, g, +y, 1); return p.length === 1 ? p[0] : '';
+  }
+  function dateOf(tab, g, y) { var r = idx().tabs[tab].rows[g][y]; return (typeof getEventDate === 'function' && getEventDate(tab, g, y)) || (r && r.end) || null; }
+  function age(n, tab, g, y) {
+    var dob = typeof getAthleteDob === 'function' ? getAthleteDob(n) : null, on = dateOf(tab, g, y);
+    if (!dob || !/^\d{4}-\d{2}-\d{2}$/.test(dob) || !on || typeof ageOn !== 'function') return null;
+    return ageOn(dob, on);
+  }
+  function ageTxt(a) { return a ? a.years + ' yrs ' + a.days + ' days' : ''; }
+  function finalOf(tab, g, y) {
+    var R = rec(tab), rows = R && R.finals && R.finals[GK[g]];
+    if (!rows) return null;
+    for (var i = 0; i < rows.length; i++) if (recYear(rows[i][3]) === y) return rows[i];
+    return null;
+  }
+  function needRec() {
+    var t = tour(), d = HD();
+    if (!window.Heats || !Heats.loadFor || recTried[t] || (d.INDEX && d.REC)) return;
+    recTried[t] = 1;
+    function redraw() { if (tour() === t && document.getElementById('view-events').classList.contains('active')) show(); }
+    Heats.loadFor(t, 'index').then(function () { return Heats.loadFor(t, 'records'); }).then(redraw).catch(function () { recTried[t] = 2; redraw(); });
+  }
+
+  // ── list ──────────────────────────────────────────────────────────────────
+  function listHtml() {
+    var I = idx(), gs = divs(), q = st.q.trim().toLowerCase(), rows = [];
+    Object.keys(I.tabs).forEach(function (k) {
+      var T = I.tabs[k]; if (!T.years) return;
+      var ys = yearsOf(T, gs);
+      if (!ys.length) return;
+      if (st.scope === 'tour' && !T.current) return;
+      if (q && (T.tab + ' ' + T.loc).toLowerCase().indexOf(q) === -1) return;
+      rows.push({ T: T, n: ys.length, first: ys[ys.length - 1], last: ys[0] });
+    });
+    var key = { name: function (r) { return r.T.tab.toLowerCase(); }, loc: function (r) { return r.T.loc.toLowerCase(); }, years: function (r) { return r.first; }, ed: function (r) { return r.n; } }[st.sort];
+    rows.sort(function (a, b) { var x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : 0) * st.dir || a.T.tab.localeCompare(b.T.tab); });
+    var all = Object.keys(I.tabs).filter(function (k) { return I.tabs[k].years; }), cur = all.filter(function (k) { return I.tabs[k].current; }).length;
+    var nEv = (D().event_results.women || []).length + (D().event_results.men || []).length, one = gs.length === 1;
+    function th(k, label) { return '<button type="button" class="ex-th' + (st.sort === k ? ' on' : '') + '" onclick="Ex.sort(\'' + k + '\')">' + label + (st.sort === k ? (st.dir > 0 ? ' ▲' : ' ▼') : '') + '</button>'; }
+    function win(T, g) {
+      var l = latest(T, g);
+      if (!Object.keys(T.years[g]).length) return '<span class="ex-dim">No ' + G[g].toLowerCase() + '&#39;s event</span>';
+      return l ? '<span class="ex-dim">' + l.y + '</span> ' + who(l.w) : '<span class="ex-dim">No winner recorded</span>';
+    }
+    var body = rows.map(function (r) {
+      var T = r.T;
+      return '<div class="ex-row' + (one ? ' one' : '') + '">'
+        + '<div><a class="ex-ev" href="' + evHref(T.tab) + '">' + esc(T.tab) + '</a></div>'
+        + '<div class="ex-c-loc ex-dim">' + esc(T.loc || 'Location not recorded') + '</div>'
+        + '<div class="ex-c-yr">' + (r.first === r.last ? r.first : r.first + ' to ' + r.last) + '</div>'
+        + '<div class="ex-c-ed">' + r.n + '<span class="ex-lab" style="width:auto;margin-left:4px">ed.</span></div>'
+        + gs.map(function (g) { return '<div class="ex-c-' + GK[g] + '"><span class="ex-lab">' + G[g] + '</span>' + win(T, g) + '</div>'; }).join('')
+        + '</div>';
+    }).join('');
+    return SecF.html('Ex.refresh', true)
+      + '<header class="ex-head"><div class="ex-eyebrow">' + TOUR[tour()] + ' · Event lineages</div><h1 class="ex-h1">Events</h1>'
+      + '<div class="ex-sub">' + all.length + ' event lineages · ' + nEv.toLocaleString() + ' event divisions · ' + cur + ' on the ' + I.maxY + ' tour</div></header>'
+      + '<div class="ex-bar"><div style="flex:1 1 260px;max-width:380px"><label for="ex-q">Find an event</label>'
+      + '<input id="ex-q" type="search" style="width:100%" value="' + esc(st.q) + '" oninput="Ex.q(this.value)" placeholder="Name or location, e.g. Bells, Hawaii"></div>'
+      + '<div><label>Show</label><div class="sf-seg"><button type="button" class="' + (st.scope === 'tour' ? 'on' : '') + '" onclick="Ex.scope(\'tour\')">' + I.maxY + ' tour (' + cur + ')</button>'
+      + '<button type="button" class="' + (st.scope === 'all' ? 'on' : '') + '" onclick="Ex.scope(\'all\')">All events (' + all.length + ')</button></div></div></div>'
+      + '<div class="ex-list" id="ex-list"><div class="ex-row hdr' + (one ? ' one' : '') + '">' + th('name', 'Event') + th('loc', 'Location') + th('years', 'Years') + th('ed', 'Editions')
+      + gs.map(function (g) { return '<span class="ex-th" style="cursor:default;display:flex;align-items:center">Latest ' + G[g].toLowerCase() + '&#39;s winner</span>'; }).join('') + '</div>'
+      + (body || '<div class="ex-empty">No event matches “' + esc(st.q) + '”. <button type="button" class="ex-ghost" onclick="Ex.q(\'\',1)">Clear search</button>'
+        + (st.scope === 'tour' ? ' <button type="button" class="ex-ghost" onclick="Ex.scope(\'all\')">Search all events</button>' : '') + '</div>')
+      + '</div>';
+  }
+
+  // ── detail ────────────────────────────────────────────────────────────────
+  function runs(ys) {            // [2020, 2021, 1983] → "1983, 2020–21"
+    ys = ys.slice().sort(function (a, b) { return a - b; });
+    var out = [], s = null, p = null;
+    ys.concat([null]).forEach(function (y) {
+      if (s !== null && y === p + 1) { p = y; return; }
+      if (s !== null) out.push(s === p ? '' + s : s + '–' + String(p).slice(2));
+      s = p = y;
+    });
+    return out;
+  }
+  function cardsHtml(T, gs) {
+    var d = D(), from = SecF.from(idx().maxY), R = rec(T.tab), heatsOn = hFrom() != null;
+    function lineFor(fn) { return gs.map(function (g) { var x = fn(g); return x ? { g: g, v: x.v, people: x.people } : { g: g, v: '—', people: [] }; }); }
+    function top(counts, detail) {
+      var best = 0; Object.keys(counts).forEach(function (n) { if (counts[n].length > best) best = counts[n].length; });
+      if (!best) return null;
+      return { v: best, people: Object.keys(counts).filter(function (n) { return counts[n].length === best; }).sort().map(function (n) { return [n, detail(counts[n])]; }) };
+    }
+    function yrs(a) { return a.sort(function (x, y) { return x - y; }).map(function (y, i) { return i ? "'" + String(y).slice(2) : y; }).join(', '); }
+    var cards = [];
+    cards.push(['Most wins', 0, lineFor(function (g) {
+      var c = {}; Object.keys(T.years[g]).forEach(function (y) { var w = winnerOf(T, g, y); if (+y >= from && w && !isPh(w)) (c[w] = c[w] || []).push(+y); });
+      return top(c, yrs);
+    })]);
+    cards.push(['Most finals', 0, lineFor(function (g) {
+      var c = {}, m = d.events[T.tab][g] || {};
+      Object.keys(m).forEach(function (n) { Object.keys(m[n].years || {}).forEach(function (y) { if (+y >= from && m[n].years[y] <= 2) (c[n] = c[n] || []).push(+y); }); });
+      return top(c, yrs);
+    })]);
+    [['Youngest winner', 1], ['Oldest winner', -1]].forEach(function (k) {
+      cards.push([k[0], 0, lineFor(function (g) {
+        var best = null;
+        Object.keys(T.years[g]).forEach(function (y) {
+          var w = winnerOf(T, g, y); if (+y < from || !w || isPh(w)) return;
+          var a = age(w, T.tab, g, +y);
+          if (a && a.years >= 14 && a.years <= 60 && (!best || (a.total - best.a.total) * k[1] < 0)) best = { a: a, n: w, y: +y };
+        });
+        return best ? { v: best.a.years + 'y ' + best.a.days + 'd', people: [[best.n, best.y]] } : null;
+      }), 'sm']);
+    });
+    if (heatsOn) {
+      [['Best heat total', 'totals'], ['Best single wave', 'waves']].forEach(function (k) {
+        cards.push([k[0], 1, lineFor(function (g) {
+          var rows = ((R && R[k[1]] && R[k[1]][GK[g]]) || []).filter(function (r) { return recYear(r[2]) >= from; });
+          if (!rows.length) return null;
+          var best = rows[0][0];
+          return { v: best.toFixed(2), people: rows.filter(function (r) { return r[0] === best; }).map(function (r) { return [r[1], recYear(r[2]) + ' ' + r[3]]; }) };
+        })]);
+      });
+      cards.push(['Most heat wins', 1, lineFor(function (g) {
+        var rows = (R && R.heats && R.heats[GK[g]]) || [];
+        if (!rows.length || !rows[0][2]) return null;
+        var best = rows[0][2];
+        return { v: best, people: rows.filter(function (r) { return r[2] === best; }).map(function (r) { return [r[0], 'from ' + r[1] + ' heats']; }) };
+      })]);
+    }
+    return '<section class="ex-cards" aria-label="Headline numbers">' + cards.map(function (c) {
+      return '<div class="ex-card"><div class="ex-card-h"><span class="ex-bl">' + c[0] + '</span>' + (c[1] ? '<span class="ex-since">Since ' + hFrom() + '</span>' : '') + '</div>'
+        + c[2].map(function (l) {
+            return '<div><div>' + (gs.length > 1 ? '<span class="ex-tag">' + GK[l.g].toUpperCase() + '</span>' : '') + '<span class="ex-bv' + (c[3] ? ' sm' : '') + '">' + esc(l.v) + '</span></div>'
+              + '<ul class="ex-people">' + l.people.map(function (p) { return '<li>' + who(p[0]) + ' <span class="ex-dim">' + esc(p[1]) + '</span></li>'; }).join('') + '</ul></div>';
+          }).join('') + '</div>';
+    }).join('') + '</section>';
+  }
+  function honourHtml(T, gs) {
+    var ys = yearsOf(T, gs), both = gs.length > 1;
+    if (!ys.length) return '<div class="ex-empty">No editions in this era.</div>';
+    function cells(g, y, sep) {
+      var r = T.rows[g][y], c = sep ? ' class="sep"' : '';
+      if (!T.years[g][y]) return '<td' + c + ' colspan="3"><span class="ex-dim">No ' + G[g].toLowerCase() + '&#39;s event</span></td>';
+      var w = winnerOf(T, g, y), a = w && !isPh(w) ? age(w, T.tab, g, y) : null, ru = placed(T.tab, g, y, 2), f = finalOf(T.tab, g, y);
+      var name = r ? '<a class="ex-subl" href="' + evHref(T.tab, y, g) + '">' + esc(r.name) + '</a>' : '<a class="ex-subl" href="' + evHref(T.tab, y, g) + '">Placings</a>';
+      var wtxt = !w ? '<span class="ex-dim">Winner not recorded</span>' : isPh(w) ? '<span class="ex-dim">' + esc(w) + '</span>' : who(w) + (a ? ' <span class="ex-dim">' + a.years + '</span>' : '');
+      return '<td' + c + '>' + wtxt + name + '</td><td>' + (ru.length ? ru.map(who).join(', ') : '<span class="ex-dim">—</span>') + '</td>'
+        + '<td class="r">' + (f ? (f[0] === 0 ? f[5].toFixed(2) + ' tied' : f[5].toFixed(2) + ' – ' + f[6].toFixed(2)) : '') + '</td>';
+    }
+    var gaps = [], seen = {}; ys.forEach(function (y) { seen[y] = 1; });
+    for (var y = ys[0]; y > ys[ys.length - 1]; y--) if (!seen[y]) gaps.push(y);
+    var gapRun = {}; runs(gaps).forEach(function (r) { gapRun[+r.slice(0, 4)] = r; });
+    var rows = [];
+    for (y = ys[0]; y >= ys[ys.length - 1]; y--) {
+      if (seen[y]) rows.push('<tr><td class="stick"><a href="' + evHref(T.tab, y, both ? (T.years.men[y] ? 'men' : 'women') : gs[0]) + '">' + y + '</a></td>' + gs.map(function (g, i) { return cells(g, y, i > 0); }).join('') + '</tr>');
+      else if (gapRun[y]) rows.push('<tr><td class="stick ex-dim">' + gapRun[y] + '</td><td colspan="' + gs.length * 3 + '" class="ex-dim">Not held</td></tr>');
+    }
+    var head = both ? '<tr><th class="stick"></th><th class="grp" colspan="3">Women</th><th class="grp sep" colspan="3">Men</th></tr>' : '';
+    head += '<tr><th class="stick">Year</th>' + gs.map(function (g, i) { return '<th' + (i ? ' class="sep"' : '') + '>Winner <span style="font-weight:400;text-transform:none;letter-spacing:0">(age)</span></th><th>Runner-up</th><th class="r">Final</th>'; }).join('') + '</tr>';
+    return '<div class="ex-panel"><span class="ex-h">Roll of honour</span><div class="ex-scroll"><table class="ex-t"><thead>' + head + '</thead><tbody>' + rows.join('') + '</tbody></table></div>'
+      + '<div class="ex-note" style="margin:12px 0 0">Ages are shown only where a full date of birth is held. ' + (hFrom() ? 'Final scores are held from ' + hFrom() + '.' : '') + '</div></div>';
+  }
+  function recordsHtml(T, gs) {
+    if (!window.Heats || !Heats.db) return '<div class="ex-empty">No heat scores are held for this tour.</div>';
+    if (!HD().REC) return '<div class="ex-empty">' + (recTried[tour()] === 2 ? 'No heat scores are held for this tour.' : 'Loading heat records…') + '</div>';
+    var R = rec(T.tab), from = Math.max(hFrom() || 0, SecF.from(idx().maxY));
+    if (!R) return '<div class="ex-panel"><div class="ex-note" style="margin:0">No heat scores are held for this event. Heat-level records start in ' + hFrom() + '.</div></div>';
+    function tbl(title, head, rows) {
+      return '<div class="ex-panel"><span class="ex-h">' + title + ' <span class="ex-since">Since ' + hFrom() + '</span></span>' + (rows.length
+        ? '<div class="ex-scroll"><table class="ex-t"><thead><tr>' + head + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>' : '<div class="ex-dim">None in this era.</div>') + '</div>';
+    }
+    function yr(i) { return recYear(i); }
+    return gs.map(function (g) {
+      var k = GK[g], ok = function (r, at) { return yr(r[at]) >= from; };
+      var tot = (R.totals && R.totals[k] || []).filter(function (r) { return ok(r, 2); }).slice(0, 10).map(function (r) {
+        return '<tr><td class="r"><b>' + r[0].toFixed(2) + '</b></td><td>' + who(r[1]) + '</td><td>' + yr(r[2]) + '</td><td class="ex-dim">' + esc(r[3]) + '</td></tr>'; });
+      var wav = (R.waves && R.waves[k] || []).filter(function (r) { return ok(r, 2); }).slice(0, 10).map(function (r) {
+        return '<tr><td class="r"><b>' + r[0].toFixed(2) + '</b>' + (r[0] >= 10 ? ' <span class="ex-since">10</span>' : '') + '</td><td>' + who(r[1]) + '</td><td>' + yr(r[2]) + '</td><td class="ex-dim">' + esc(r[3]) + '</td></tr>'; });
+      var mar = (R.margins && R.margins[k] || []).filter(function (r) { return ok(r, 3); }).slice(0, 10).map(function (r) {
+        return '<tr><td class="r"><b>' + r[0].toFixed(2) + '</b></td><td>' + who(r[1]) + ' <span class="ex-dim">' + r[5].toFixed(2) + '</span></td><td>' + who(r[2]) + ' <span class="ex-dim">' + r[6].toFixed(2) + '</span></td><td>' + yr(r[3]) + '</td><td class="ex-dim">' + esc(r[4]) + '</td></tr>'; });
+      var fin = (R.finals && R.finals[k] || []).filter(function (r) { return ok(r, 3); }).slice().sort(function (a, b) { return a[0] - b[0] || yr(b[3]) - yr(a[3]); }).slice(0, 10).map(function (r) {
+        return '<tr><td class="r"><b>' + (r[0] === 0 ? 'Tied' : r[0].toFixed(2)) + '</b></td><td>' + who(r[1]) + ' <span class="ex-dim">' + r[5].toFixed(2) + (r[0] === 0 ? ', placed first' : '') + '</span></td><td>' + who(r[2]) + ' <span class="ex-dim">' + r[6].toFixed(2) + '</span></td><td>' + yr(r[3]) + '</td></tr>'; });
+      var hd = '<th class="r">Score</th><th>Surfer</th><th>Year</th><th>Round</th>';
+      return (gs.length > 1 ? '<h2 class="ex-h" style="margin:4px 0 10px;color:#001834">' + G[g] + '</h2>' : '') + '<div class="ex-two">'
+        + tbl('Best heat totals', hd, tot) + tbl('Best single waves', hd, wav)
+        + tbl('Biggest winning margins', '<th class="r">Margin</th><th>Winner</th><th>Beaten</th><th>Year</th><th>Round</th>', mar)
+        + tbl('Closest finals', '<th class="r">Margin</th><th>Winner</th><th>Runner-up</th><th>Year</th>', fin) + '</div>';
+    }).join('');
+  }
+  function surfersHtml(T, gs) {
+    var from = SecF.from(idx().maxY), all = SecF.era === 'all', R = rec(T.tab);
+    var cols = [['name', 'Surfer'], ['apps', 'Apps'], ['wins', 'Wins'], ['finals', 'Finals']].concat(all ? [['sf', 'SF'], ['qf', 'QF']] : [], [['best', 'Best'], ['avg', 'Avg']], R ? [['hw', 'Heat wins'], ['hp', 'Heat win %']] : []);
+    return gs.map(function (g) {
+      var m = D().events[T.tab][g] || {}, hw = {};
+      ((R && R.heats && R.heats[GK[g]]) || []).forEach(function (r) { hw[r[0]] = r; });
+      var rows = [];
+      Object.keys(m).forEach(function (n) {
+        var ps = []; Object.keys(m[n].years || {}).forEach(function (y) { if (+y >= from) ps.push(m[n].years[y]); });
+        if (!ps.length) return;
+        var s = m[n].stats || {}, h = hw[n];
+        rows.push({ name: n, apps: ps.length, wins: ps.filter(function (p) { return p === 1; }).length, finals: ps.filter(function (p) { return p <= 2; }).length,
+          sf: s.semis, qf: s.quarters, best: Math.min.apply(null, ps), avg: ps.reduce(function (a, b) { return a + b; }, 0) / ps.length,
+          hw: h ? h[2] : null, hp: h && h[1] ? 100 * h[2] / h[1] : null });
+      });
+      var k = st.ss, dir = st.sd;
+      rows.sort(function (a, b) {
+        var x = a[k], y = b[k];
+        if (k === 'name') return x.localeCompare(y) * dir;
+        if (x == null && y == null) return a.name.localeCompare(b.name);
+        if (x == null) return 1; if (y == null) return -1;
+        return (x - y) * dir || b.wins - a.wins || b.finals - a.finals || a.best - b.best || a.name.localeCompare(b.name);
+      });
+      var head = cols.map(function (c, i) { return '<th class="' + (i ? 'r' : 'stick') + '"><button type="button" class="' + (k === c[0] ? 'on' : '') + '" onclick="Ex.ssort(\'' + c[0] + '\')">' + c[1] + (k === c[0] ? (dir > 0 ? ' ▲' : ' ▼') : '') + '</button></th>'; }).join('');
+      function v(x, dp) { return x == null ? '<span class="ex-dim">—</span>' : dp != null ? x.toFixed(dp) : x; }
+      var body = rows.map(function (r) {
+        return '<tr><td class="stick">' + who(r.name) + '</td><td class="r">' + r.apps + '</td><td class="r">' + r.wins + '</td><td class="r">' + r.finals + '</td>'
+          + (all ? '<td class="r">' + v(r.sf) + '</td><td class="r">' + v(r.qf) + '</td>' : '') + '<td class="r">' + r.best + '</td><td class="r">' + r.avg.toFixed(1) + '</td>'
+          + (R ? '<td class="r">' + v(r.hw) + '</td><td class="r">' + (r.hp == null ? '<span class="ex-dim">—</span>' : Math.round(r.hp) + '%') + '</td>' : '') + '</tr>';
+      }).join('');
+      return '<div class="ex-panel"><span class="ex-h">' + G[g] + ' · ' + rows.length + ' surfers</span>' + (rows.length
+        ? '<div class="ex-scroll"><table class="ex-t"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>' : '<div class="ex-dim">No ' + G[g].toLowerCase() + '&#39;s results in this era.</div>')
+        + '<div class="ex-note" style="margin:12px 0 0">' + (all ? 'SF and QF are the counts kept on the Sheet. ' : 'SF and QF are kept for all time only, so they are hidden while an era is chosen. ')
+        + (R ? 'Heat wins are from ' + hFrom() + ' on and are not narrowed by the era.' : '') + '</div></div>';
+    }).join('');
+  }
+  function editionsHtml(T, gs) {
+    var ys = yearsOf(T, ['women', 'men']);
+    if (!ys.length) return '<div class="ex-empty">No editions in this era.</div>';
+    var y = st.edY && ys.indexOf(st.edY) !== -1 ? st.edY : ys[0];
+    var g = st.edG && T.years[st.edG][y] ? st.edG : (gs.filter(function (x) { return T.years[x][y]; })[0] || (T.years.women[y] ? 'women' : 'men'));
+    var r = T.rows[g][y], on = dateOf(T.tab, g, y), m = D().events[T.tab][g] || {}, byPlace = {};
+    Object.keys(m).forEach(function (n) { var p = m[n].years && m[n].years[y]; if (p) (byPlace[p] = byPlace[p] || []).push(n); });
+    var places = Object.keys(byPlace).map(Number).sort(function (a, b) { return a - b; });
+    var head = '<div class="ex-bar" style="border:1px solid #e2e8f0;border-radius:10px;margin-bottom:14px"><div><label for="ex-edy">Edition</label><select id="ex-edy" onchange="Ex.ed(+this.value)">'
+      + ys.map(function (x) { return '<option value="' + x + '"' + (x === y ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>'
+      + '<div><label>Division</label><div class="sf-seg">' + ['women', 'men'].map(function (x) {
+          return '<button type="button" class="' + (x === g ? 'on' : '') + '"' + (T.years[x][y] ? '' : ' disabled style="opacity:.4;cursor:default"') + ' onclick="Ex.ed(' + y + ',\'' + x + '\')">' + G[x] + '</button>'; }).join('') + '</div></div>'
+      + '<div style="flex:1 1 220px"><div style="font-weight:800;color:#001834">' + esc(r ? r.name : y + ' ' + T.tab) + '</div><div class="ex-dim" style="font-size:0.78rem">'
+      + esc((r && r.location) || T.loc) + (on ? ' · finished ' + on : '') + (r && r.url ? ' · <a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + (/worldsurfleague/.test(r.url) ? 'WSL page' : 'Results sheet') + '</a>' : '') + '</div></div></div>';
+    var bracket = '<div id="ex-bracket" data-k="' + y + g + '"></div>', note = '';
+    if (hFrom() == null || y < hFrom()) note = '<div class="ex-note">Placings only.' + (hFrom() != null ? ' Heat scores are held from ' + hFrom() + '.' : '') + '</div>';
+    var pl = places.length ? '<div class="ex-panel"><span class="ex-h">Finishing places · ' + places.reduce(function (a, p) { return a + byPlace[p].length; }, 0) + ' surfers</span><div class="ex-places">'
+      + places.map(function (p) { return '<div><b>' + (typeof csOrdinal === 'function' ? csOrdinal(p) : p) + '</b> ' + byPlace[p].sort().map(who).join(', ') + '</div>'; }).join('') + '</div></div>'
+      : '<div class="ex-panel"><div class="ex-dim">No placings are recorded for this edition' + (r && r.winner && !isPh(r.winner) ? '; the Events index names ' + who(r.winner) + ' as the winner' : '') + '.</div></div>';
+    if (!note) setTimeout(function () { loadBracket(T, y, g); }, 0);
+    return head + note + bracket + pl;
+  }
+  function loadBracket(T, y, g) {
+    var box = document.getElementById('ex-bracket');
+    if (!box || !window.Heats || !Heats.loadFor) return;
+    var t = tour();
+    box.innerHTML = '<div class="ex-panel"><div class="ex-dim">Loading heats…</div></div>';
+    Heats.loadFor(t, y).then(function () {
+      var d = Heats.db(t), Y = d.Y[y] || {}, r = T.rows[g][y], key = null, nm = r && r.name;
+      ((d.REC && d.REC.events) || []).forEach(function (e) { if (e[0] === y && e[2] === GK[g] && e[3] === T.tab) nm = e[1]; });
+      Object.keys(Y).forEach(function (k) { if (k.slice(-1) === GK[g] && Y[k].n === nm) key = k; });
+      box = document.getElementById('ex-bracket'); if (!box || box.getAttribute('data-k') !== y + g) return;
+      var ev = key && Y[key], rounds = ev && ev.r ? ev.r.filter(function (x) { return /quarter|semi|final|title|match/i.test(x[0]); }) : [];
+      if (!rounds.length) { box.innerHTML = '<div class="ex-note">No heat scores are held for this edition.</div>'; return; }
+      box.innerHTML = '<div class="ex-panel"><span class="ex-h">Final rounds <span class="ex-since">Counting waves shown</span></span><div class="ex-rounds">' + rounds.map(function (rd) {
+        return '<div><div class="ex-bl" style="margin-bottom:6px">' + esc(rd[0]) + '</div>' + rd[1].map(function (h) {
+          return '<div class="ex-heat">' + h[2].slice().sort(function (a, b) { return (a[1] || 9) - (b[1] || 9); }).map(function (l) {
+            var cw = (l[3] || []).filter(function (w) { return w[1]; }).map(function (w) { return w[0].toFixed(2); }).join(' + ');
+            return '<div class="ex-heat-row' + (l[1] === 1 ? ' win' : '') + '"><span>' + who(l[0]) + '</span><span><span class="ex-waves">' + cw + '</span> <b>' + (l[2] == null ? '–' : l[2].toFixed(2)) + '</b></span></div>';
+          }).join('') + '</div>';
+        }).join('') + '</div>';
+      }).join('') + '</div></div>';
+    }).catch(function () { var b = document.getElementById('ex-bracket'); if (b) b.innerHTML = '<div class="ex-note">The heats could not be loaded.</div>'; });
+  }
+  function nationOf(n) {
+    var v = typeof getAthleteNation === 'function' ? getAthleteNation(n) : ((D().athletes[n] || {}).nation || '');
+    if (!v && typeof regIdFor === 'function' && typeof regData === 'function') { var id = regIdFor(n), R = regData(); if (id && R && R.byId[id]) v = R.byId[id].nation || ''; }
+    return v || '';
+  }
+  function nationsHtml(T, gs) {
+    var from = SecF.from(idx().maxY);
+    return '<div class="ex-two">' + gs.map(function (g) {
+      var m = D().events[T.tab][g] || {}, by = {};
+      Object.keys(m).forEach(function (n) {
+        var nat = nationOf(n) || 'Nation not recorded';
+        Object.keys(m[n].years || {}).forEach(function (y) {
+          if (+y < from) return;
+          var b = by[nat] || (by[nat] = { w: 0, f: 0, a: 0, s: {} }), p = m[n].years[y];
+          b.a++; b.s[n] = 1; if (p === 1) b.w++; if (p <= 2) b.f++;
+        });
+      });
+      var rows = Object.keys(by).sort(function (a, b) { return by[b].w - by[a].w || by[b].f - by[a].f || by[b].a - by[a].a || a.localeCompare(b); }).map(function (n) {
+        return '<tr><td class="stick">' + (typeof nationFlag === 'function' ? nationFlag(n) : '') + esc(n) + '</td><td class="r">' + by[n].w + '</td><td class="r">' + by[n].f + '</td><td class="r">' + Object.keys(by[n].s).length + '</td><td class="r">' + by[n].a + '</td></tr>'; });
+      return '<div class="ex-panel"><span class="ex-h">' + G[g] + '</span>' + (rows.length
+        ? '<div class="ex-scroll"><table class="ex-t"><thead><tr><th class="stick">Nation</th><th class="r">Wins</th><th class="r">Finals</th><th class="r">Surfers</th><th class="r">Appearances</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>'
+        : '<div class="ex-dim">No ' + G[g].toLowerCase() + '&#39;s results in this era.</div>') + '</div>';
+    }).join('') + '</div>';
+  }
+  function detailHtml(tab) {
+    var I = idx(), T = I.tabs[tab];
+    if (!T || !T.years) return SecF.html('Ex.refresh', true) + '<div class="ex-empty">No event called “' + esc(tab) + '” on this tour. <a href="#events">All events</a></div>';
+    var gs = divs(), allY = yearsOf(T, ['women', 'men']), nW = Object.keys(T.years.women).length, nM = Object.keys(T.years.men).length;
+    var anyY = Object.keys(T.years.women).concat(Object.keys(T.years.men)).map(Number), first = Math.min.apply(null, anyY), last = Math.max.apply(null, anyY), seen = {}, gaps = [];
+    anyY.forEach(function (y) { seen[y] = 1; });
+    for (var y = first; y < last; y++) if (!seen[y]) gaps.push(y);
+    var gr = runs(gaps), n = Object.keys(seen).length;
+    var sub = (first === last ? first : first + ' to ' + last) + ' · ' + n + ' edition' + (n !== 1 ? 's' : '') + ' (women ' + nW + ', men ' + nM + ')'
+      + (gr.length ? ' · not held ' + (gr.length <= 3 ? gr.join(', ') : 'in ' + gaps.length + ' years') : '');
+    var lat = ['women', 'men'].map(function (g) { var l = latest(T, g); return l ? '<a class="ex-pill" href="#athletes/' + encodeURIComponent(l.w) + '"><span>' + l.y + ' ' + G[g] + '</span><span>' + esc(l.w) + '</span></a>' : ''; }).join('');
+    var TABS = [['honour', 'Roll of honour'], ['records', 'Records'], ['surfers', 'Surfers'], ['editions', 'Editions'], ['nations', 'Nations']];
+    var body = { honour: honourHtml, records: recordsHtml, surfers: surfersHtml, editions: editionsHtml, nations: nationsHtml }[st.sub](T, gs);
+    var missing = gs.length === 1 && !yearsOf(T, gs).length ? '<div class="ex-note">No ' + G[gs[0]].toLowerCase() + '&#39;s event has been held here' + (SecF.era !== 'all' ? ' in this era' : '') + '.</div>' : '';
+    return SecF.html('Ex.refresh', true)
+      + '<nav class="ex-crumb" aria-label="Breadcrumb"><a href="#events" style="font-weight:600">Events</a><span aria-hidden="true">/</span><span>' + esc(tab) + '</span></nav>'
+      + '<header class="ex-head"><div class="ex-eyebrow">' + TOUR[tour()] + (T.loc ? ' · ' + esc(T.loc) : '') + '</div><h1 class="ex-h1">' + esc(tab) + '</h1><div class="ex-sub">' + sub + '</div>'
+      + (lat ? '<div class="ex-latest"><span class="ex-latest-l">Latest winners</span>' + lat + '</div>' : '') + '</header>'
+      + cardsHtml(T, gs)
+      + '<nav class="ex-tabs" aria-label="Event sections">' + TABS.map(function (t) { return '<button type="button" class="ex-tab' + (t[0] === st.sub ? ' on' : '') + '" aria-pressed="' + (t[0] === st.sub) + '" onclick="Ex.sub(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</nav>'
+      + '<div class="ex-body">' + missing + body + '</div>';
+  }
+
+  function show() {
+    var root = document.getElementById('ex-root'); if (!root) return;
+    needRec();
+    if (Ex.pending !== undefined) {
+      var p = Ex.pending; Ex.pending = undefined;
+      if (p) { var bits = String(p).split('/'); st.tab = bits[0]; if (bits[1]) { st.sub = 'editions'; st.edY = +bits[1]; st.edG = bits[2] === 'm' ? 'men' : bits[2] === 'w' ? 'women' : null; } }
+      else st.tab = null;
+    }
+    root.innerHTML = st.tab ? detailHtml(st.tab) : listHtml();
+  }
+  return {
+    pending: undefined, show: show, refresh: show,
+    reset: function () { cache = {}; },
+    q: function (v, redraw) { st.q = v; if (redraw) return show(); var l = document.getElementById('ex-list'), tmp = document.createElement('div'); tmp.innerHTML = listHtml(); if (l) l.innerHTML = tmp.querySelector('#ex-list').innerHTML; },
+    scope: function (s) { st.scope = s; show(); },
+    sort: function (k) { if (st.sort === k) st.dir = -st.dir; else { st.sort = k; st.dir = k === 'ed' ? -1 : 1; } show(); },
+    sub: function (s) { st.sub = s; show(); },
+    ssort: function (k) { if (st.ss === k) st.sd = -st.sd; else { st.ss = k; st.sd = (k === 'name' || k === 'best' || k === 'avg') ? 1 : -1; } show(); },
+    ed: function (y, g) { st.edY = y; if (g) st.edG = g; show(); }
+  };
+})();
+</script>
+<!-- ── Seasons section (redesign, Nov 2026) ────────────────────────────────── -->
+<style>
+  #sx-root { max-width: 1240px; margin: 0 auto; min-width: 0; }
+  #sx-root a { color: #001834; font-weight: 700; text-decoration: none; }
+  #sx-root a:hover { color: #1f5fa8; text-decoration: underline; }
+  #sx-root .ex-head a { color: #fff; }
+  .sx-headrow { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; justify-content: space-between; }
+  .sx-live { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #001834; background: #f0b400; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+  .sx-pick { display: flex; gap: 6px; align-items: center; }
+  .sx-ib { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: #0a2647; color: #fff; font-size: 1.2rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .sx-ib[disabled] { opacity: 0.35; cursor: default; }
+  .sx-pick select { min-height: 44px; min-width: 104px; padding: 0 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; background: #0a2647; color: #fff; font: inherit; font-size: 0.95rem; font-weight: 800; }
+  .ex-bv.gold { color: #b54708; }
+  .sx-cell { display: inline-block; min-width: 38px; padding: 3px 4px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; text-align: center; background: #f8fafc; color: #64748b; border: 1px solid #f1f5f9; }
+  .sx-cell.w { background: #b54708; color: #fff; border-color: #b54708; }
+  .sx-cell.ru { background: #1a7549; color: #fff; border-color: #1a7549; }
+  .sx-cell.sf { background: #1f5fa8; color: #fff; border-color: #1f5fa8; }
+  .sx-cell.qf { background: #6b3fd8; color: #fff; border-color: #6b3fd8; }
+  .sx-cell.r16 { background: #e2e8f0; color: #334155; border-color: #e2e8f0; }
+  .sx-cell.none { background: none; border-color: transparent; color: #94a3b8; }
+  .sx-cell.todo { background: none; border: 1px dashed #cbd5e1; color: transparent; }
+  .sx-lg { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.7rem; color: #64748b; }
+  .sx-lg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+  .sx-rk { font-weight: 900; font-style: italic; color: #001834; font-size: 0.95rem; }
+  .sx-nc { margin-left: 6px; font-size: 0.66rem; color: #64748b; font-weight: 600; }
+  .sx-tag { margin-left: 6px; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.08em; color: #6b3fd8; background: #ede9fe; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
+  .sx-t2 .stick2 { position: sticky; left: 40px; background: #fff; z-index: 1; white-space: nowrap; }
+  .sx-t2 .c { text-align: center; padding-left: 3px; padding-right: 3px; }
+  .sx-race { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+  .sx-chart { position: relative; height: 420px; margin-left: 30px; }
+  .sx-who { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; font-family: inherit; font-size: 0.8rem; font-weight: 700; color: #001834; cursor: pointer; text-align: left; }
+  .sx-who.on { border-color: #b54708; background: #fff7ed; }
+  .sx-evs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 14px; }
+  .sx-ev { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .sx-ev.todo { background: #f8fafc; border-style: dashed; }
+  #sx-root a.sx-evn { font-size: 1rem; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: -0.02em; line-height: 1.15; }
+  .sx-pod { display: grid; grid-template-columns: 30px 1fr auto; gap: 4px 8px; align-items: baseline; font-size: 0.82rem; padding-top: 6px; border-top: 1px solid #f1f5f9; }
+  .sx-boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 14px; }
+  .sx-irow { display: grid; grid-template-columns: 70px minmax(150px,1.3fr) minmax(150px,1.3fr) 70px 90px minmax(140px,1fr); gap: 12px; align-items: center; padding: 10px 16px; border-bottom: 1px solid #f1f5f9; font-size: 0.82rem; }
+  .sx-irow.hdr { padding-top: 0; padding-bottom: 0; border-bottom: 1px solid #e2e8f0; }
+  #sx-root a.sx-yr { font-size: 1rem; font-weight: 900; font-style: italic; letter-spacing: -0.02em; }
+  @media (max-width: 720px) {
+    .sx-irow { grid-template-columns: 64px 1fr; gap: 3px 10px; padding: 12px; }
+    .sx-irow.hdr { display: none; }
+    .sx-irow > .sx-yc { grid-row: 1 / span 5; align-self: start; }
+    .sx-irow .ex-lab { display: inline-block; width: 78px; }
+    .sx-chart { height: 320px; }
+  }
+</style>
+<script>
+window.Sx = (function () {
+  var st = { year: null, g: null, sub: 'rank', hl: null, sort: 'year', dir: -1 };
+  var G = { women: 'Women', men: 'Men' }, GK = { women: 'w', men: 'm' };
+  var TOUR = { ct: 'Championship Tour', cs: 'Challenger Series', lt: 'Longboard Tour' };
+  var MIN_HEATS = 8, recTried = {}, yrTried = {};
+  function tour() { return (typeof currentWSLTour !== 'undefined' && TOUR[currentWSLTour]) ? currentWSLTour : 'ct'; }
+  function D() { return (typeof DATA !== 'undefined' && DATA) || { athletes: {}, events: {}, seasons: {}, tour_seasons: {}, rookies: {}, event_results: { women: [], men: [] } }; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function isPh(n) { return /^event (not completed|incomplete|cancell?ed)$/i.test(String(n || '').trim()); }
+  function who(n) { return D().athletes[n] ? '<a href="#athletes/' + encodeURIComponent(n) + '">' + esc(n) + '</a>' : esc(n); }
+  function ord(p) { return typeof csOrdinal === 'function' ? csOrdinal(p) : String(p); }
+  function href(y, g) { return '#season' + (y ? '/' + y + '/' + GK[g] : ''); }
+  function HD() { return (window.Heats && Heats.db) ? Heats.db(tour()) : {}; }
+  function hFrom() { var d = HD(); return d.INDEX ? d.INDEX.from : null; }
+  function heatsOn(y) { return hFrom() != null && +y >= hFrom(); }
+  function active() { var v = document.getElementById('view-season'); return v && v.classList.contains('active'); }
+
+  function years(g) {
+    var o = {}, d = D();
+    Object.keys(d.seasons || {}).concat(Object.keys(d.tour_seasons || {})).forEach(function (k) { var m = k.match(/^(\d{4})-(women|men)$/); if (m && m[2] === g) o[m[1]] = 1; });
+    (d.event_results[g] || []).forEach(function (r) { if (r.year) o[r.year] = 1; });
+    return Object.keys(o).map(Number).sort(function (a, b) { return b - a; });
+  }
+  function byRank(l) { return l.slice().sort(function (a, b) { return (a.rank == null ? 9999 : a.rank) - (b.rank == null ? 9999 : b.rank) || a.name.localeCompare(b.name); }); }
+  // the season table's surfers, each with the rank the year's ranking gives when the table has none
+  function ranked(T, y, g) {
+    var pos = {}; ranking(y, g).forEach(function (r) { pos[r.name] = r.rank; });
+    return byRank(T.athletes.map(function (a) { return a.rank != null ? a : Object.assign({}, a, { rank: pos[a.name] != null ? pos[a.name] : null }); }));
+  }
+  function ranking(y, g) {                     // [{rank, name, nation}] for the year
+    var d = D(), s = (d.seasons || {})[y + '-' + g], t = (d.tour_seasons || {})[y + '-' + g];
+    if (s && s.length) return byRank(s.filter(function (r) { return r.rank != null; }));
+    return t ? byRank(t.athletes.filter(function (r) { return r.rank != null; })) : [];
+  }
+  function evRows(y, g) {                      // the year's events, in tour order
+    var rows = (D().event_results[g] || []).filter(function (r) { return +r.year === +y && !/^QS/i.test(r.tier || ''); });
+    var by = (typeof EVENTS_BY_YEAR !== 'undefined' && EVENTS_BY_YEAR && EVENTS_BY_YEAR[g] && EVENTS_BY_YEAR[g][y]) || [], o = {};
+    by.forEach(function (e, i) { o[e.n] = e.o != null ? e.o : i + 1; });
+    return rows.map(function (r, i) { return { r: r, o: o[r.name] != null ? o[r.name] : 900 + i }; }).sort(function (a, b) { return a.o - b.o; }).map(function (x) { return x.r; });
+  }
+  function winners(y, g) {
+    var c = {}, n = 0;
+    evRows(y, g).forEach(function (r) { if (r.winner && !isPh(r.winner) && r.tab !== 'WSL Finals') { (c[r.winner] = c[r.winner] || []).push(r); n++; } });
+    return { by: c, n: n };
+  }
+  // the season table's short column keys matched to event tabs by the places in them
+  function colTabs(T, y, g) {
+    var d = D(), tabs = evRows(y, g).map(function (r) { return r.tab; }).filter(Boolean), out = {};
+    T.events.forEach(function (k) {
+      var best = null, score = 0;
+      tabs.forEach(function (tab) {
+        var m = (d.events[tab] || {})[g] || {}, s = 0;
+        T.athletes.forEach(function (a) { var p = a.placings && a.placings[k]; if (p != null && m[a.name] && m[a.name].years && m[a.name].years[y] === p) s++; });
+        if (s > score) { score = s; best = tab; }
+      });
+      if (best && score >= 3) out[k] = best;
+    });
+    return out;
+  }
+  function done(T) { return T.events.filter(function (k) { return T.athletes.some(function (a) { return a.placings && a.placings[k] != null; }); }); }
+  function info(y, g) {
+    var T = (D().tour_seasons || {})[y + '-' + g] || null, ys = years(g), dn = T ? done(T) : [];
+    var live = !!T && +y === ys[0] && dn.length < T.events.length;
+    return { T: T, done: dn, todo: T ? T.events.filter(function (k) { return dn.indexOf(k) === -1; }) : [], live: live };
+  }
+  function need(y) {
+    if (!window.Heats || !Heats.loadFor) return;
+    var t = tour(), d = HD();
+    function redraw() { if (tour() === t && active()) show(); }
+    if (!(d.INDEX && d.REC) && !recTried[t]) { recTried[t] = 1; Heats.loadFor(t, 'index').then(function () { return Heats.loadFor(t, 'records'); }).then(redraw).catch(function () {}); }
+    if (y && heatsOn(y) && !d.Y[y] && !yrTried[t + y]) { yrTried[t + y] = 1; Heats.loadFor(t, y).then(redraw).catch(function () {}); }
+  }
+  function tabOf(y, name, g) {
+    var t = null; ((HD().REC || {}).events || []).forEach(function (e) { if (e[0] === +y && e[1] === name && e[2] === GK[g]) t = e[3]; });
+    return t;
+  }
+  // every surfer's heats for the year, from the heat files
+  function heatStats(y, g) {
+    var Y = HD().Y && HD().Y[y]; if (!Y) return null;
+    var by = {}, totals = [], waves = [], notHere = {};
+    (D().event_results[g] || []).forEach(function (r) { if (+r.year === +y && /^QS/i.test(r.tier || '') && r.tab) notHere[r.tab] = 1; });
+    Object.keys(Y).forEach(function (k) {
+      if (k.slice(-1) !== GK[g]) return;
+      var ev = Y[k], label = tabOf(y, ev.n, g) || ev.n;
+      if (notHere[label]) return;                // a QS 6000 event: not part of this season
+      (ev.r || []).forEach(function (rd) {
+        rd[1].forEach(function (h) {
+          h[2].forEach(function (l) {
+            if (l[2] == null) return;
+            var s = by[l[0]] || (by[l[0]] = { n: l[0], h: 0, w: 0, sum: 0, x8: 0, rid: 0 });
+            s.h++; if (l[1] === 1) s.w++; s.sum += l[2];
+            totals.push([l[2], l[0], label, rd[0]]);
+            (l[3] || []).forEach(function (w) { s.rid++; if (w[0] >= 8) s.x8++; waves.push([w[0], l[0], label, rd[0]]); });
+          });
+        });
+      });
+    });
+    var list = Object.keys(by).map(function (n) { return by[n]; });
+    if (!list.length) return null;
+    function desc(a, b) { return b[0] - a[0] || a[1].localeCompare(b[1]); }
+    return { list: list, totals: totals.sort(desc), waves: waves.sort(desc) };
+  }
+  function topBy(list, f, ok) {
+    var best = null; list.forEach(function (s) { if ((!ok || ok(s)) && (best === null || f(s) > best)) best = f(s); });
+    return best === null ? null : { v: best, who: list.filter(function (s) { return (!ok || ok(s)) && f(s) === best; }).sort(function (a, b) { return a.n.localeCompare(b.n); }) };
+  }
+
+  // ── all seasons ───────────────────────────────────────────────────────────
+  function indexHtml() {
+    var g = SecF.one(), ys = years(g), other = years(g === 'women' ? 'men' : 'women'), maxY = Math.max(ys[0] || 0, other[0] || 0), from = SecF.from(maxY), roo = (D().rookies || {})[g] || {};
+    var rows = ys.filter(function (y) { return y >= from; }).map(function (y) {
+      var rk = ranking(y, g), W = winners(y, g), I = info(y, g);
+      return { y: y, champ: rk[0] ? rk[0].name : '', ru: rk[1] ? rk[1].name : '', ev: evRows(y, g).length, dw: Object.keys(W.by).length, roty: (roo[y] || {}).roty || '', live: I.live };
+    });
+    var key = { year: function (r) { return r.y; }, champ: function (r) { return r.champ.toLowerCase(); }, ev: function (r) { return r.ev; }, dw: function (r) { return r.dw; } }[st.sort];
+    rows.sort(function (a, b) { var x = key(a), z = key(b); return (x < z ? -1 : x > z ? 1 : 0) * st.dir || b.y - a.y; });
+    function th(k, l) { return '<button type="button" class="ex-th' + (st.sort === k ? ' on' : '') + '" onclick="Sx.sort(\'' + k + '\')">' + l + (st.sort === k ? (st.dir > 0 ? ' ▲' : ' ▼') : '') + '</button>'; }
+    function plain(l) { return '<span class="ex-th" style="cursor:default;display:flex;align-items:center">' + l + '</span>'; }
+    var out = [], prev = null, byYear = st.sort === 'year';
+    function gapRows(a, b) {                    // years with no season between two listed years
+      for (var y = a - 1; y > b; y--) if (y >= from) out.push('<div class="sx-irow"><div class="sx-yc ex-dim" style="font-weight:800">' + y + '</div><div class="ex-dim" style="grid-column:2 / -1">' + (other.indexOf(y) !== -1 ? 'No ' + G[g].toLowerCase() + '&#39;s tour' : 'No tour') + '</div></div>');
+    }
+    rows.forEach(function (r) {
+      if (byYear && prev !== null) st.dir < 0 ? gapRows(prev, r.y) : null;
+      prev = r.y;
+      out.push('<div class="sx-irow"><div class="sx-yc"><a class="sx-yr" href="' + href(r.y, g) + '">' + r.y + '</a></div>'
+        + '<div><span class="ex-lab">' + (r.live ? 'Leader' : 'Champion') + '</span>' + (r.champ ? who(r.champ) : '<span class="ex-dim">Not recorded</span>') + (r.live ? '<span class="sx-tag" style="color:#001834;background:#fde68a">IN PROGRESS</span>' : '') + '</div>'
+        + '<div><span class="ex-lab">Runner-up</span>' + (r.ru ? who(r.ru) : '<span class="ex-dim">—</span>') + '</div>'
+        + '<div><span class="ex-lab">Events</span>' + (r.ev || '<span class="ex-dim">—</span>') + '</div>'
+        + '<div><span class="ex-lab">Winners</span>' + (r.dw || '<span class="ex-dim">—</span>') + '</div>'
+        + '<div><span class="ex-lab">Rookie</span>' + (r.roty ? who(r.roty) : '<span class="ex-dim">—</span>') + '</div></div>');
+    });
+    if (byYear && st.dir < 0 && rows.length) {      // women's tour started later than the men's
+      var last = rows[rows.length - 1].y;
+      other.filter(function (y) { return y < last && y >= from; }).forEach(function (y) { out.push('<div class="sx-irow"><div class="sx-yc ex-dim" style="font-weight:800">' + y + '</div><div class="ex-dim" style="grid-column:2 / -1">No ' + G[g].toLowerCase() + '&#39;s tour</div></div>'); });
+    }
+    return SecF.html('Sx.refresh', false)
+      + '<header class="ex-head"><div class="ex-eyebrow">' + TOUR[tour()] + ' · ' + G[g] + '</div><h1 class="ex-h1">Seasons</h1>'
+      + '<div class="ex-sub">' + ys.length + ' seasons' + (ys.length ? ' · ' + ys[ys.length - 1] + ' to ' + ys[0] : '') + '</div></header>'
+      + '<div class="ex-list" style="border-top:1px solid #e2e8f0"><div class="sx-irow hdr">' + th('year', 'Year') + th('champ', 'Champion') + plain('Runner-up') + th('ev', 'Events') + th('dw', 'Winners') + plain('Rookie of the year') + '</div>'
+      + (out.join('') || '<div class="ex-empty">No ' + G[g].toLowerCase() + '&#39;s seasons in this era.</div>') + '</div>';
+  }
+
+  // ── one season ────────────────────────────────────────────────────────────
+  function cardsHtml(y, g, I, rk, W, H) {
+    var cards = [], nDone = I.T ? I.done.length : evRows(y, g).length;
+    function card(label, v, people, cls, since) {
+      cards.push('<div class="ex-card"><div class="ex-card-h"><span class="ex-bl">' + label + '</span>' + (since ? '<span class="ex-since">Heat scores</span>' : '') + '</div>'
+        + '<div><span class="ex-bv ' + (cls || '') + '">' + v + '</span></div><ul class="ex-people">' + people.map(function (p) { return '<li>' + who(p[0]) + ' <span class="ex-dim">' + esc(p[1]) + '</span></li>'; }).join('') + '</ul></div>');
+    }
+    if (rk[0]) card(I.live ? 'Leader after ' + nDone + ' event' + (nDone !== 1 ? 's' : '') : 'Champion', who(rk[0].name), rk.slice(1, 3).map(function (r) { return [r.name, ord(r.rank)]; }), 'gold sm');
+    var most = 0; Object.keys(W.by).forEach(function (n) { if (W.by[n].length > most) most = W.by[n].length; });
+    if (most) card('Most event wins', most, Object.keys(W.by).filter(function (n) { return W.by[n].length === most; }).sort().map(function (n) { return [n, W.by[n].map(function (r) { return r.tab || r.name.replace(/^\d{4}\s+/, ''); }).join(', ')]; }));
+    if (H) {
+      var hw = topBy(H.list, function (s) { return s.w; });
+      if (hw) card('Most heat wins', hw.v, hw.who.map(function (s) { return [s.n, 'of ' + s.h + ' heats']; }), '', 1);
+      var av = topBy(H.list, function (s) { return Math.round(100 * s.sum / s.h) / 100; }, function (s) { return s.h >= MIN_HEATS; });
+      if (av) card('Best average heat total', av.v.toFixed(2), av.who.map(function (s) { return [s.n, s.h + ' heats']; }), '', 1);
+      if (H.waves.length) { var bw = H.waves.filter(function (w) { return w[0] === H.waves[0][0]; }); card('Best single wave', H.waves[0][0].toFixed(2) + (bw.length > 1 ? ' ×' + bw.length : ''), bw.map(function (w) { return [w[1], w[2] + ', ' + w[3]]; }), '', 1); }
+      if (H.totals.length) { var bt = H.totals.filter(function (t) { return t[0] === H.totals[0][0]; }); card('Best heat total', H.totals[0][0].toFixed(2), bt.map(function (t) { return [t[1], t[2] + ', ' + t[3]]; }), '', 1); }
+    }
+    if (W.n) card('Different event winners', Object.keys(W.by).length + ' of ' + W.n, []);
+    return cards.length ? '<section class="ex-cards" aria-label="Headline numbers">' + cards.join('') + '</section>' : '';
+  }
+  function cellCls(p) { return p == null ? 'none' : p === 1 ? 'w' : p === 2 ? 'ru' : p <= 4 ? 'sf' : p <= 8 ? 'qf' : p <= 16 ? 'r16' : ''; }
+  function rankHtml(y, g, I, rk) {
+    var T = I.T, roo = (((D().rookies || {})[g] || {})[y] || {}).class || [], nat = {};
+    rk.forEach(function (r) { nat[r.name] = r.nation || ''; });
+    function natOf(n) { return nat[n] || (typeof getAthleteNation === 'function' ? getAthleteNation(n) : '') || ''; }
+    function name(n) { return who(n) + (natOf(n) ? '<span class="sx-nc">' + esc(natOf(n)) + '</span>' : '') + (roo.indexOf(n) !== -1 ? '<span class="sx-tag">ROOKIE</span>' : ''); }
+    if (!T) {
+      if (!rk.length) return '<div class="ex-empty">No ranking is recorded for this season.</div>';
+      return '<div class="ex-panel"><span class="ex-h">Year-end ranking · ' + rk.length + ' surfers</span><div class="ex-scroll"><table class="ex-t"><thead><tr><th class="r" style="width:40px">#</th><th>Surfer</th></tr></thead><tbody>'
+        + rk.map(function (r) { return '<tr><td class="r sx-rk">' + r.rank + '</td><td>' + name(r.name) + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+    }
+    var tabs = colTabs(T, y, g), aths = ranked(T, y, g);
+    var head = T.events.map(function (k, i) {
+      var todo = I.done.indexOf(k) === -1, t = tabs[k];
+      return '<th class="c" title="' + esc(t || k) + '">' + (t ? '<a href="#events/' + encodeURIComponent(t) + '/' + y + '/' + GK[g] + '">' + esc(k) + '</a>' : '<span style="color:' + (todo ? '#94a3b8' : '#001834') + '">' + esc(k) + '</span>')
+        + '<span style="display:block;font-size:0.56rem;letter-spacing:0.04em;color:#94a3b8;font-weight:700">' + (todo ? 'TO RUN' : 'E' + (i + 1)) + '</span></th>';
+    }).join('');
+    // A mid-season cut shows in the table itself: from one event on, the field is
+    // three-quarters or less of what it had been. The WSL Finals are not a cut.
+    var cut = [], most = 0, cutAt = -1;
+    I.done.forEach(function (k) {
+      var n = aths.filter(function (x) { return x.placings && x.placings[k] != null; }).length;
+      if (tabs[k] === 'WSL Finals' || /finals/i.test(k)) return;
+      if (most && n <= 0.75 * most) cut.push(k); else { if (cut.length) cut = []; if (n > most) most = n; }
+    });
+    if (cut.length) {
+      aths.some(function (x, i) { if (i && !cut.some(function (k) { return x.placings && x.placings[k] != null; })) { cutAt = i; return true; } return false; });
+      if (cutAt < 5) cutAt = -1;
+    }
+    var before = T.events[T.events.indexOf(cut[0]) - 1];
+    var cutRow = cutAt === -1 ? '' : '<tr><td colspan="' + (T.events.length + 2) + '" style="padding:5px 8px;font-size:0.62rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#64748b;background:#f8fafc">Mid-season cut'
+      + (before ? ' after ' + esc(tabs[before] || before) : '') + ' · a reduced field surfed ' + esc(cut.map(function (k) { return tabs[k] || k; }).join(', ')) + '</td></tr>';
+    var body = aths.map(function (a, ai) {
+      return (ai === cutAt ? cutRow : '') + '<tr><td class="stick r sx-rk" style="width:40px;min-width:40px">' + (a.rank == null ? '–' : a.rank) + '</td><td class="stick2">' + name(a.name) + '</td>' + T.events.map(function (k) {
+        if (I.done.indexOf(k) === -1) return '<td class="c"><span class="sx-cell todo" aria-label="' + esc(k) + ': still to run">–</span></td>';
+        var p = a.placings ? a.placings[k] : null;
+        return '<td class="c"><span class="sx-cell ' + cellCls(p) + '" aria-label="' + esc(tabs[k] || k) + ': ' + (p == null ? 'did not compete' : ord(p)) + '">' + (p == null ? '–' : ord(p)) + '</span></td>';
+      }).join('') + '</tr>';
+    }).join('');
+    return '<div class="ex-panel"><div style="display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;margin-bottom:12px"><span class="ex-h" style="margin:0">Rankings' + (I.live ? ' after event ' + I.done.length : '') + ' · place at every event</span>'
+      + '<div class="sx-lg"><span><i style="background:#b54708"></i>Win</span><span><i style="background:#1a7549"></i>Runner-up</span><span><i style="background:#1f5fa8"></i>Semi-final</span><span><i style="background:#6b3fd8"></i>Quarter-final</span><span><i style="background:#e2e8f0"></i>9th to 16th</span><span><i style="background:#f8fafc;border:1px solid #e2e8f0"></i>17th or lower</span></div></div>'
+      + '<div class="ex-scroll"><table class="ex-t sx-t2" style="min-width:' + (260 + T.events.length * 58) + 'px"><thead><tr><th class="stick r" style="width:40px;min-width:40px">#</th><th class="stick2">Surfer</th>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>'
+      + '<div class="ex-note" style="margin:12px 0 0">' + (I.live ? 'Ranks are live until ' + esc(I.todo.join(', ')) + ' ' + (I.todo.length > 1 ? 'are' : 'is') + ' surfed. ' : '') + '“–” means the surfer did not compete at that event. Ranking points are not held, so there is no points column.</div></div>';
+  }
+  function raceHtml(y, g, I) {
+    var T = I.T, n = I.done.length, keys = [];
+    for (var i = 1; i <= n; i++) keys.push('E' + i);
+    var top = ranked(T, y, g).slice(0, 10).filter(function (a) { return a.progression && keys.some(function (k) { return a.progression[k] != null; }); });
+    if (!top.length || n < 2) return '<div class="ex-panel"><div class="ex-note" style="margin:0">Rank after each event is not held for this season.</div></div>';
+    var hl = top.some(function (a) { return a.name === st.hl; }) ? st.hl : top[0].name, cols = T.events.length;
+    function X(i) { return cols > 1 ? 40 + i * (920 / (cols - 1)) : 500; }
+    function Y(r) { return 20 + (Math.min(r, 20) - 1) * 20; }
+    function pts(a) { var o = []; keys.forEach(function (k, i) { var r = a.progression[k]; if (r != null) o.push(X(i).toFixed(1) + ',' + Y(r)); }); return o.join(' '); }
+    var order = top.filter(function (a) { return a.name !== hl; }).concat(top.filter(function (a) { return a.name === hl; }));
+    var lines = order.map(function (a) { var on = a.name === hl; return '<polyline points="' + pts(a) + '" fill="none" stroke="' + (on ? '#b54708' : '#cbd5e1') + '" stroke-width="' + (on ? 3.5 : 1.5) + '" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>'; }).join('');
+    var H = top.filter(function (a) { return a.name === hl; })[0], dots = '';
+    keys.forEach(function (k, i) { var r = H.progression[k]; if (r != null) dots += '<div aria-hidden="true" style="position:absolute;left:' + (X(i) / 10) + '%;top:' + (Y(r) / 4.2) + '%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#b54708;color:#fff;font-size:0.6rem;font-weight:800;display:flex;align-items:center;justify-content:center">' + (r > 20 ? '20+' : r) + '</div>'; });
+    var grid = [1, 5, 10, 15, 20].map(function (r) { return '<div style="position:absolute;left:0;right:0;top:' + (Y(r) / 4.2) + '%;border-top:1px solid #f1f5f9"></div><div aria-hidden="true" style="position:absolute;left:-30px;top:' + (Y(r) / 4.2) + '%;transform:translateY(-50%);font-size:0.68rem;font-weight:700;color:#64748b;width:24px;text-align:right">' + (r === 20 ? '20+' : r) + '</div>'; }).join('');
+    var shade = n < cols ? '<div aria-hidden="true" style="position:absolute;top:0;bottom:0;left:' + ((X(n - 1) + X(n)) / 20) + '%;right:0;background:repeating-linear-gradient(135deg,#f8fafc 0 6px,#fff 6px 12px)"></div>' : '';
+    var xl = T.events.map(function (k, i) { return '<div style="position:absolute;left:' + (X(i) / 10) + '%;transform:translateX(-50%);top:6px;font-size:0.6rem;font-weight:800;color:' + (i >= n ? '#94a3b8' : '#475569') + ';white-space:nowrap">' + esc(k) + '</div>'; }).join('');
+    function path(a) { var v = keys.map(function (k) { return a.progression[k]; }).filter(function (r) { return r != null; }); return v.length ? v[0] + '→' + v[v.length - 1] : ''; }
+    var aria = 'Line chart of rank after each of ' + n + ' events for the top ' + top.length + '. Highlighted: ' + hl + ', ' + keys.map(function (k) { return H.progression[k]; }).filter(function (r) { return r != null; }).join(', ');
+    return '<div class="ex-panel"><div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:12px"><span class="ex-h" style="margin:0">Title race · rank after each event, top ' + top.length + '</span><span class="ex-dim" style="font-size:0.75rem">Pick a surfer to follow their line.</span></div>'
+      + '<div class="sx-race"><div style="flex:999 1 560px;min-width:0"><div class="sx-chart" role="img" aria-label="' + esc(aria) + '">' + grid + shade
+      + '<svg viewBox="0 0 1000 420" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible">' + lines + '</svg>' + dots + '</div>'
+      + '<div style="position:relative;height:34px;margin-left:30px">' + xl + '</div></div>'
+      + '<div style="flex:1 1 220px;display:flex;flex-direction:column;gap:6px">' + top.map(function (a) { var on = a.name === hl; return '<button type="button" class="sx-who' + (on ? ' on' : '') + '" aria-pressed="' + on + '" data-n="' + esc(a.name) + '" onclick="Sx.hl(this.getAttribute(\'data-n\'))"><span style="width:22px;font-weight:900;font-style:italic">' + a.rank + '</span><span style="flex:1">' + esc(a.name) + '</span><span class="ex-dim" style="font-size:0.7rem;font-weight:600">' + path(a) + '</span></button>'; }).join('') + '</div></div>'
+      + '<div class="ex-note" style="margin:12px 0 0">Ranks below 20th sit on the bottom line.' + (n < cols ? ' The shaded part is still to run.' : '') + '</div></div>';
+  }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function dates(r, g, y) {
+    var rec = (typeof EVENT_DATES !== 'undefined' && EVENT_DATES && r.tab && EVENT_DATES[r.tab] && EVENT_DATES[r.tab][g] && EVENT_DATES[r.tab][g][String(y)]) || {};
+    var s = rec.start || r.start || null, e = rec.end || r.end || null;
+    function f(d, mon) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d); return m ? +m[3] + (mon ? ' ' + MON[+m[2] - 1] : '') : ''; }
+    if (s && e) return s.slice(0, 7) === e.slice(0, 7) ? f(s) + '–' + f(e, 1) : f(s, 1) + ' – ' + f(e, 1);
+    return e ? 'Ended ' + f(e, 1) : s ? 'Started ' + f(s, 1) : 'Dates not held';
+  }
+  function eventsHtml(y, g, I) {
+    var d = D(), rows = evRows(y, g), tabs = I.T ? colTabs(I.T, y, g) : {}, seen = {};
+    rows.forEach(function (r) { if (r.tab) seen[r.tab] = 1; });
+    var cards = rows.map(function (r, i) {
+      var ru = [], m = r.tab && d.events[r.tab] ? d.events[r.tab][g] || {} : {}, fin = null;
+      Object.keys(m).forEach(function (n) { if (m[n].years && m[n].years[y] === 2) ru.push(n); });
+      var HR = HD().REC, R = HR && r.tab && HR.venues && HR.venues[r.tab];
+      ((R && R.finals && R.finals[GK[g]]) || []).forEach(function (f) { if (HR.events[f[3]] && HR.events[f[3]][0] === +y) fin = f; });
+      var link = r.tab ? '#events/' + encodeURIComponent(r.tab) + '/' + y + '/' + GK[g] : null, has = r.winner && !isPh(r.winner);
+      return '<article class="sx-ev"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span class="ex-bl">Event ' + (i + 1) + '</span><span class="ex-dim" style="font-size:0.75rem">' + dates(r, g, y) + '</span></div>'
+        + (link ? '<a class="sx-evn" href="' + link + '">' + esc(r.name.replace(/^\d{4}\s+/, '')) + '</a>' : '<span class="sx-evn" style="font-size:1rem;font-weight:900;font-style:italic;text-transform:uppercase;color:#001834">' + esc(r.name.replace(/^\d{4}\s+/, '')) + '</span>')
+        + '<div class="ex-dim" style="font-size:0.75rem">' + esc(r.location || '') + '</div>'
+        + (r.winner ? '<div class="sx-pod"><span style="font-size:0.62rem;font-weight:800;color:#b54708">1ST</span><span>' + (has ? who(r.winner) : '<span class="ex-dim">' + esc(r.winner) + '</span>') + '</span><span style="font-weight:900;font-style:italic;color:#001834">' + (fin ? fin[5].toFixed(2) : '') + '</span>'
+          + (has && ru.length ? '<span style="font-size:0.62rem;font-weight:800;color:#1a7549">2ND</span><span>' + ru.sort().map(who).join(', ') + '</span><span style="font-weight:700;color:#64748b">' + (fin ? fin[6].toFixed(2) : '') + '</span>' : '') + '</div>' : '<div class="ex-dim" style="font-size:0.8rem;padding-top:6px;border-top:1px solid #f1f5f9">Winner not recorded</div>')
+        + (link ? '<a href="' + link + '" style="font-size:0.75rem;min-height:32px;display:inline-flex;align-items:center">Open edition ›</a>' : '') + '</article>';
+    });
+    I.todo.forEach(function (k) { if (!tabs[k]) cards.push('<article class="sx-ev todo"><div><span class="ex-bl">Event ' + (I.T.events.indexOf(k) + 1) + '</span></div><span class="sx-evn" style="font-size:1rem;font-weight:900;font-style:italic;text-transform:uppercase;color:#001834">' + esc(k) + '</span><div style="font-size:0.8rem;color:#475569;padding-top:6px;border-top:1px dashed #cbd5e1">Still to run.</div></article>'); });
+    return cards.length ? '<div class="sx-evs">' + cards.join('') + '</div>' : '<div class="ex-empty">No events are recorded for this season.</div>';
+  }
+  function leadersHtml(y, g, H) {
+    if (!H) return '<div class="ex-empty">' + (HD().Y && HD().Y[y] ? 'No heat scores are held for this season.' : 'Loading heat scores…') + '</div>';
+    function board(title, vl, dl, rows, note) {
+      return '<div class="ex-panel" style="margin:0"><span class="ex-h">' + title + '</span><table class="ex-t"><thead><tr><th class="r" style="width:22px">#</th><th>Surfer</th><th class="r">' + vl + '</th><th>' + dl + '</th></tr></thead><tbody>'
+        + rows.map(function (r, i) { return '<tr><td class="r ex-dim">' + (i + 1) + '</td><td>' + who(r[0]) + '</td><td class="r sx-rk">' + r[1] + '</td><td class="ex-dim" style="font-size:0.75rem">' + esc(r[2]) + '</td></tr>'; }).join('') + '</tbody></table>'
+        + (note ? '<div class="ex-dim" style="font-size:0.75rem;margin-top:8px">' + note + '</div>' : '') + '</div>';
+    }
+    function top(f, ok, n) { return H.list.filter(ok || function () { return 1; }).slice().sort(function (a, b) { return f(b) - f(a) || b.h - a.h || a.n.localeCompare(b.n); }).slice(0, n || 8); }
+    var q = function (s) { return s.h >= MIN_HEATS; }, pc = function (s) { return Math.round(100 * s.w / s.h); }, note = 'Surfers with ' + MIN_HEATS + ' or more heats.';
+    return '<div class="sx-boards">'
+      + board('Heat wins', 'Wins', 'Heats · win rate', top(function (s) { return s.w; }).map(function (s) { return [s.n, s.w, s.h + ' · ' + pc(s) + '%']; }))
+      + board('Heat win rate', 'Rate', 'Won of surfed', top(function (s) { return s.w / s.h; }, q).map(function (s) { return [s.n, pc(s) + '%', s.w + ' of ' + s.h]; }), note)
+      + board('Average heat total', 'Average', 'Heats', top(function (s) { return s.sum / s.h; }, q).map(function (s) { return [s.n, (s.sum / s.h).toFixed(2), '' + s.h]; }), note)
+      + board('Excellent-range waves (8.00 and above)', 'Waves', 'Of waves ridden', top(function (s) { return s.x8; }, function (s) { return s.x8 > 0; }).map(function (s) { return [s.n, s.x8, '' + s.rid]; }))
+      + board('Best heat totals', 'Total', 'Event · round', H.totals.slice(0, 8).map(function (t) { return [t[1], t[0].toFixed(2), t[2] + ' · ' + t[3]]; }))
+      + board('Best single waves', 'Wave', 'Event · round', H.waves.slice(0, 8).map(function (w) { return [w[1], w[0].toFixed(2), w[2] + ' · ' + w[3]]; }))
+      + '</div>';
+  }
+  function rookiesHtml(y, g, I, rk) {
+    var R = ((D().rookies || {})[g] || {})[y] || {}, cls = (R.class || []).slice(), pos = {}, T = I.T, by = {};
+    if (R.roty && cls.indexOf(R.roty) === -1) cls.push(R.roty);
+    if (!cls.length) return '<div class="ex-panel"><div class="ex-note" style="margin:0">No rookie class is recorded for this season.</div></div>';
+    rk.forEach(function (r) { pos[r.name] = r.rank; });
+    if (T) T.athletes.forEach(function (a) { by[a.name] = a; if (pos[a.name] == null && a.rank != null) pos[a.name] = a.rank; });
+    cls.sort(function (a, b) { return (pos[a] || 999) - (pos[b] || 999) || a.localeCompare(b); });
+    var lead = I.live && pos[cls[0]] != null ? cls[0] : null;
+    return '<div class="ex-panel" style="max-width:760px"><span class="ex-h">' + y + ' rookie class · ' + cls.length + ' surfer' + (cls.length !== 1 ? 's' : '') + '</span><div class="ex-scroll"><table class="ex-t"><thead><tr><th>Rookie</th><th>Nation</th><th class="r">' + (I.live ? 'Rank now' : 'Rank') + '</th>' + (T ? '<th class="r">Best result</th><th class="r">Events</th>' : '') + '</tr></thead><tbody>'
+      + cls.map(function (n) {
+          var a = by[n], ps = a && a.placings ? Object.keys(a.placings).map(function (k) { return a.placings[k]; }).filter(function (p) { return p != null; }) : [], nat = typeof getAthleteNation === 'function' ? getAthleteNation(n) : '';
+          return '<tr><td>' + who(n) + (R.roty === n && !I.live ? '<span class="sx-tag">ROOKIE OF THE YEAR</span>' : '') + (lead === n ? '<span class="sx-tag">LEADING ROOKIE</span>' : '') + '</td><td class="ex-dim">' + esc(nat || '—') + '</td><td class="r" style="font-weight:800">' + (pos[n] != null ? ord(pos[n]) : '—') + '</td>'
+            + (T ? '<td class="r">' + (ps.length ? ord(Math.min.apply(null, ps)) : '—') + '</td><td class="r">' + (ps.length || '—') + '</td>' : '') + '</tr>';
+        }).join('') + '</tbody></table></div>' + (I.live ? '<div class="ex-note" style="margin:12px 0 0">Rookie of the year is confirmed when the season ends.</div>' : '') + '</div>';
+  }
+  function seasonHtml(y, g) {
+    var ys = years(g);
+    if (ys.indexOf(y) === -1) return SecF.html('Sx.refresh', false) + '<div class="ex-empty">No ' + G[g].toLowerCase() + '&#39;s season is recorded for ' + esc(y) + '. <a href="#season">All seasons</a></div>';
+    need(y);
+    var I = info(y, g), rk = ranking(y, g), W = winners(y, g), ho = heatsOn(y), H = ho ? heatStats(y, g) : null, i = ys.indexOf(y), nEv = I.T ? I.T.events.length : evRows(y, g).length;
+    var TABS = [['rank', 'Rankings']].concat(I.T ? [['race', 'Title race']] : [], [['events', 'Events']], ho ? [['leaders', 'Leaders']] : [], [['rookies', 'Rookies']]);
+    var sub = TABS.some(function (t) { return t[0] === st.sub; }) ? st.sub : 'rank';
+    var line = I.live ? 'After ' + I.done.length + ' of ' + nEv + ' events' + (rk[0] ? ' · leader ' + who(rk[0].name) : '') + (rk[1] ? ' · 2nd ' + who(rk[1].name) : '') + ' · still to run: ' + esc(I.todo.join(', ')) + ' · ranks are live'
+      : (nEv ? nEv + ' event' + (nEv !== 1 ? 's' : '') : 'Events not recorded') + (rk[0] ? ' · champion ' + who(rk[0].name) : '') + (rk[1] ? ' · runner-up ' + who(rk[1].name) : '');
+    var body = sub === 'rank' ? rankHtml(y, g, I, rk) : sub === 'race' ? raceHtml(y, g, I) : sub === 'events' ? eventsHtml(y, g, I) : sub === 'leaders' ? leadersHtml(y, g, H) : rookiesHtml(y, g, I, rk);
+    var pre = !ho && hFrom() != null ? '<div class="ex-note">Before ' + hFrom() + ' the archive holds the year-end ranking and event results only. Heat leaders start in ' + hFrom() + '.</div>' : '';
+    return SecF.html('Sx.refresh', false)
+      + '<nav class="ex-crumb" aria-label="Breadcrumb"><a href="#season" style="font-weight:600">Seasons</a><span aria-hidden="true">/</span><span>' + y + ' ' + G[g].toLowerCase() + '</span></nav>'
+      + '<header class="ex-head sx-headrow"><div style="min-width:0"><div class="ex-eyebrow">' + TOUR[tour()] + ' · ' + G[g] + '</div>'
+      + '<div style="display:flex;align-items:center;gap:12px;margin:6px 0"><h1 class="ex-h1" style="margin:0">' + y + '</h1>' + (I.live ? '<span class="sx-live">In progress</span>' : '') + '</div><div class="ex-sub">' + line + '</div></div>'
+      + '<div class="sx-pick"><button type="button" class="sx-ib" aria-label="Previous season' + (ys[i + 1] ? ', ' + ys[i + 1] : '') + '"' + (ys[i + 1] ? ' onclick="Sx.go(' + ys[i + 1] + ')"' : ' disabled') + '>‹</button>'
+      + '<select aria-label="Season" onchange="Sx.go(+this.value)">' + ys.map(function (x) { return '<option value="' + x + '"' + (x === y ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select>'
+      + '<button type="button" class="sx-ib" aria-label="Next season' + (ys[i - 1] ? ', ' + ys[i - 1] : '') + '"' + (ys[i - 1] ? ' onclick="Sx.go(' + ys[i - 1] + ')"' : ' disabled') + '>›</button></div></header>'
+      + cardsHtml(y, g, I, rk, W, H)
+      + '<nav class="ex-tabs" aria-label="Season sections">' + TABS.map(function (t) { return '<button type="button" class="ex-tab' + (t[0] === sub ? ' on' : '') + '" aria-pressed="' + (t[0] === sub) + '" onclick="Sx.sub(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</nav>'
+      + '<div class="ex-body">' + pre + body + '</div>';
+  }
+
+  function show() {
+    var root = document.getElementById('sx-root'); if (!root) return;
+    if (Sx.pending !== undefined) {
+      var p = Sx.pending; Sx.pending = undefined;
+      if (p) { var b = String(p).split('/'); st.year = +b[0] || null; if (b[1] === 'm' || b[1] === 'w') { st.g = b[1] === 'm' ? 'men' : 'women'; if (SecF.div !== st.g) SecF.set('div', st.g, ''); } else st.g = null; }
+      else st.year = null;
+    }
+    if (st.year) {
+      var g = SecF.one();
+      if (st.g && st.g !== g) {                 // division changed on the strip: follow it
+        st.g = g;
+        if (years(g).indexOf(st.year) !== -1 && location.hash !== href(st.year, g)) { try { history.replaceState(null, '', href(st.year, g)); } catch (e) {} }
+      }
+      st.g = g;
+      root.innerHTML = seasonHtml(st.year, g);
+    } else root.innerHTML = indexHtml();
+  }
+  return {
+    pending: undefined, show: show, refresh: show,
+    sort: function (k) { if (st.sort === k) st.dir = -st.dir; else { st.sort = k; st.dir = k === 'champ' ? 1 : -1; } show(); },
+    sub: function (s) { st.sub = s; show(); },
+    hl: function (n) { st.hl = n; show(); },
+    go: function (y) { location.hash = href(y, SecF.one()); }
+  };
+})();
+</script>
+<!-- ── Winners section (redesign, Nov 2026) ────────────────────────────────── -->
+<style>
+  #wx-root { max-width: 1240px; margin: 0 auto; min-width: 0; }
+  #wx-root a { color: #001834; font-weight: 700; text-decoration: none; }
+  #wx-root a:hover { color: #1f5fa8; text-decoration: underline; }
+  .wx-num { font-weight: 900; font-style: italic; color: #001834; font-size: 0.95rem; white-space: nowrap; }
+  .wx-num.gold { color: #b54708; }
+  .wx-bars { display: flex; align-items: flex-end; gap: 3px; height: 170px; overflow-x: auto; padding-top: 6px; }
+  .wx-bars > div { flex: 1 0 16px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
+  .wx-bars span.v { font-size: 0.56rem; font-weight: 800; color: #001834; }
+  .wx-bars span.b { width: 100%; max-width: 22px; border-radius: 3px 3px 0 0; }
+  .wx-bars span.a { font-size: 0.56rem; color: #64748b; }
+  .wx-dec { display: inline-block; min-width: 30px; padding: 2px 4px; border-radius: 4px; font-weight: 700; text-align: center; }
+  .wx-flag { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; }
+  .wx-pill { display: inline-block; margin-right: 4px; font-size: 0.66rem; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #f1f5f9; color: #001834; white-space: nowrap; }
+  .wx-lists { display: flex; flex-wrap: wrap; gap: 8px; }
+  .wx-lists button { min-height: 44px; padding: 0 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-family: inherit; font-size: 0.8rem; font-weight: 700; color: #001834; cursor: pointer; }
+  .wx-lists button:hover { border-color: #001834; }
+  .wx-cov { background: #f1f5f9; border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; color: #334155; line-height: 1.5; margin-bottom: 14px; }
+</style>
+<script>
+window.Wx = (function () {
+  var st = { sub: 'lead', nation: 'all', ev: 'all', sort: 'w', dir: -1, more: false };
+  var G = { women: 'Women', men: 'Men' }, GK = { women: 'w', men: 'm' };
+  var TOUR = { ct: 'Championship Tour', cs: 'Challenger Series', lt: 'Longboard Tour' };
+  var NOT_WINS = { 'WSL Finals': 1 };
+  function tour() { return (typeof currentWSLTour !== 'undefined' && TOUR[currentWSLTour]) ? currentWSLTour : 'ct'; }
+  function D() { return (typeof DATA !== 'undefined' && DATA) || { athletes: {}, events: {}, seasons: {}, tour_seasons: {}, rookies: {}, event_results: { women: [], men: [] } }; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function phKind(n) { var m = /^event (not completed|incomplete|cancell?ed)$/i.exec(String(n || '').trim()); return m ? (/^cancel/i.test(m[1]) ? 'Cancelled' : /^incomplete/i.test(m[1]) ? 'Incomplete' : 'Not completed') : null; }
+  function who(n) { return D().athletes[n] ? '<a href="#athletes/' + encodeURIComponent(n) + '">' + esc(n) + '</a>' : esc(n); }
+  function yl(y, g) { return '<a href="#season/' + y + '/' + GK[g] + '">' + y + '</a>'; }
+  function el(r, g, label) { return r.tab ? '<a style="font-weight:600" href="#events/' + encodeURIComponent(r.tab) + '/' + r.year + '/' + GK[g] + '">' + esc(label) + '</a>' : esc(label); }
+  function nationOf(n) {
+    var v = typeof getAthleteNation === 'function' ? getAthleteNation(n) : ((D().athletes[n] || {}).nation || '');
+    if (!v && typeof regIdFor === 'function' && typeof regData === 'function') { var id = regIdFor(n), R = regData(); if (id && R && R.byId[id]) v = R.byId[id].nation || ''; }
+    return v || '';
+  }
+  function dob(n) { var d = typeof getAthleteDob === 'function' ? getAthleteDob(n) : null; return d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null; }
+
+  // every event of the division in tour order (oldest first), with its winner if it has one
+  function events(d, g, from, by) {
+    var o = {};
+    Object.keys(by || {}).forEach(function (y) { (by[y] || []).forEach(function (e, i) { o[e.n] = e.o != null ? e.o : i + 1; }); });
+    return (d.event_results[g] || []).filter(function (r) { return +r.year >= from && !NOT_WINS[r.tab] && !/^QS/i.test(r.tier || ''); })
+      .map(function (r, i) { return { year: +r.year, name: r.name, tab: r.tab || '', loc: r.location || '', end: r.end || '', o: o[r.name] != null ? o[r.name] : 900 + i, ph: phKind(r.winner), w: r.winner && !phKind(r.winner) ? r.winner : '' }; })
+      .sort(function (a, b) { return a.year - b.year || a.o - b.o; });
+  }
+  function model() {
+    var d = D(), g = SecF.one(), maxY = 0;
+    ['women', 'men'].forEach(function (x) { (d.event_results[x] || []).forEach(function (r) { if (+r.year > maxY) maxY = +r.year; }); });
+    var from = SecF.from(maxY), by = (typeof EVENTS_BY_YEAR !== 'undefined' && EVENTS_BY_YEAR && EVENTS_BY_YEAR[g]) || {};
+    var evs = events(d, g, from, by), S = {}, list;
+    evs.forEach(function (e, i) { e.i = i; if (!e.w) return; var s = S[e.w] || (S[e.w] = { n: e.w, wins: [], nat: nationOf(e.w), f: 0, e: 0 }); s.wins.push(e); });
+    Object.keys(d.events).forEach(function (tab) {
+      if (NOT_WINS[tab]) return;
+      var m = d.events[tab][g] || {};
+      Object.keys(S).forEach(function (n) { var ys = m[n] && m[n].years; if (!ys) return; Object.keys(ys).forEach(function (y) { if (+y >= from) { S[n].e++; if (ys[y] <= 2) S[n].f++; } }); });
+    });
+    list = Object.keys(S).map(function (n) {
+      var s = S[n], v = {}; s.wins.forEach(function (e) { if (e.tab) v[e.tab] = 1; }); if (!Object.keys(v).length) s.wins.forEach(function (e) { v[e.loc || e.name] = 1; });
+      s.w = s.wins.length; s.y1 = s.wins[0].year; s.y2 = s.wins[s.w - 1].year; s.v = Object.keys(v).length;
+      s.f = Math.max(s.f, 0); s.rate = s.e ? 100 * Math.min(s.w, s.e) / s.e : null;
+      return s;
+    });
+    var years = {}; evs.forEach(function (e) { years[e.year] = 1; });
+    return { d: d, g: g, from: from, maxY: maxY, evs: evs, S: S, list: list, years: Object.keys(years).map(Number).sort(function (a, b) { return a - b; }) };
+  }
+  function ageAt(e, g) {
+    var b = dob(e.w), on = (e.tab && typeof getEventDate === 'function' && getEventDate(e.tab, g, e.year)) || e.end;
+    if (!b || !on || typeof ageOn !== 'function') return null;
+    var a = ageOn(b, on); return a && a.years >= 14 && a.years <= 60 ? a : null;
+  }
+  function champions(M) {                      // [{y, c, ru, live}] newest first, the division's seasons in the era
+    var d = M.d, g = M.g, ys = {}, out = [];
+    Object.keys(d.seasons || {}).forEach(function (k) { var m = k.match(/^(\d{4})-(women|men)$/); if (m && m[2] === g && +m[1] >= M.from) ys[m[1]] = 1; });
+    var list = Object.keys(ys).map(Number).sort(function (a, b) { return b - a; });
+    list.forEach(function (y, i) {
+      var s = (d.seasons[y + '-' + g] || []).filter(function (r) { return r.rank != null; }).sort(function (a, b) { return a.rank - b.rank; });
+      var T = (d.tour_seasons || {})[y + '-' + g], live = i === 0 && !!T && T.events.some(function (k) { return !T.athletes.some(function (a) { return a.placings && a.placings[k] != null; }); });
+      out.push({ y: y, c: s[0] ? s[0].name : '', ru: s[1] ? s[1].name : '', live: live });
+    });
+    return out;
+  }
+
+  // ── pieces ────────────────────────────────────────────────────────────────
+  function cardsHtml(M, ch) {
+    var cards = [], g = M.g;
+    function card(label, v, people, cls) {
+      cards.push('<div class="ex-card"><div class="ex-card-h"><span class="ex-bl">' + label + '</span></div><div><span class="ex-bv ' + (cls || '') + '">' + v + '</span></div><ul class="ex-people">'
+        + people.map(function (p) { return '<li>' + (p[0] ? who(p[0]) + ' ' : '') + '<span class="ex-dim">' + p[1] + '</span></li>'; }).join('') + '</ul></div>');
+    }
+    function top(f) { var best = 0; M.list.forEach(function (s) { if (f(s) > best) best = f(s); }); return best ? { v: best, who: M.list.filter(function (s) { return f(s) === best; }).sort(function (a, b) { return a.n.localeCompare(b.n); }) } : null; }
+    var t = top(function (s) { return s.w; });
+    if (t) card('Most event wins', t.v, t.who.map(function (s) { return [s.n, s.y1 === s.y2 ? s.y1 : s.y1 + ' to ' + s.y2]; }), 'gold');
+    var tc = {}, tb = 0; ch.forEach(function (c) { if (c.c && !c.live) { tc[c.c] = (tc[c.c] || 0) + 1; if (tc[c.c] > tb) tb = tc[c.c]; } });
+    if (tb) card('Most world titles', tb, Object.keys(tc).filter(function (n) { return tc[n] === tb; }).sort().map(function (n) { return [n, '']; }));
+    var sb = 0, sw = [];
+    M.list.forEach(function (s) { var c = {}; s.wins.forEach(function (e) { c[e.year] = (c[e.year] || 0) + 1; }); Object.keys(c).forEach(function (y) { if (c[y] > sb) { sb = c[y]; sw = []; } if (c[y] === sb) sw.push([s.n, y]); }); });
+    if (sb) card('Most wins in one season', sb, sw.sort(function (a, b) { return a[1] - b[1]; }));
+    var ages = []; M.evs.forEach(function (e) { if (e.w) { var a = ageAt(e, g); if (a) ages.push({ a: a, e: e }); } });
+    ages.sort(function (x, y) { return x.a.total - y.a.total; });
+    if (ages.length) {
+      card('Youngest winner', ages[0].a.years + 'y ' + ages[0].a.days + 'd', [[ages[0].e.w, esc(ages[0].e.name)]], 'sm');
+      var o = ages[ages.length - 1]; card('Oldest winner', o.a.years + 'y ' + o.a.days + 'd', [[o.e.w, esc(o.e.name)]], 'sm');
+    }
+    var v = top(function (s) { return s.v; });
+    if (v) card('Most different venues won', v.v, v.who.map(function (s) { return [s.n, '']; }));
+    var first = M.list.slice().sort(function (a, b) { return b.wins[0].i - a.wins[0].i; })[0];
+    if (first && M.from === 0) card('Most recent first-time winner', who(first.n), [['', esc(first.wins[0].name)]], 'sm');
+    return cards.length ? '<section class="ex-cards" aria-label="Headline numbers">' + cards.join('') + '</section>' : '';
+  }
+  function tabList(M) { var t = {}; M.evs.forEach(function (e) { if (e.tab) t[e.tab] = 1; }); return Object.keys(t).sort(); }
+  function leadHtml(M) {
+    var rows = M.list.filter(function (s) { return (st.nation === 'all' || (s.nat || 'Not recorded') === st.nation) && (st.ev === 'all' || s.wins.some(function (e) { return e.tab === st.ev; })); });
+    if (st.ev !== 'all') rows = rows.map(function (s) { var w = s.wins.filter(function (e) { return e.tab === st.ev; }), m = ((M.d.events[st.ev] || {})[M.g] || {})[s.n], e = 0, f = 0; Object.keys((m && m.years) || {}).forEach(function (y) { if (+y >= M.from) { e++; if (m.years[y] <= 2) f++; } }); return { n: s.n, nat: s.nat, w: w.length, f: f, e: e, rate: e ? 100 * Math.min(w.length, e) / e : null, y1: w[0].year, y2: w[w.length - 1].year, v: 1 }; });
+    var C = [['n', 'Surfer', 1], ['nat', 'Nation', 1], ['w', 'Wins', 0], ['f', 'Finals', 0], ['e', 'Entered', 0], ['rate', 'Win rate', 0], ['y1', 'First win', 0], ['y2', 'Latest win', 0], ['v', 'Venues won', 0]], k = st.sort, dir = st.dir;
+    rows.sort(function (a, b) {
+      var x = a[k], y = b[k];
+      if (k === 'n' || k === 'nat') return String(x).localeCompare(String(y)) * dir || b.w - a.w;
+      if (x == null && y == null) return b.w - a.w; if (x == null) return 1; if (y == null) return -1;
+      return (x - y) * dir || b.w - a.w || a.y1 - b.y1 || a.n.localeCompare(b.n);
+    });
+    var total = rows.length, shown = st.more ? rows : rows.slice(0, 25), what = (st.nation !== 'all' ? ' from ' + esc(st.nation) : '') + (st.ev !== 'all' ? ' at ' + esc(st.ev) : '');
+    if (!total) return '<div class="ex-panel"><div style="padding:20px 4px"><div style="font-size:0.95rem;font-weight:800;color:#001834">No ' + G[M.g].toLowerCase() + '&#39;s event winners' + what + '</div>'
+      + '<div class="ex-dim" style="font-size:0.82rem;margin:8px 0 12px">Try the other division or era, or clear the filters.</div><button type="button" class="ex-ghost" onclick="Wx.clear()">Clear filters</button></div></div>';
+    var linked = M.evs.filter(function (e) { return e.w && e.tab; }).length, won = M.evs.filter(function (e) { return e.w; }).length;
+    return '<div class="ex-panel"><div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:8px"><span class="ex-h" style="margin:0">' + (what ? 'Winners' + what : 'Every winner ranked by wins') + ' · ' + (shown.length < total ? 'top ' + shown.length + ' of ' + total : total) + '</span><span class="ex-dim" style="font-size:0.75rem">Tap a column to sort</span></div>'
+      + '<div class="ex-scroll"><table class="ex-t" style="min-width:900px"><thead><tr><th class="r" style="width:28px">#</th>' + C.map(function (c) { return '<th class="' + (c[2] ? (c[0] === 'n' ? 'stick' : '') : 'r') + '"><button type="button" class="' + (k === c[0] ? 'on' : '') + '" aria-label="Sort by ' + c[1] + '" onclick="Wx.sort(\'' + c[0] + '\')">' + c[1] + (k === c[0] ? (dir < 0 ? ' ▼' : ' ▲') : '') + '</button></th>'; }).join('') + '</tr></thead><tbody>'
+      + shown.map(function (r, i) { return '<tr><td class="r ex-dim">' + (i + 1) + '</td><td class="stick">' + who(r.n) + '</td><td class="ex-dim">' + esc(r.nat || '—') + '</td><td class="r wx-num gold">' + r.w + '</td><td class="r">' + (r.e ? r.f : '<span class="ex-dim">—</span>') + '</td><td class="r">' + (r.e || '<span class="ex-dim">—</span>') + '</td><td class="r">' + (r.rate == null ? '<span class="ex-dim">—</span>' : r.rate.toFixed(1) + '%') + '</td><td class="r">' + yl(r.y1, M.g) + '</td><td class="r">' + yl(r.y2, M.g) + '</td><td class="r">' + r.v + '</td></tr>'; }).join('')
+      + '</tbody></table></div>' + (total > 25 ? '<div style="margin-top:12px"><button type="button" class="ex-ghost" onclick="Wx.more()">' + (st.more ? 'Show the top 25' : 'Show all ' + total) + '</button></div>' : '')
+      + '<div class="ex-note" style="margin:12px 0 0">Wins come from every event in the Events index. Finals, events entered, win rate and venues won come from the ' + linked + ' of ' + won + ' won events that are linked to an event page' + (linked < won ? ', so for some surfers they read low' : '') + '. The WSL Finals decide the title and are not counted as an event win.</div></div>';
+  }
+  function titlesHtml(M, ch) {
+    var tc = {}; ch.forEach(function (c) { if (c.c && !c.live) tc[c.c] = (tc[c.c] || 0) + 1; });
+    var names = Object.keys(tc).sort(function (a, b) { return tc[b] - tc[a] || a.localeCompare(b); }), mx = names.length ? tc[names[0]] : 1, rows = [];
+    ch.forEach(function (c, i) {
+      rows.push('<tr' + (c.live ? ' style="background:#f8fafc"' : '') + '><td><span class="wx-num">' + yl(c.y, M.g) + '</span></td><td>' + (c.live ? '<span class="ex-dim" style="font-style:italic">In progress' + (c.c ? ' · leader ' : '') + '</span>' + (c.c ? who(c.c) : '') : c.c ? who(c.c) : '<span class="ex-dim">Not recorded</span>') + '</td><td>' + (c.ru && !c.live ? who(c.ru) : '') + '</td></tr>');
+      var next = ch[i + 1]; if (next) for (var y = c.y - 1; y > next.y; y--) rows.push('<tr style="background:#f8fafc"><td><span class="wx-num ex-dim">' + y + '</span></td><td colspan="2" class="ex-dim" style="font-style:italic">No tour</td></tr>');
+    });
+    if (!ch.length) return '<div class="ex-empty">No seasons are recorded in this era.</div>';
+    return '<div class="ex-two"><div class="ex-panel"><span class="ex-h">Titles by surfer · ' + names.length + ' different champions</span><table class="ex-t"><thead><tr><th>Surfer</th><th class="r">Titles</th><th style="width:50%"></th></tr></thead><tbody>'
+      + names.map(function (n) { return '<tr><td>' + who(n) + '</td><td class="r wx-num">' + tc[n] + '</td><td><div aria-hidden="true" style="height:10px;width:' + (100 * tc[n] / mx) + '%;background:#001834;border-radius:3px"></div></td></tr>'; }).join('') + '</tbody></table></div>'
+      + '<div class="ex-panel"><span class="ex-h">Champions, newest first</span><table class="ex-t"><thead><tr><th>Year</th><th>Champion</th><th>Runner-up</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>'
+      + '<a href="#season" style="display:inline-flex;align-items:center;min-height:44px;font-size:0.82rem">All seasons ›</a></div></div>';
+  }
+  function bars(obj, col, aria) {
+    var ks = Object.keys(obj).map(Number); if (!ks.length) return '<div class="ex-dim">None with a known age.</div>';
+    var mx = 0, out = ''; ks.forEach(function (k) { if (obj[k] > mx) mx = obj[k]; });
+    for (var a = Math.min.apply(null, ks); a <= Math.max.apply(null, ks); a++) { var v = obj[a] || 0; out += '<div><span class="v">' + (v || '') + '</span><span class="b" style="height:' + Math.round(130 * v / mx) + 'px;background:' + col + '"></span><span class="a">' + a + '</span></div>'; }
+    return '<div class="wx-bars" role="img" aria-label="' + esc(aria) + '">' + out + '</div>';
+  }
+  function ageHtml(M) {
+    var g = M.g, aged = [], withDob = 0, wa = {}, fa = {}, firstN = 0, won = M.evs.filter(function (e) { return e.w; });
+    M.list.forEach(function (s) { if (dob(s.n)) withDob++; var a = ageAt(s.wins[0], g); if (a) { fa[a.years] = (fa[a.years] || 0) + 1; firstN++; } });
+    won.forEach(function (e) { var a = ageAt(e, g); if (a) { aged.push({ a: a, e: e }); wa[a.years] = (wa[a.years] || 0) + 1; } });
+    aged.sort(function (x, y) { return x.a.total - y.a.total; });
+    function tbl(title, list) {
+      return '<div class="ex-panel"><span class="ex-h">' + title + '</span>' + (list.length ? '<table class="ex-t"><thead><tr><th class="r">Age</th><th>Surfer</th><th>Event</th></tr></thead><tbody>'
+        + list.map(function (x) { return '<tr><td class="r wx-num">' + x.a.years + 'y ' + x.a.days + 'd</td><td>' + who(x.e.w) + '</td><td>' + el(x.e, g, x.e.name) + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="ex-dim">None with a known age.</div>') + '</div>';
+    }
+    var peak = Object.keys(wa).sort(function (a, b) { return wa[b] - wa[a]; })[0];
+    return '<div class="wx-cov"><strong style="color:#001834">' + withDob + ' of ' + M.list.length + ' winners have a full date of birth.</strong> Ages below cover ' + aged.length + ' of ' + won.length + ' wins. Winners with a birth year only, or none, are left out of every age record.</div>'
+      + '<div class="ex-two">' + tbl('Youngest winners', aged.slice(0, 10)) + tbl('Oldest winners', aged.slice(-10).reverse())
+      + '<div class="ex-panel"><span class="ex-h">Wins by age · ' + aged.length + ' wins with a known age</span>' + bars(wa, '#001834', 'Bar chart of wins by age at the time of the win.' + (peak ? ' Most wins at age ' + peak + '.' : '')) + '</div>'
+      + '<div class="ex-panel"><span class="ex-h">Age at first win · ' + firstN + ' surfers</span>' + bars(fa, '#1f5fa8', 'Bar chart of age at first event win for ' + firstN + ' surfers.') + '</div></div>';
+  }
+  function nationHtml(M) {
+    var N = {}, decs = {}, mx = 0;
+    M.list.forEach(function (s) {
+      var k = s.nat || 'Not recorded', n = N[k] || (N[k] = { n: k, w: 0, s: 0, dec: {}, first: null });
+      n.s++; s.wins.forEach(function (e) { n.w++; var d = Math.floor(e.year / 10) * 10; decs[d] = 1; n.dec[d] = (n.dec[d] || 0) + 1; if (!n.first || e.i < n.first.i) n.first = e; });
+    });
+    var ds = Object.keys(decs).map(Number).sort(), rows = Object.keys(N).map(function (k) { return N[k]; }).sort(function (a, b) { return (a.n === 'Not recorded') - (b.n === 'Not recorded') || b.w - a.w || a.n.localeCompare(b.n); });
+    rows.forEach(function (r) { ds.forEach(function (d) { if ((r.dec[d] || 0) > mx) mx = r.dec[d]; }); });
+    if (!rows.length) return '<div class="ex-empty">No event wins in this era.</div>';
+    return '<div class="ex-panel"><span class="ex-h">Wins by nation, and by decade</span><div class="ex-scroll"><table class="ex-t" style="min-width:' + (520 + ds.length * 70) + 'px"><thead><tr><th class="stick">Nation</th><th class="r">Wins</th><th class="r">Winners</th>' + ds.map(function (d) { return '<th class="r">' + d + 's</th>'; }).join('') + '<th>First winner</th></tr></thead><tbody>'
+      + rows.map(function (r) {
+          return '<tr><td class="stick" style="font-weight:700;color:#001834">' + (r.n !== 'Not recorded' && typeof nationFlag === 'function' ? nationFlag(r.n) : '') + esc(r.n) + '</td><td class="r wx-num gold">' + r.w + '</td><td class="r">' + r.s + '</td>'
+            + ds.map(function (d) { var v = r.dec[d] || 0, k = v / mx; return '<td class="r"><span class="wx-dec" style="background:' + (v ? (k > 0.5 ? '#001834' : k > 0.2 ? '#1f5fa8' : k > 0.05 ? '#d8e6f7' : '#f1f5f9') : 'transparent') + ';color:' + (v ? (k > 0.2 ? '#fff' : '#001834') : '#94a3b8') + '">' + (v || '–') + '</span></td>'; }).join('')
+            + '<td>' + (r.n !== 'Not recorded' && r.first ? who(r.first.w) + ' <span class="ex-dim" style="font-size:0.75rem">' + esc(r.first.name) + '</span>' : '') + '</td></tr>';
+        }).join('') + '</tbody></table></div><div class="ex-note" style="margin:12px 0 0">Nation as recorded for each surfer. Darker cells: more wins in that decade.</div></div>';
+  }
+  function streaksHtml(M) {
+    var won = M.evs.filter(function (e) { return e.w; }), runs = [], cur = null;
+    won.forEach(function (e) { if (cur && cur.n === e.w) { cur.c++; cur.b = e; } else { cur = { n: e.w, c: 1, a: e, b: e }; runs.push(cur); } });
+    runs = runs.filter(function (r) { return r.c >= 2; }).sort(function (x, y) { return y.c - x.c || x.a.i - y.a.i; }).slice(0, 8);
+    var yi = {}; M.years.forEach(function (y, i) { yi[y] = i; });
+    var seas = [], gaps = [];
+    M.list.forEach(function (s) {
+      var ys = {}, list; s.wins.forEach(function (e) { ys[e.year] = 1; }); list = Object.keys(ys).map(Number).sort(function (a, b) { return a - b; });
+      var a = list[0], n = 1;
+      for (var i = 1; i <= list.length; i++) {
+        if (i < list.length && yi[list[i]] === yi[list[i - 1]] + 1) { n++; continue; }
+        if (n >= 2) seas.push({ n: s.n, c: n, a: a, b: list[i - 1] });
+        if (i < list.length) { gaps.push({ n: s.n, c: list[i] - list[i - 1], a: list[i - 1], b: list[i] }); a = list[i]; n = 1; }
+      }
+    });
+    seas.sort(function (x, y) { return y.c - x.c || x.a - y.a; }); gaps = gaps.filter(function (x) { return x.c >= 2; }).sort(function (x, y) { return y.c - x.c || x.a - y.a; });
+    var firsts = M.list.slice().sort(function (a, b) { return b.wins[0].i - a.wins[0].i; }).slice(0, 8);
+    var skipped = []; for (var y = M.years[0]; y < M.years[M.years.length - 1]; y++) if (yi[y] == null) skipped.push(y);
+    function card(title, vl, dl, rows, note) {
+      return '<div class="ex-panel"><span class="ex-h">' + title + '</span>' + (rows.length ? '<table class="ex-t"><thead><tr><th class="r">' + vl + '</th><th>Surfer</th><th>' + dl + '</th></tr></thead><tbody>'
+        + rows.map(function (r) { return '<tr><td class="r wx-num">' + r[0] + '</td><td>' + who(r[1]) + '</td><td style="color:#334155;font-size:0.75rem">' + r[2] + '</td></tr>'; }).join('') + '</tbody></table>' : '<div class="ex-dim">None in this era.</div>')
+        + (note ? '<div class="ex-dim" style="font-size:0.75rem;margin-top:8px">' + note + '</div>' : '') + '</div>';
+    }
+    return '<div class="ex-two">'
+      + card('Consecutive event wins', 'Wins', 'From · to', runs.map(function (r) { return [r.c, r.n, esc(r.a.name) + ' → ' + esc(r.b.name)]; }), 'Events run in the order of the Events index. Events with no winner are passed over.')
+      + card('Wins in consecutive seasons', 'Seasons', 'Run', seas.slice(0, 8).map(function (r) { return [r.c, r.n, r.a + ' to ' + r.b]; }), skipped.length ? 'No tour in ' + skipped.join(', ') + ', so the seasons either side count as consecutive.' : '')
+      + card('Longest gap between wins', 'Years', 'Between', gaps.slice(0, 8).map(function (r) { return [r.c, r.n, r.a + ' → ' + r.b]; }))
+      + card('Most recent first-time winners', 'Year', 'First win', firsts.map(function (s) { return [s.wins[0].year, s.n, el(s.wins[0], M.g, s.wins[0].name.replace(/^\d{4}\s+/, ''))]; }), M.from ? 'First win within this era.' : '')
+      + '</div>';
+  }
+  function fullHtml(M) {
+    var rows = M.evs.slice().reverse().filter(function (e) { return (st.ev === 'all' || e.tab === st.ev) && (st.nation === 'all' || (e.w && ((M.S[e.w] && M.S[e.w].nat) || 'Not recorded') === st.nation)); });
+    var none = M.evs.filter(function (e) { return !e.w; }), won = rows.filter(function (e) { return e.w; }).length;
+    if (!rows.length) return '<div class="ex-panel"><div class="ex-dim" style="padding:16px 0">No events match the filters. <button type="button" class="ex-ghost" onclick="Wx.clear()">Clear filters</button></div></div>';
+    return '<div class="ex-panel"><span class="ex-h">Every event, newest first · ' + rows.length + ' events, ' + won + ' with a winner</span><div class="ex-scroll"><table class="ex-t"><thead><tr><th>Year</th><th>Event</th><th>Location</th><th>Winner</th></tr></thead><tbody>'
+      + rows.map(function (e) {
+          return '<tr' + (e.w ? '' : ' style="background:#f8fafc"') + '><td>' + yl(e.year, M.g) + '</td><td>' + el(e, M.g, e.name.replace(/^\d{4}\s+/, '')) + '</td><td class="ex-dim">' + esc(e.loc) + '</td><td>'
+            + (e.w ? who(e.w) + (M.S[e.w].nat ? '<span class="sx-nc">' + esc(M.S[e.w].nat) + '</span>' : '') : e.ph ? '<span class="wx-flag">' + e.ph + '</span> <span class="ex-dim" style="font-size:0.75rem">no winner, counts for nobody</span>' : '<span class="ex-dim">Winner not recorded</span>') + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      + (none.length ? '<div class="ex-note" style="margin:12px 0 0">' + none.length + ' event' + (none.length > 1 ? 's have' : ' has') + ' no winner: ' + none.map(function (e) { return e.year + ' ' + esc(e.tab || e.loc || e.name); }).join(', ') + '. They stay in the list, marked, and count for nobody.</div>' : '') + '</div>';
+  }
+  function allHtml(M) {
+    var g = M.g, T = [['ct', 'CT', typeof CT_DATA !== 'undefined' && CT_DATA], ['cs', 'CS', typeof CS_DATA !== 'undefined' && CS_DATA], ['lt', 'LT', typeof LT_DATA !== 'undefined' && LT_DATA]], S = {};
+    T.forEach(function (t) { if (!t[2] || !t[2].event_results) return; events(t[2], g, M.from, null).forEach(function (e) { if (!e.w) return; var s = S[e.w] || (S[e.w] = { n: e.w, t: 0, by: {} }); s.t++; s.by[t[0]] = (s.by[t[0]] || 0) + 1; }); });
+    var rows = Object.keys(S).map(function (n) { return S[n]; }).sort(function (a, b) { return b.t - a.t || a.n.localeCompare(b.n); }), shown = st.more ? rows : rows.slice(0, 50);
+    if (!rows.length) return '<div class="ex-empty">No event wins in this era.</div>';
+    return '<div class="ex-panel"><span class="ex-h">Event wins on every tour · ' + (shown.length < rows.length ? 'top ' + shown.length + ' of ' + rows.length : rows.length) + ' surfers</span><div class="ex-scroll"><table class="ex-t"><thead><tr><th class="r" style="width:28px">#</th><th>Surfer</th><th class="r">Wins</th><th>By tour</th></tr></thead><tbody>'
+      + shown.map(function (s, i) { return '<tr><td class="r ex-dim">' + (i + 1) + '</td><td><a href="#athletes/' + encodeURIComponent(s.n) + '">' + esc(s.n) + '</a></td><td class="r wx-num gold">' + s.t + '</td><td>' + T.map(function (t) { return s.by[t[0]] ? '<span class="wx-pill">' + t[1] + ' ' + s.by[t[0]] + '</span>' : ''; }).join('') + '</td></tr>'; }).join('')
+      + '</tbody></table></div>' + (rows.length > 50 ? '<div style="margin-top:12px"><button type="button" class="ex-ghost" onclick="Wx.more()">' + (st.more ? 'Show the top 50' : 'Show all ' + rows.length) + '</button></div>' : '')
+      + '<div class="ex-note" style="margin:12px 0 0">Championship Tour, Challenger Series and Longboard Tour event wins, joined on the surfer&#39;s name as each Sheet writes it.</div></div>';
+  }
+  var LISTS = [['champs', 'World champions'], ['wins', 'Event wins'], ['venue', 'Venue records'], ['streak', 'Consecutive wins'], ['roty', 'Rookies of the year']];
+  function show() {
+    var root = document.getElementById('wx-root'); if (!root) return;
+    var M = model(), g = M.g, ch = champions(M), won = M.evs.filter(function (e) { return e.w; }), none = M.evs.length - won.length, nats = {};
+    M.list.forEach(function (s) { nats[s.nat || 'Not recorded'] = 1; });
+    var nl = Object.keys(nats).filter(function (n) { return n !== 'Not recorded'; }).sort(), tabs = tabList(M);
+    if (st.nation !== 'all' && !nats[st.nation]) st.nation = 'all';
+    if (st.ev !== 'all' && tabs.indexOf(st.ev) === -1) st.ev = 'all';
+    var TABS = [['lead', 'Leaderboard'], ['titles', 'World titles'], ['age', 'By age'], ['nation', 'By nation'], ['streaks', 'Streaks and firsts'], ['full', 'Full list'], ['all', 'All tours']];
+    var body = { lead: leadHtml, titles: function (m) { return titlesHtml(m, ch); }, age: ageHtml, nation: nationHtml, streaks: streaksHtml, full: fullHtml, all: allHtml }[st.sub](M);
+    var filt = st.nation !== 'all' || st.ev !== 'all';
+    root.innerHTML = SecF.html('Wx.refresh', false)
+      + '<header class="ex-head"><div class="ex-eyebrow">' + TOUR[tour()] + ' · ' + G[g] + '</div><h1 class="ex-h1">Event winners</h1>'
+      + '<div class="ex-sub">' + won.length + ' events won · ' + M.list.length + ' different winners · ' + nl.length + ' nations' + (M.years.length ? ' · ' + M.years[0] + ' to ' + M.years[M.years.length - 1] : '') + (none ? ' · ' + none + ' event' + (none > 1 ? 's' : '') + ' with no winner' : '') + '</div></header>'
+      + '<div class="ex-bar" role="group" aria-label="Winners filters"><div><label for="wx-n">Nation</label><select id="wx-n" onchange="Wx.nation(this.value)"><option value="all">All nations</option>' + nl.concat(nats['Not recorded'] ? ['Not recorded'] : []).map(function (n) { return '<option' + (n === st.nation ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></div>'
+      + '<div><label for="wx-e">Event</label><select id="wx-e" onchange="Wx.ev(this.value)"><option value="all">All events</option>' + tabs.map(function (t) { return '<option' + (t === st.ev ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></div>'
+      + (filt ? '<button type="button" class="ex-ghost" onclick="Wx.clear()">Clear filters</button>' : '') + '<span class="ex-dim" style="font-size:0.72rem;align-self:center">Nation and event apply to the Leaderboard and the Full list.</span></div>'
+      + cardsHtml(M, ch)
+      + '<nav class="ex-tabs" aria-label="Winners sections">' + TABS.map(function (t) { return '<button type="button" class="ex-tab' + (t[0] === st.sub ? ' on' : '') + '" aria-pressed="' + (t[0] === st.sub) + '" onclick="Wx.sub(\'' + t[0] + '\')">' + t[1] + '</button>'; }).join('') + '</nav>'
+      + '<div class="ex-body">' + body
+      + '<div class="ex-panel"><span class="ex-h">Full lists · each opens in a new tab, ready to print</span><div class="wx-lists">' + LISTS.map(function (l) { return '<button type="button" data-winlist="' + l[0] + '-' + g + '" onclick="openWinList(\'' + l[0] + '-' + g + '\')">' + l[1] + ' ↗</button>'; }).join('') + '</div></div></div>';
+  }
+  return {
+    show: show, refresh: show,
+    sub: function (s) { st.sub = s; st.more = false; show(); },
+    sort: function (k) { if (st.sort === k) st.dir = -st.dir; else { st.sort = k; st.dir = (k === 'n' || k === 'nat' || k === 'y1') ? 1 : -1; } show(); },
+    nation: function (v) { st.nation = v; show(); }, ev: function (v) { st.ev = v; show(); },
+    clear: function () { st.nation = 'all'; st.ev = 'all'; show(); },
+    more: function () { st.more = !st.more; show(); }
+  };
 })();
 </script>
 </body>
