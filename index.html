@@ -1674,7 +1674,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261127174612"></script>
+<script src="data.js?v=20261127203517"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261126133548" onerror="this.remove()"></script>
 <script src="registry.js?v=20261126133548" onerror="this.remove()"></script>
@@ -8960,6 +8960,17 @@ window.Heats = (function () {
     return '<div class="ht-tile"><div class="ht-tile-l">' + label + '</div><div class="ht-tile-v">' + value + '</div>'
       + (sub ? '<div class="ht-tile-s">' + sub + '</div>' : '') + '</div>';
   }
+  // an event read from the archive results PDFs (before 2008): its heat totals
+  // are on the scale of its day and stay out of every average and best
+  function isPdf(ev) {
+    var a = A(); if (!a.pdf) return false;
+    if (!a._pdf) { a._pdf = {}; a.pdf.forEach(function (i) { a._pdf[i] = 1; }); }
+    return !!a._pdf[ev];
+  }
+  function srcNote() {
+    var I = db(cur).INDEX;
+    return I && I.from < 2008 && cur === 'ct' ? 'From WSL heat data (2008 on) and the archive results PDFs (before 2008, where an event\'s heats could be read)' : 'From WSL heat data';
+  }
   function meetingsOf(name) {
     var me = A().names.indexOf(name), by = {};
     if (me < 0) return by;
@@ -8968,7 +8979,7 @@ window.Heats = (function () {
       if (m[2] === me) { other = m[3]; mine = [m[4], m[6]]; theirs = [m[5], m[7]]; }
       else if (m[3] === me) { other = m[2]; mine = [m[5], m[7]]; theirs = [m[4], m[6]]; }
       else return;
-      (by[other] = by[other] || []).push({ ev: m[0], round: m[1], my: mine[0], their: theirs[0], won: mine[1] < theirs[1], lanes: m[8] });
+      (by[other] = by[other] || []).push({ ev: m[0], round: m[1], my: mine[0], their: theirs[0], won: mine[1] < theirs[1], lanes: m[8], pdf: isPdf(m[0]) });
     });
     return by;
   }
@@ -8993,7 +9004,7 @@ window.Heats = (function () {
     var rows = list.slice().sort(function (a, b) { return b.ev - a.ev; }).map(function (x) {
       return '<div class="ht-meet"><span class="ht-meet-res ' + (x.won ? 'w' : 'l') + '">' + (x.won ? 'W' : 'L') + '</span>'
         + '<span class="ht-meet-ev">' + wslRound(x.ev, x.round, esc(evLabel(x.ev)) + ' · ' + esc(x.round)) + '</span>'
-        + '<span class="ht-sc">' + fmt(x.my) + ' – ' + fmt(x.their) + '</span></div>';
+        + '<span class="ht-sc">' + (x.my == null && x.their == null ? '' : fmt(x.my) + ' – ' + fmt(x.their)) + '</span></div>';
     }).join('');
     return '<div class="ht-opp" data-name="' + esc(name.toLowerCase()) + '">'
       + '<div class="ht-opp-head" onclick="this.parentNode.classList.toggle(\'open\')">'
@@ -9021,7 +9032,7 @@ window.Heats = (function () {
     var id = 'ht-h2h-' + Math.random().toString(36).slice(2);
     opps.t = cur;
     pending[id] = opps;
-    var note = '<div class="ht-note">From WSL heat data, ' + span() + ' ' + TOUR_NAME[cur] + ' events. Placings and rankings elsewhere on this page come from the archive.</div>';
+    var note = '<div class="ht-note">' + srcNote() + ', ' + span() + ' ' + TOUR_NAME[cur] + ' events. Placings and rankings elsewhere on this page come from the archive.</div>';
     if (part === 'tiles') return note + '<div class="ht-tiles">' + tiles + '</div>';
     if (part === 'h2h' && !opps.length) return '<div class="ht-note">No two-surfer heats in the WSL heat data.</div>';
     return (part === 'h2h' ? '' : note + '<div class="ht-tiles">' + tiles + '</div>')
@@ -9092,7 +9103,7 @@ window.Heats = (function () {
       else if (m[3] === me) { mine = [m[5], m[7]]; other = [A().names[m[2]], m[4], m[6]]; }
       else return;
       var k = m[0] + '|' + m[1] + '|' + mine[0];
-      if (!by[k]) { by[k] = { ev: m[0], round: m[1], my: mine[0], place: mine[1], others: [] }; out.push(by[k]); }
+      if (!by[k]) { by[k] = { ev: m[0], round: m[1], my: mine[0], place: mine[1], others: [], pdf: isPdf(m[0]) }; out.push(by[k]); }
       by[k].others.push(other);
     });
     return out;
@@ -9163,16 +9174,17 @@ window.Heats = (function () {
     years.forEach(function (y) {
       var S = (R.seasons[y] || {})[g] || {};
       Object.keys(S).forEach(function (n) {
-        var a = agg[n] = agg[n] || [0, 0, 0, 0, 0, 0];
-        for (var i = 0; i < 6; i++) a[i] += S[n][i];
+        var a = agg[n] = agg[n] || [0, 0, 0, 0, 0, 0, 0];
+        for (var i = 0; i < 7; i++) a[i] += S[n][i] || 0;   // the seventh: heats from the results PDFs, whose totals are not averaged
       });
     });
     var min = rec.year === 'all' ? 50 : 10;
-    var list = Object.keys(agg).map(function (n) { return [n].concat(agg[n]); });   // n, heats, wins, sum, waves, ex, tens
+    var list = Object.keys(agg).map(function (n) { return [n].concat(agg[n]); });   // n, heats, wins, sum, waves, ex, tens, PDF heats
+    var scd = function (a) { return a[1] - a[7]; };
     var val, show, note, need = 0;
     if (rec.kind === 'wins') { val = function (a) { return a[2]; }; show = function (a) { return a[2]; }; note = function (a) { return a[1] + ' heats'; }; }
     else if (rec.kind === 'rate') { need = min; val = function (a) { return a[2] / a[1]; }; show = function (a) { return Math.round(100 * a[2] / a[1]) + '%'; }; note = function (a) { return a[2] + ' of ' + a[1] + ' heats'; }; }
-    else if (rec.kind === 'avg') { need = min; val = function (a) { return a[3] / a[1]; }; show = function (a) { return fmt(a[3] / a[1]); }; note = function (a) { return a[1] + ' heats'; }; }
+    else if (rec.kind === 'avg') { need = min; val = function (a) { return scd(a) >= min ? a[3] / scd(a) : 0; }; show = function (a) { return fmt(a[3] / scd(a)); }; note = function (a) { return scd(a) + ' heats'; }; }
     else if (rec.kind === 'ex') { val = function (a) { return a[5]; }; show = function (a) { return a[5]; }; note = function (a) { return 'of ' + a[4] + ' waves scored'; }; }
     else { val = function (a) { return a[6]; }; show = function (a) { return a[6]; }; note = function () { return ''; }; }
     list = list.filter(function (a) { return a[1] >= need && val(a) > 0; })
@@ -9235,7 +9247,8 @@ window.Heats = (function () {
     if (!S) { box.innerHTML = ''; return; }
     var rows = Object.keys(S).map(function (n) {
       var a = S[n];      // heats, wins, sum, waves, excellent, tens
-      return [n, a[0], a[1], a[0] ? a[1] / a[0] : 0, a[0] ? a[2] / a[0] : 0, a[4], a[5]];
+      var sc = a[0] - (a[6] || 0);   // heats from the results PDFs are left out of the average
+      return [n, a[0], a[1], a[0] ? a[1] / a[0] : 0, sc ? a[2] / sc : null, a[4], a[5]];
     });
     var c = seasonSort.col;
     rows.sort(function (a, b) {
@@ -9243,7 +9256,7 @@ window.Heats = (function () {
     });
     var heads = ['Surfer', 'Heats', 'Heat wins', 'Win rate', 'Avg heat total', 'Excellent waves', '10s'];
     box.innerHTML = '<div class="ht-rec-bar" style="margin-top:22px"><div class="section-title">Heat stats, ' + esc(seasonNow[0]) + '</div></div>'
-      + '<div class="ht-note">From WSL heat data. Tap a column to sort. Wave-pool leaderboard events have no heats and are not counted.</div>'
+      + '<div class="ht-note">' + srcNote() + '. Tap a column to sort. Wave-pool leaderboard events have no heats and are not counted.</div>'
       + '<div class="winners-board"><div class="winners-scroll"><table class="winners-table"><thead><tr>' + heads.map(function (h, i) {
           return '<th' + (i ? ' class="wins-col"' : '') + ' style="cursor:pointer" onclick="Heats.sortSeason(' + i + ')">' + h
             + (i === c ? (seasonSort.dir < 0 ? ' ▼' : ' ▲') : '') + '</th>'; }).join('') + '</tr></thead><tbody>'
@@ -9331,6 +9344,9 @@ window.Prof = (function () {
   function esc(s) { return escHtml(String(s == null ? '' : s)); }
   function ord(n) { return n == null ? '—' : csOrdinal(n); }
   function f2(n) { return n == null || isNaN(n) ? '—' : Number(n).toFixed(2); }
+  // heats whose totals can be averaged: not the pre-2008 results-PDF heats
+  function scoredH(L) { return L.filter(function (h) { return !h.pdf && h.my != null; }); }
+  function avgH(L) { var S = scoredH(L); return S.length ? S.reduce(function (t, h) { return t + h.my; }, 0) / S.length : NaN; }
   function pct(a, b) { return b ? Math.round(100 * a / b) : 0; }
   function span(ys) {
     if (!ys.length) return '';
@@ -9829,9 +9845,9 @@ window.Prof = (function () {
       if (fin.length >= 3) add(88 - less, fw + '/' + fin.length, 'Wins ' + pct(fw, fin.length) + '% of the ' + T + ' finals ' + they + ' makes.', fin.length - fw + ' final' + (fin.length - fw !== 1 ? 's' : '') + ' lost.', T + ' heats');
       var byV = {};
       H.forEach(function (h) { var v = h.tab; (byV[v] = byV[v] || []).push(h); });
-      var career = H.reduce(function (a, h) { return a + (h.my || 0); }, 0) / (H.length || 1);
-      var bestV = Object.keys(byV).filter(function (v) { return byV[v].length >= 6 && v !== 'WSL Finals' && v !== 'Finals'; })
-        .map(function (v) { var L = byV[v]; return [v, L.reduce(function (a, h) { return a + (h.my || 0); }, 0) / L.length, L]; })
+      var career = avgH(H);
+      var bestV = Object.keys(byV).filter(function (v) { return scoredH(byV[v]).length >= 6 && v !== 'WSL Finals' && v !== 'Finals'; })
+        .map(function (v) { var L = scoredH(byV[v]); return [v, avgH(L), L]; })
         .sort(function (a, b) { return b[1] - a[1]; })[0];
       if (bestV && bestV[1] > career + 0.5) add(76 - less, f2(bestV[1]), 'Highest ' + T + ' heat average anywhere is at ' + vname(bestV[0]) + '.',
           bestV[2].filter(function (h) { return h.place === 1; }).length + ' wins from ' + bestV[2].length + ' heats; career average ' + f2(career) + '.', T + ' heats');
@@ -9968,7 +9984,7 @@ window.Prof = (function () {
       '<div class="pf-legend"><span class="w">Win</span><span class="ru">Runner-up</span><span class="sf">Semi</span><span class="qf">Quarter</span><span class="out">Earlier</span></div>'
       + '<div class="pf-scroll"><table class="pf-table pf-matrix"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>'
       + '<div class="pf-note">Tap a venue for its sheet: every result there, ' + (ct ? 'every heat, ' : '') + 'who has won there, and your notes. '
-      + (ct ? 'Heat columns from WSL heat data, every CT start including wildcards.' : '') + ' A small number is how many events that season.</div>');
+      + (ct ? 'Heat columns from the heat data, every CT start including wildcards.' : '') + ' A small number is how many events that season.</div>');
   }
 
   // ── Events list (QS, Pro Junior, ISA, Games) ────────────────────────────────
@@ -10202,7 +10218,7 @@ window.Prof = (function () {
       var c = function (k) { return tr.querySelector('[data-h="' + k + '"]'); };
       if (!c('n')) return;
       if (!L.length) { c('n').textContent = '—'; return; }
-      var r = pct(w, L.length), avg = L.reduce(function (t, h) { return t + (h.my || 0); }, 0) / L.length;
+      var r = pct(w, L.length), avg = avgH(L);
       c('n').textContent = L.length; c('w').textContent = w;
       c('r').innerHTML = '<span class="pf-rate"><span style="width:' + r + '%" class="' + (r >= 70 ? 'hi' : r >= 50 ? 'mid' : 'lo') + '"></span></span><b>' + r + '%</b>';
       c('a').textContent = f2(avg);
@@ -10210,14 +10226,14 @@ window.Prof = (function () {
     var vh = el.querySelector('[data-vheats]');
     if (vh) {
       var tab = vh.dataset.vheats, L = H.filter(function (h) { return h.tab === tab; }).sort(function (a, b) { return b.ev - a.ev; });
-      var w = L.filter(function (h) { return h.place === 1; }).length, best = L.reduce(function (m, h) { return !m || h.my > m.my ? h : m; }, null);
+      var w = L.filter(function (h) { return h.place === 1; }).length, best = scoredH(L).reduce(function (m, h) { return !m || h.my > m.my ? h : m; }, null);
       setBox(el, 'vh', L.length || '—', w + ' won');
       setBox(el, 'vr', L.length ? pct(w, L.length) + '%' : '—', s ? 'career ' + pct(s[2], s[1]) + '%' : '');
-      setBox(el, 'va', L.length ? f2(L.reduce(function (t, h) { return t + (h.my || 0); }, 0) / L.length) : '—', best ? 'best ' + f2(best.my) + ', ' + best.year + ' ' + best.round : '');
+      setBox(el, 'va', L.length ? f2(avgH(L)) : '—', best ? 'best ' + f2(best.my) + ', ' + best.year + ' ' + best.round : '');
       vh.innerHTML = L.length ? '<div class="pf-scroll"><table class="pf-table"><tbody>' + L.map(function (h) {
         return '<tr><td class="b d">' + h.year + '</td><td>' + esc(h.round) + '</td><td><span class="pf-res ' + (h.place === 1 ? 'w' : '') + '">' + (h.place === 1 ? 'W' : h.place) + '</span></td>'
           + '<td class="b">' + f2(h.my) + '</td><td class="pf-sm">' + h.others.map(function (o) { return esc(o[0]) + ' ' + f2(o[1]); }).join(' · ') + '</td></tr>';
-      }).join('') + '</tbody></table></div><div class="pf-note">From WSL heat data. A heat with no scoring opponent is not listed.</div>'
+      }).join('') + '</tbody></table></div><div class="pf-note">From WSL heat data' + (L.some(function (h) { return h.pdf; }) ? ' and, before 2008, the archive results PDFs, whose totals are on the scale of their day' : '') + '. A heat with no scoring opponent is not listed.</div>'
         : '<div class="pf-empty">No WSL heat data at this venue.</div>';
     }
     var hp = el.querySelector('[data-heats]');
@@ -10242,7 +10258,7 @@ window.Prof = (function () {
         + card('Season by season', '<table class="pf-table"><thead><tr><th>Season</th><th class="c">Heats</th><th class="c">Won</th><th class="c">Rate</th><th class="c">Avg total</th></tr></thead><tbody>'
             + Object.keys(byY).sort(function (a, b) { return b - a; }).map(function (y) {
                 var L = byY[y], w = L.filter(function (h) { return h.place === 1; }).length;
-                return '<tr><td class="b">' + y + '</td><td class="c">' + L.length + '</td><td class="c">' + w + '</td><td class="c b">' + pct(w, L.length) + '%</td><td class="c">' + f2(L.reduce(function (t, h) { return t + (h.my || 0); }, 0) / L.length) + '</td></tr>';
+                return '<tr><td class="b">' + y + '</td><td class="c">' + L.length + '</td><td class="c">' + w + '</td><td class="c b">' + pct(w, L.length) + '%</td><td class="c">' + f2(avgH(L)) + '</td></tr>';
               }).join('') + '</tbody></table>', ' style="flex:1 1 420px"') + '</div>';
   }
   function fillRecords(ctx, el) {
@@ -10688,11 +10704,11 @@ window.Ex = (function () {
       box = document.getElementById('ex-bracket'); if (!box || box.getAttribute('data-k') !== y + g) return;
       var ev = key && Y[key], rounds = ev && ev.r ? ev.r.filter(function (x) { return /quarter|semi|final|title|match/i.test(x[0]); }) : [];
       if (!rounds.length) { box.innerHTML = '<div class="ex-note">No heat scores are held for this edition.</div>'; return; }
-      box.innerHTML = '<div class="ex-panel"><span class="ex-h">Final rounds <span class="ex-since">Counting waves shown</span></span><div class="ex-rounds">' + rounds.map(function (rd) {
+      box.innerHTML = '<div class="ex-panel"><span class="ex-h">Final rounds <span class="ex-since">' + (ev.src === 'pdf' ? 'From the results PDF' + (ev.tot ? ', totals on the scale of the day' : ', places only') : 'Counting waves shown') + '</span></span><div class="ex-rounds">' + rounds.map(function (rd) {
         return '<div><div class="ex-bl" style="margin-bottom:6px">' + esc(rd[0]) + '</div>' + rd[1].map(function (h) {
           return '<div class="ex-heat">' + h[2].slice().sort(function (a, b) { return (a[1] || 9) - (b[1] || 9); }).map(function (l) {
             var cw = (l[3] || []).filter(function (w) { return w[1]; }).map(function (w) { return w[0].toFixed(2); }).join(' + ');
-            return '<div class="ex-heat-row' + (l[1] === 1 ? ' win' : '') + '"><span>' + who(l[0]) + '</span><span><span class="ex-waves">' + cw + '</span> <b>' + (l[2] == null ? '–' : l[2].toFixed(2)) + '</b></span></div>';
+            return '<div class="ex-heat-row' + (l[1] === 1 ? ' win' : '') + '"><span>' + who(l[0]) + '</span><span><span class="ex-waves">' + cw + '</span> <b>' + (l[2] == null ? (ev.src === 'pdf' ? (l[1] === 1 ? 'Won' : '') : '–') : l[2].toFixed(2)) + '</b></span></div>';
           }).join('') + '</div>';
         }).join('') + '</div>';
       }).join('') + '</div></div>';
@@ -10896,15 +10912,22 @@ window.Sx = (function () {
   // every surfer's heats for the year, from the heat files
   function heatStats(y, g) {
     var Y = HD().Y && HD().Y[y]; if (!Y) return null;
-    var by = {}, totals = [], waves = [], notHere = {};
+    var by = {}, totals = [], waves = [], notHere = {}, pdfEv = 0;
     (D().event_results[g] || []).forEach(function (r) { if (+r.year === +y && /^QS/i.test(r.tier || '') && r.tab) notHere[r.tab] = 1; });
     Object.keys(Y).forEach(function (k) {
       if (k.slice(-1) !== GK[g]) return;
       var ev = Y[k], label = tabOf(y, ev.n, g) || ev.n;
       if (notHere[label]) return;                // a QS 6000 event: not part of this season
+      if (ev.src === 'pdf') pdfEv++;
       (ev.r || []).forEach(function (rd) {
         rd[1].forEach(function (h) {
           h[2].forEach(function (l) {
+            if (ev.src === 'pdf') {              // a results-PDF heat: counted, its total kept out
+              if (!l[1]) return;
+              var sp = by[l[0]] || (by[l[0]] = { n: l[0], h: 0, w: 0, sum: 0, x8: 0, rid: 0, ph: 0 });
+              sp.h++; sp.ph = (sp.ph || 0) + 1; if (l[1] === 1) sp.w++;
+              return;
+            }
             if (l[2] == null) return;
             var s = by[l[0]] || (by[l[0]] = { n: l[0], h: 0, w: 0, sum: 0, x8: 0, rid: 0 });
             s.h++; if (l[1] === 1) s.w++; s.sum += l[2];
@@ -10917,7 +10940,7 @@ window.Sx = (function () {
     var list = Object.keys(by).map(function (n) { return by[n]; });
     if (!list.length) return null;
     function desc(a, b) { return b[0] - a[0] || a[1].localeCompare(b[1]); }
-    return { list: list, totals: totals.sort(desc), waves: waves.sort(desc) };
+    return { list: list, totals: totals.sort(desc), waves: waves.sort(desc), pdfEv: pdfEv };
   }
   function topBy(list, f, ok) {
     var best = null; list.forEach(function (s) { if ((!ok || ok(s)) && (best === null || f(s) > best)) best = f(s); });
@@ -10973,8 +10996,9 @@ window.Sx = (function () {
     if (H) {
       var hw = topBy(H.list, function (s) { return s.w; });
       if (hw) card('Most heat wins', hw.v, hw.who.map(function (s) { return [s.n, 'of ' + s.h + ' heats']; }), '', 1);
-      var av = topBy(H.list, function (s) { return Math.round(100 * s.sum / s.h) / 100; }, function (s) { return s.h >= MIN_HEATS; });
-      if (av) card('Best average heat total', av.v.toFixed(2), av.who.map(function (s) { return [s.n, s.h + ' heats']; }), '', 1);
+      var scH = function (s) { return s.h - (s.ph || 0); };   // heats whose totals are on today's scale
+      var av = topBy(H.list, function (s) { return Math.round(100 * s.sum / scH(s)) / 100; }, function (s) { return scH(s) >= MIN_HEATS; });
+      if (av) card('Best average heat total', av.v.toFixed(2), av.who.map(function (s) { return [s.n, scH(s) + ' heats']; }), '', 1);
       if (H.waves.length) { var bw = H.waves.filter(function (w) { return w[0] === H.waves[0][0]; }); card('Best single wave', H.waves[0][0].toFixed(2) + (bw.length > 1 ? ' ×' + bw.length : ''), bw.map(function (w) { return [w[1], w[2] + ', ' + w[3]]; }), '', 1); }
       if (H.totals.length) { var bt = H.totals.filter(function (t) { return t[0] === H.totals[0][0]; }); card('Best heat total', H.totals[0][0].toFixed(2), bt.map(function (t) { return [t[1], t[2] + ', ' + t[3]]; }), '', 1); }
     }
@@ -11085,15 +11109,17 @@ window.Sx = (function () {
         + (note ? '<div class="ex-dim" style="font-size:0.75rem;margin-top:8px">' + note + '</div>' : '') + '</div>';
     }
     function top(f, ok, n) { return H.list.filter(ok || function () { return 1; }).slice().sort(function (a, b) { return f(b) - f(a) || b.h - a.h || a.n.localeCompare(b.n); }).slice(0, n || 8); }
+    var sc = function (s) { return s.h - (s.ph || 0); };
     var q = function (s) { return s.h >= MIN_HEATS; }, pc = function (s) { return Math.round(100 * s.w / s.h); }, note = 'Surfers with ' + MIN_HEATS + ' or more heats.';
     return '<div class="sx-boards">'
       + board('Heat wins', 'Wins', 'Heats · win rate', top(function (s) { return s.w; }).map(function (s) { return [s.n, s.w, s.h + ' · ' + pc(s) + '%']; }))
       + board('Heat win rate', 'Rate', 'Won of surfed', top(function (s) { return s.w / s.h; }, q).map(function (s) { return [s.n, pc(s) + '%', s.w + ' of ' + s.h]; }), note)
-      + board('Average heat total', 'Average', 'Heats', top(function (s) { return s.sum / s.h; }, q).map(function (s) { return [s.n, (s.sum / s.h).toFixed(2), '' + s.h]; }), note)
-      + board('Excellent-range waves (8.00 and above)', 'Waves', 'Of waves ridden', top(function (s) { return s.x8; }, function (s) { return s.x8 > 0; }).map(function (s) { return [s.n, s.x8, '' + s.rid]; }))
-      + board('Best heat totals', 'Total', 'Event · round', H.totals.slice(0, 8).map(function (t) { return [t[1], t[0].toFixed(2), t[2] + ' · ' + t[3]]; }))
-      + board('Best single waves', 'Wave', 'Event · round', H.waves.slice(0, 8).map(function (w) { return [w[1], w[0].toFixed(2), w[2] + ' · ' + w[3]]; }))
-      + '</div>';
+      + (H.totals.length ? board('Average heat total', 'Average', 'Heats', top(function (s) { return s.sum / sc(s); }, function (s) { return sc(s) >= MIN_HEATS; }).map(function (s) { return [s.n, (s.sum / sc(s)).toFixed(2), '' + sc(s)]; }), note) : '')
+      + (H.waves.length ? board('Excellent-range waves (8.00 and above)', 'Waves', 'Of waves ridden', top(function (s) { return s.x8; }, function (s) { return s.x8 > 0; }).map(function (s) { return [s.n, s.x8, '' + s.rid]; })) : '')
+      + (H.totals.length ? board('Best heat totals', 'Total', 'Event · round', H.totals.slice(0, 8).map(function (t) { return [t[1], t[0].toFixed(2), t[2] + ' · ' + t[3]]; })) : '')
+      + (H.waves.length ? board('Best single waves', 'Wave', 'Event · round', H.waves.slice(0, 8).map(function (w) { return [w[1], w[0].toFixed(2), w[2] + ' · ' + w[3]]; })) : '')
+      + '</div>'
+      + (H.totals.length ? '' : '<div class="ex-note" style="margin-top:12px">Heats for this season come from the archive results PDFs: ' + H.pdfEv + ' event' + (H.pdfEv !== 1 ? 's' : '') + ' could be read, so these counts may not cover the whole season. Totals are on the scale of the day, so no averages or best totals are ranked.</div>');
   }
   function rookiesHtml(y, g, I, rk) {
     var R = ((D().rookies || {})[g] || {})[y] || {}, cls = (R.class || []).slice(), pos = {}, T = I.T, by = {};
