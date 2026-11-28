@@ -1674,7 +1674,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261127203517"></script>
+<script src="data.js?v=20261128082104"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261126133548" onerror="this.remove()"></script>
 <script src="registry.js?v=20261126133548" onerror="this.remove()"></script>
@@ -8969,7 +8969,7 @@ window.Heats = (function () {
   }
   function srcNote() {
     var I = db(cur).INDEX;
-    return I && I.from < 2008 && cur === 'ct' ? 'From WSL heat data (2008 on) and the archive results PDFs (before 2008, where an event\'s heats could be read)' : 'From WSL heat data';
+    return I && I.from < 2008 && cur === 'ct' ? 'From WSL heat data (2008 on); before 2008 from the WSL\'s archive pages and the results PDFs, where an event\'s heats could be read' : 'From WSL heat data';
   }
   function meetingsOf(name) {
     var me = A().names.indexOf(name), by = {};
@@ -10233,7 +10233,7 @@ window.Prof = (function () {
       vh.innerHTML = L.length ? '<div class="pf-scroll"><table class="pf-table"><tbody>' + L.map(function (h) {
         return '<tr><td class="b d">' + h.year + '</td><td>' + esc(h.round) + '</td><td><span class="pf-res ' + (h.place === 1 ? 'w' : '') + '">' + (h.place === 1 ? 'W' : h.place) + '</span></td>'
           + '<td class="b">' + f2(h.my) + '</td><td class="pf-sm">' + h.others.map(function (o) { return esc(o[0]) + ' ' + f2(o[1]); }).join(' · ') + '</td></tr>';
-      }).join('') + '</tbody></table></div><div class="pf-note">From WSL heat data' + (L.some(function (h) { return h.pdf; }) ? ' and, before 2008, the archive results PDFs, whose totals are on the scale of their day' : '') + '. A heat with no scoring opponent is not listed.</div>'
+      }).join('') + '</tbody></table></div><div class="pf-note">From WSL heat data' + (L.some(function (h) { return h.pdf; }) ? ' and, before 2008, the WSL\'s archive pages and the results PDFs, whose totals are on the scale of their day' : '') + '. A heat with no scoring opponent is not listed.</div>'
         : '<div class="pf-empty">No WSL heat data at this venue.</div>';
     }
     var hp = el.querySelector('[data-heats]');
@@ -10704,14 +10704,14 @@ window.Ex = (function () {
       box = document.getElementById('ex-bracket'); if (!box || box.getAttribute('data-k') !== y + g) return;
       var ev = key && Y[key], rounds = ev && ev.r ? ev.r.filter(function (x) { return /quarter|semi|final|title|match/i.test(x[0]); }) : [];
       if (!rounds.length) { box.innerHTML = '<div class="ex-note">No heat scores are held for this edition.</div>'; return; }
-      box.innerHTML = '<div class="ex-panel"><span class="ex-h">Final rounds <span class="ex-since">' + (ev.src === 'pdf' ? 'From the results PDF' + (ev.tot ? ', totals on the scale of the day' : ', places only') : 'Counting waves shown') + '</span></span><div class="ex-rounds">' + rounds.map(function (rd) {
+      box.innerHTML = '<div class="ex-panel"><span class="ex-h">Final rounds <span class="ex-since">' + (ev.src ? ({ pdf: 'From the results PDF', 'wsl-old': 'From the WSL\'s archive page', merged: 'From the WSL\'s archive page and the results PDF' }[ev.src] || 'From the archive') + (ev.vote ? ', judges\' votes' : ev.tot ? ', totals on the scale of the day' : ', places only') : 'Counting waves shown') + '</span></span><div class="ex-rounds">' + rounds.map(function (rd) {
         return '<div><div class="ex-bl" style="margin-bottom:6px">' + esc(rd[0]) + '</div>' + rd[1].map(function (h) {
           return '<div class="ex-heat">' + h[2].slice().sort(function (a, b) { return (a[1] || 9) - (b[1] || 9); }).map(function (l) {
             var cw = (l[3] || []).filter(function (w) { return w[1]; }).map(function (w) { return w[0].toFixed(2); }).join(' + ');
-            return '<div class="ex-heat-row' + (l[1] === 1 ? ' win' : '') + '"><span>' + who(l[0]) + '</span><span><span class="ex-waves">' + cw + '</span> <b>' + (l[2] == null ? (ev.src === 'pdf' ? (l[1] === 1 ? 'Won' : '') : '–') : l[2].toFixed(2)) + '</b></span></div>';
+            return '<div class="ex-heat-row' + (l[1] === 1 ? ' win' : '') + '"><span>' + who(l[0]) + '</span><span><span class="ex-waves">' + cw + '</span> <b>' + (l[2] == null ? (ev.src ? (l[1] === 1 && !ev.vote ? 'Won' : '') : '–') : ev.vote ? String(l[2]) : l[2].toFixed(2)) + '</b></span></div>';
           }).join('') + '</div>';
         }).join('') + '</div>';
-      }).join('') + '</div></div>';
+      }).join('') + '</div>' + (ev.abs && ev.abs.length ? '<div class="ex-dim" style="font-size:0.75rem;margin-top:10px">The WSL\'s page for this event leaves out ' + ev.abs.map(esc).join(', ') + ', and no results PDF fills the gap: their heats are not shown.</div>' : '') + '</div>';
     }).catch(function () { var b = document.getElementById('ex-bracket'); if (b) b.innerHTML = '<div class="ex-note">The heats could not be loaded.</div>'; });
   }
   function nationOf(n) {
@@ -10918,11 +10918,11 @@ window.Sx = (function () {
       if (k.slice(-1) !== GK[g]) return;
       var ev = Y[k], label = tabOf(y, ev.n, g) || ev.n;
       if (notHere[label]) return;                // a QS 6000 event: not part of this season
-      if (ev.src === 'pdf') pdfEv++;
+      if (ev.src) pdfEv++;
       (ev.r || []).forEach(function (rd) {
         rd[1].forEach(function (h) {
           h[2].forEach(function (l) {
-            if (ev.src === 'pdf') {              // a results-PDF heat: counted, its total kept out
+            if (ev.src) {                        // a pre-2008 archive heat: counted, its total kept out
               if (!l[1]) return;
               var sp = by[l[0]] || (by[l[0]] = { n: l[0], h: 0, w: 0, sum: 0, x8: 0, rid: 0, ph: 0 });
               sp.h++; sp.ph = (sp.ph || 0) + 1; if (l[1] === 1) sp.w++;
@@ -11119,7 +11119,7 @@ window.Sx = (function () {
       + (H.totals.length ? board('Best heat totals', 'Total', 'Event · round', H.totals.slice(0, 8).map(function (t) { return [t[1], t[0].toFixed(2), t[2] + ' · ' + t[3]]; })) : '')
       + (H.waves.length ? board('Best single waves', 'Wave', 'Event · round', H.waves.slice(0, 8).map(function (w) { return [w[1], w[0].toFixed(2), w[2] + ' · ' + w[3]]; })) : '')
       + '</div>'
-      + (H.totals.length ? '' : '<div class="ex-note" style="margin-top:12px">Heats for this season come from the archive results PDFs: ' + H.pdfEv + ' event' + (H.pdfEv !== 1 ? 's' : '') + ' could be read, so these counts may not cover the whole season. Totals are on the scale of the day, so no averages or best totals are ranked.</div>');
+      + (H.totals.length ? '' : '<div class="ex-note" style="margin-top:12px">Heats for this season come from the WSL\'s archive pages and the results PDFs: ' + H.pdfEv + ' event' + (H.pdfEv !== 1 ? 's' : '') + ' could be read, so these counts may not cover the whole season. Totals are on the scale of the day, so no averages or best totals are ranked.</div>');
   }
   function rookiesHtml(y, g, I, rk) {
     var R = ((D().rookies || {})[g] || {})[y] || {}, cls = (R.class || []).slice(), pos = {}, T = I.T, by = {};
