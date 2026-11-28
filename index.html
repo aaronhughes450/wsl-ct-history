@@ -1674,7 +1674,7 @@
 </div>
 
 <script src="isa-dob.js" onerror="this.remove()"></script>
-<script src="data.js?v=20261127160142"></script>
+<script src="data.js?v=20261127165720"></script>
 <script src="qspj.js?v=20261029235321" onerror="this.remove()"></script>
 <script src="registry-public.js?v=20261126133548" onerror="this.remove()"></script>
 <script src="registry.js?v=20261126133548" onerror="this.remove()"></script>
@@ -2674,6 +2674,16 @@ function officialDob(name) {
   }
   return v || '';
 }
+// Birth year only (ATHLETE_BORN, from athlete-dob-manual.json): shown as
+// "Born 1960" when there is no full date. Display only, never an age.
+let _bornLoose = null;
+function bornYear(name) {
+  const src = (typeof ATHLETE_BORN !== 'undefined' && ATHLETE_BORN) || null;
+  if (!src) return null;
+  if (name in src) return src[name];
+  if (_bornLoose === null) _bornLoose = _isaLooseMap(src);
+  return _bornLoose[_dobKey(name)] || null;
+}
 let _isaAgeLoose = null;
 function profileAge(dobVal, name) {
   const a = calcAge(dobVal);
@@ -2841,6 +2851,7 @@ function renderProfile(name, panelEl, reg) {
   // Age from stored DOB (global calcAge)
   const dobVal = bioGet('dob') || officialDob(name) || (reg && reg.dob ? reg.dob : '');
   const age    = profileAge(dobVal, name);
+  const born   = (!dobVal && age === null) ? bornYear(name) : null;
 
   // ISA lookup needed here for wildcard nation seeding (also reused below for ISA overview)
   const isaAthleteData = (ISA_WSG_DATA && ISA_WSG_DATA.athletes)
@@ -2875,7 +2886,7 @@ function renderProfile(name, panelEl, reg) {
         <div class="bento-info-field">
           <label>Age</label>
           <div class="bio-input" style="background:transparent;border-color:transparent;padding-top:7px;color:var(--navy);font-weight:900;font-style:italic;font-size:1.1rem">
-            ${age !== null ? age : '<span style="color:var(--text-dim);font-size:0.9rem;font-style:normal;font-weight:400">—</span>'}
+            ${age !== null ? age : '<span style="color:var(--text-dim);font-size:0.9rem;font-style:normal;font-weight:400">' + (born ? 'Born ' + born : '—') + '</span>'}
           </div>
         </div>
         <div class="bento-info-field">
@@ -3034,7 +3045,7 @@ function renderProfile(name, panelEl, reg) {
     panel.innerHTML = Prof.render({
       reg: reg, name: name, ctName: _ctN, pref: _pref, tags: tags, bioHtml: bioFields,
       nationLine: (reg.flags && reg.flags.length ? reg.flags.map(f => nationFlag(f[0]) + escHtml(f[0])).join(' / ') : escHtml(a.nation || reg.nation || '')),
-      stance: escHtml(bioGet('stance') || reg.stance || ''), age: age, resides: escHtml(bioGet('location') || ''),
+      stance: escHtml(bioGet('stance') || reg.stance || ''), age: age, born: born, resides: escHtml(bioGet('location') || ''),
       ctRankChips: _srcTour === 'ct' ? '<div class="rankings-row">' + (rankingChips || '<span style="color:var(--text-dim);font-size:0.85rem">No ranking data</span>') + '</div>' : '',
       ctSeasonProg: _srcTour === 'ct' ? buildSeasonProgression(name, gender) : '',
       ctRookieHtml: _srcTour === 'ct' ? rookieClassHtml : ''
@@ -9631,7 +9642,7 @@ window.Prof = (function () {
     var st = STATE[reg.id], start = st && ctx.scopes.indexOf(st.sc) >= 0 ? st : null;
     if (!start && ctx.pref && ctx.scopes.indexOf(ctx.pref) >= 0) start = { sc: ctx.pref, tab: 'Overview' };
     ctx.start = start || { sc: 'ALL', tab: 'Overview' };
-    var g = gOf(reg), sub = [ctx.nationLine, ctx.stance, ctx.age != null ? 'Age ' + ctx.age : '', ctx.resides].filter(Boolean).join(' · ');
+    var g = gOf(reg), sub = [ctx.nationLine, ctx.stance, ctx.age != null ? 'Age ' + ctx.age : (ctx.born ? 'Born ' + ctx.born : ''), ctx.resides].filter(Boolean).join(' · ');
     var groups = GROUPS.map(function (gr) {
       var items = gr[1].filter(function (s) { return ctx.scopes.indexOf(s) >= 0; });
       if (!items.length) return '';
